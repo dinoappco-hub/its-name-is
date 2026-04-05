@@ -9,15 +9,7 @@ import { useAuth, useAlert } from '@/template';
 import { theme, typography } from '../constants/theme';
 import { config } from '../constants/config';
 import { useApp } from '../contexts/AppContext';
-import { shareApp } from '../services/shareService';
 
-const SOCIAL_LINKS: { key: string; icon: string; label: string; color: string; url: string }[] = [
-  { key: 'instagram', icon: 'instagram', label: 'Instagram', color: '#E1306C', url: config.socials.instagram },
-  { key: 'tiktok', icon: 'music-note', label: 'TikTok', color: '#00F2EA', url: config.socials.tiktok },
-  { key: 'twitter', icon: 'alternate-email', label: 'X / Twitter', color: '#1DA1F2', url: config.socials.twitter },
-  { key: 'youtube', icon: 'play-circle-filled', label: 'YouTube', color: '#FF0000', url: config.socials.youtube },
-  { key: 'facebook', icon: 'facebook', label: 'Facebook', color: '#1877F2', url: config.socials.facebook },
-];
 
 interface SettingsItem {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -62,10 +54,6 @@ export default function SettingsScreen() {
     ]);
   };
 
-  const handleShareApp = () => {
-    Haptics.selectionAsync();
-    shareApp();
-  };
 
   const handleContact = () => {
     Linking.openURL('mailto:support@itsnameis.app?subject=its%20name%20is.%20Support');
@@ -135,13 +123,7 @@ export default function SettingsScreen() {
           onPress: handleRateApp,
           showChevron: true,
         },
-        {
-          icon: 'share',
-          label: 'Share with Friends',
-          subtitle: 'Spread the word',
-          onPress: handleShareApp,
-          showChevron: true,
-        },
+
         {
           icon: 'mail',
           label: 'Contact Support',
@@ -151,10 +133,7 @@ export default function SettingsScreen() {
         },
       ],
     },
-    {
-      title: 'Follow Us',
-      items: [],
-    },
+
     {
       title: 'Legal',
       items: [
@@ -228,34 +207,6 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {sections.map((section) => {
-          if (section.title === 'Follow Us') {
-            return (
-              <View key={section.title} style={styles.section}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
-                <View style={styles.socialCard}>
-                  <Text style={styles.socialHeadline}>Join our community</Text>
-                  <Text style={styles.socialSubtext}>Follow us for naming challenges, featured objects, and community highlights</Text>
-                  <View style={styles.socialGrid}>
-                    {SOCIAL_LINKS.map((social) => (
-                      <Pressable
-                        key={social.key}
-                        style={styles.socialBtn}
-                        onPress={() => {
-                          Haptics.selectionAsync();
-                          Linking.openURL(social.url);
-                        }}
-                      >
-                        <View style={[styles.socialIconWrap, { backgroundColor: `${social.color}18` }]}>
-                          <MaterialIcons name={social.icon as any} size={22} color={social.color} />
-                        </View>
-                        <Text style={styles.socialLabel}>{social.label}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-              </View>
-            );
-          }
           return (
             <View key={section.title} style={styles.section}>
               <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -360,48 +311,5 @@ const styles = StyleSheet.create({
   footerVersion: { ...typography.small, color: theme.textMuted, marginBottom: 4 },
   footerCopy: { ...typography.small, color: theme.textMuted },
 
-  // Social
-  socialCard: {
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusLarge,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 16,
-  },
-  socialHeadline: {
-    ...typography.bodyBold,
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  socialSubtext: {
-    ...typography.small,
-    color: theme.textSecondary,
-    lineHeight: 16,
-    marginBottom: 16,
-  },
-  socialGrid: {
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
-    gap: 10,
-  },
-  socialBtn: {
-    alignItems: 'center' as const,
-    width: '18%' as any,
-    minWidth: 56,
-    flexGrow: 1,
-  },
-  socialIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    marginBottom: 6,
-  },
-  socialLabel: {
-    ...typography.small,
-    fontSize: 10,
-    color: theme.textSecondary,
-    textAlign: 'center' as const,
-  },
+
 });

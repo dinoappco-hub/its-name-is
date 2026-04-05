@@ -10,7 +10,7 @@ import { useAuth, useAlert } from '@/template';
 import { theme, typography } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import AdBanner from '../../components/AdBanner';
-import { shareObject, shareApp } from '../../services/shareService';
+
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -62,9 +62,6 @@ export default function ProfileScreen() {
         <View style={styles.headerRow}>
           <Text style={styles.pageTitle}>Profile</Text>
           <View style={styles.headerActions}>
-            <Pressable style={styles.headerBtn} onPress={() => { Haptics.selectionAsync(); shareApp(); }}>
-              <MaterialIcons name="share" size={20} color={theme.textSecondary} />
-            </Pressable>
             <Pressable style={styles.headerBtn} onPress={handleLogout}>
               <MaterialIcons name="logout" size={20} color={theme.error} />
             </Pressable>

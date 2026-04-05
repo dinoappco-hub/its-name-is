@@ -12,7 +12,7 @@ import { useApp } from '../../contexts/AppContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { ObjectSubmission, User } from '../../services/types';
 import AdBanner from '../../components/AdBanner';
-import { shareObject } from '../../services/shareService';
+
 import { CommunityStats, fetchCommunityStats, fetchRecentActiveUsers } from '../../services/communityService';
 import NavigationDrawer from '../../components/NavigationDrawer';
 
@@ -100,21 +100,7 @@ export default function FeedScreen() {
                 <MaterialIcons name="chat-bubble-outline" size={12} color={theme.textMuted} />
                 <Text style={styles.cardMetaText}>{item.suggestedNames.length}</Text>
               </View>
-              <Pressable
-                style={styles.cardShareBtn}
-                hitSlop={6}
-                onPress={(e) => {
-                  e.stopPropagation?.();
-                  Haptics.selectionAsync();
-                  shareObject({
-                    objectId: item.id,
-                    topName: topName?.name,
-                    submitterName: item.submittedBy.displayName,
-                  });
-                }}
-              >
-                <MaterialIcons name="share" size={13} color={theme.textMuted} />
-              </Pressable>
+
             </View>
             <Pressable
               style={styles.cardUser}
@@ -439,7 +425,7 @@ const styles = StyleSheet.create({
   cardMeta: { flexDirection: 'row', gap: 10, marginBottom: 8 },
   cardMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   cardMetaText: { ...typography.small, color: theme.textSecondary },
-  cardShareBtn: { marginLeft: 'auto', padding: 2 },
+
   cardUser: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   cardAvatar: { width: 18, height: 18, borderRadius: 9 },
   cardUsername: { ...typography.small, color: theme.textSecondary, flex: 1 },

@@ -11,7 +11,7 @@ import { theme, typography } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import { SuggestedName } from '../../services/types';
 import AdBanner from '../../components/AdBanner';
-import { shareObject } from '../../services/shareService';
+
 import { REPORT_REASONS, submitReport, hasUserReported } from '../../services/reportService';
 import { Comment, fetchComments, addComment, deleteComment } from '../../services/commentService';
 
@@ -373,20 +373,6 @@ export default function ObjectDetailScreen() {
                     </View>
                   ) : null}
                   <Pressable
-                    style={styles.heroShareBtn}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      const topN = sortedNames[0];
-                      shareObject({
-                        objectId: object.id,
-                        topName: topN?.name,
-                        submitterName: object.submittedBy.displayName,
-                      });
-                    }}
-                  >
-                    <MaterialIcons name="share" size={20} color="#fff" />
-                  </Pressable>
-                  <Pressable
                     style={styles.heroReportBtn}
                     onPress={() => openReportModal()}
                   >
@@ -732,7 +718,7 @@ const styles = StyleSheet.create({
   heroImage: { width: '100%', height: '100%' },
   heroOverlay: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 54, paddingHorizontal: 16 },
   heroRightActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  heroShareBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+
   heroReportBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   heroBack: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   heroFeaturedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.primary, borderRadius: theme.radiusFull, paddingHorizontal: 10, paddingVertical: 5 },
