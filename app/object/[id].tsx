@@ -12,8 +12,8 @@ import { useApp } from '../../contexts/AppContext';
 import { SuggestedName } from '../../services/types';
 import AdBanner from '../../components/AdBanner';
 import { shareObject } from '../../services/shareService';
-import { useRouter as useRouterNav } from 'expo-router';
 import { REPORT_REASONS, submitReport, hasUserReported } from '../../services/reportService';
+import { Comment, fetchComments, addComment, deleteComment } from '../../services/commentService';
 
 export default function ObjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,11 +39,32 @@ export default function ObjectDetailScreen() {
   const [submittingReport, setSubmittingReport] = useState(false);
   const [alreadyReported, setAlreadyReported] = useState(false);
 
+  // Comments state
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentText, setCommentText] = useState('');
+  const [replyingTo, setReplyingTo] = useState<{ id: string; username: string } | null>(null);
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
+
   const object = useMemo(() => objects.find(o => o.id === id), [objects, id]);
 
   useEffect(() => {
     if (id) trackView(id);
   }, [id, trackView]);
+
+  // Load comments
+  useEffect(() => {
+    if (id) loadComments();
+  }, [id]);
+
+  const loadComments = async () => {
+    if (!id) return;
+    setCommentsLoading(true);
+    const { data } = await fetchComments(id);
+    setComments(data);
+    setCommentsLoading(false);
+  };
 
   // Check if user already reported this object
   useEffect(() => {
@@ -91,6 +112,65 @@ export default function ObjectDetailScreen() {
     setAlreadyReported(true);
     showAlert('Report Submitted', 'Thank you. Our moderation team will review this content shortly.');
   }, [reportReason, reportDescription, reportNameId, authUser?.id, id, showAlert]);
+
+  const handlePostComment = useCallback(async () => {
+    if (!commentText.trim() || !authUser?.id || !id) return;
+    if (commentText.trim().length < 2) {
+      showAlert('Too short', 'Comments must be at least 2 characters.');
+      return;
+    }
+
+    setSubmittingComment(true);
+    const { error } = await addComment(id, authUser.id, commentText.trim(), replyingTo?.id || undefined);
+    setSubmittingComment(false);
+
+    if (error) {
+      showAlert('Error', error);
+      return;
+    }
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setCommentText('');
+    setReplyingTo(null);
+    await loadComments();
+  }, [commentText, authUser?.id, id, replyingTo, showAlert]);
+
+  const handleDeleteComment = useCallback((commentId: string) => {
+    showAlert('Delete Comment?', 'This action cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const { error } = await deleteComment(commentId);
+          if (error) {
+            showAlert('Error', error);
+            return;
+          }
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          await loadComments();
+        },
+      },
+    ]);
+  }, [showAlert]);
+
+  const handleReply = useCallback((commentId: string, username: string) => {
+    Haptics.selectionAsync();
+    setReplyingTo({ id: commentId, username });
+    setCommentText(`@${username} `);
+  }, []);
+
+  const totalCommentCount = useMemo(() => {
+    let count = 0;
+    const countAll = (list: Comment[]) => {
+      for (const c of list) {
+        count++;
+        if (c.replies.length > 0) countAll(c.replies);
+      }
+    };
+    countAll(comments);
+    return count;
+  }, [comments]);
 
   if (!object) {
     return (
@@ -140,6 +220,63 @@ export default function ObjectDetailScreen() {
     if (hrs < 24) return `${hrs}h ago`;
     const days = Math.floor(hrs / 24);
     return `${days}d ago`;
+  };
+
+  const displayedComments = showAllComments ? comments : comments.slice(0, 3);
+
+  const renderComment = (comment: Comment, depth: number = 0) => {
+    const isOwn = comment.userId === authUser?.id;
+    const maxDepth = 2;
+    const indent = Math.min(depth, maxDepth) * 24;
+
+    return (
+      <View key={comment.id} style={{ marginLeft: indent }}>
+        <View style={[styles.commentCard, depth > 0 && styles.commentCardReply]}>
+          <Pressable onPress={() => navigateToUser(comment.user.id)} hitSlop={4}>
+            <Image source={{ uri: comment.user.avatar }} style={styles.commentAvatar} contentFit="cover" />
+          </Pressable>
+          <View style={styles.commentBody}>
+            <View style={styles.commentHeader}>
+              <Pressable style={styles.commentUserRow} onPress={() => navigateToUser(comment.user.id)} hitSlop={4}>
+                <Text style={styles.commentUsername} numberOfLines={1}>
+                  {comment.user.displayName}
+                </Text>
+                {comment.user.isPremium ? (
+                  <MaterialIcons name="verified" size={12} color={theme.primary} />
+                ) : null}
+              </Pressable>
+              <Text style={styles.commentTime}>{timeAgo(comment.createdAt)}</Text>
+            </View>
+            <Text style={styles.commentContent}>{comment.content}</Text>
+            <View style={styles.commentActions}>
+              <Pressable
+                style={styles.commentAction}
+                onPress={() => handleReply(comment.id, comment.user.username || comment.user.displayName)}
+                hitSlop={8}
+              >
+                <MaterialIcons name="reply" size={14} color={theme.textMuted} />
+                <Text style={styles.commentActionText}>Reply</Text>
+              </Pressable>
+              {isOwn ? (
+                <Pressable
+                  style={styles.commentAction}
+                  onPress={() => handleDeleteComment(comment.id)}
+                  hitSlop={8}
+                >
+                  <MaterialIcons name="delete-outline" size={14} color={theme.error} />
+                  <Text style={[styles.commentActionText, { color: theme.error }]}>Delete</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        </View>
+        {comment.replies.length > 0 ? (
+          <View>
+            {comment.replies.map(reply => renderComment(reply, depth + 1))}
+          </View>
+        ) : null}
+      </View>
+    );
   };
 
   const renderNameRow = (item: SuggestedName, index: number) => {
@@ -385,6 +522,99 @@ export default function ObjectDetailScreen() {
 
               {sortedNames.map((item, index) => renderNameRow(item, index))}
             </View>
+
+            {/* Comments Section */}
+            <Animated.View entering={FadeInUp.delay(400)} style={styles.commentsSection}>
+              <View style={styles.commentsSectionHeader}>
+                <View style={styles.commentsTitleRow}>
+                  <MaterialIcons name="forum" size={20} color={theme.accent} />
+                  <Text style={styles.commentsSectionTitle}>Discussion</Text>
+                  <View style={styles.commentCountBadge}>
+                    <Text style={styles.commentCountText}>{totalCommentCount}</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Reply indicator */}
+              {replyingTo ? (
+                <View style={styles.replyIndicator}>
+                  <MaterialIcons name="reply" size={14} color={theme.accent} />
+                  <Text style={styles.replyIndicatorText}>
+                    Replying to @{replyingTo.username}
+                  </Text>
+                  <Pressable
+                    onPress={() => {
+                      setReplyingTo(null);
+                      setCommentText('');
+                    }}
+                    hitSlop={8}
+                  >
+                    <MaterialIcons name="close" size={16} color={theme.textMuted} />
+                  </Pressable>
+                </View>
+              ) : null}
+
+              {/* Comment input */}
+              <View style={styles.commentInputRow}>
+                <Image
+                  source={{ uri: currentUser.avatar }}
+                  style={styles.commentInputAvatar}
+                  contentFit="cover"
+                />
+                <TextInput
+                  style={styles.commentTextInput}
+                  placeholder="Add a comment..."
+                  placeholderTextColor={theme.textMuted}
+                  value={commentText}
+                  onChangeText={setCommentText}
+                  maxLength={500}
+                  multiline
+                />
+                <Pressable
+                  style={[styles.commentSendBtn, (!commentText.trim() || submittingComment) && { opacity: 0.3 }]}
+                  onPress={handlePostComment}
+                  disabled={!commentText.trim() || submittingComment}
+                >
+                  {submittingComment ? (
+                    <ActivityIndicator size="small" color={theme.background} />
+                  ) : (
+                    <MaterialIcons name="send" size={16} color={theme.background} />
+                  )}
+                </Pressable>
+              </View>
+
+              {/* Comments list */}
+              {commentsLoading ? (
+                <View style={styles.commentsLoading}>
+                  <ActivityIndicator size="small" color={theme.accent} />
+                  <Text style={styles.commentsLoadingText}>Loading discussion...</Text>
+                </View>
+              ) : comments.length === 0 ? (
+                <View style={styles.noComments}>
+                  <MaterialIcons name="chat-bubble-outline" size={32} color={theme.textMuted} />
+                  <Text style={styles.noCommentsTitle}>No comments yet</Text>
+                  <Text style={styles.noCommentsText}>Start the discussion about this object</Text>
+                </View>
+              ) : (
+                <View style={styles.commentsList}>
+                  {displayedComments.map(comment => renderComment(comment, 0))}
+                  {comments.length > 3 && !showAllComments ? (
+                    <Pressable
+                      style={styles.showMoreBtn}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setShowAllComments(true);
+                      }}
+                    >
+                      <Text style={styles.showMoreText}>
+                        Show all {totalCommentCount} comments
+                      </Text>
+                      <MaterialIcons name="expand-more" size={18} color={theme.accent} />
+                    </Pressable>
+                  ) : null}
+                </View>
+              )}
+            </Animated.View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -568,6 +798,209 @@ const styles = StyleSheet.create({
   voteCount: { ...typography.captionBold, color: theme.textSecondary, minWidth: 20, textAlign: 'center' },
   voteCountPositive: { color: theme.upvote },
   voteCountNegative: { color: theme.downvote },
+
+  // Comments Section
+  commentsSection: {
+    marginTop: 28,
+    borderTopWidth: 1,
+    borderTopColor: theme.border,
+    paddingTop: 20,
+  },
+  commentsSectionHeader: {
+    marginBottom: 16,
+  },
+  commentsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  commentsSectionTitle: {
+    ...typography.subtitle,
+    fontSize: 18,
+    flex: 1,
+  },
+  commentCountBadge: {
+    backgroundColor: theme.accent,
+    borderRadius: theme.radiusFull,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    minWidth: 28,
+    alignItems: 'center',
+  },
+  commentCountText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
+  },
+
+  // Reply indicator
+  replyIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: `${theme.accent}15`,
+    borderRadius: theme.radiusSmall,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.accent,
+  },
+  replyIndicatorText: {
+    ...typography.small,
+    color: theme.accent,
+    flex: 1,
+    fontWeight: '600',
+  },
+
+  // Comment input
+  commentInputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    marginBottom: 16,
+  },
+  commentInputAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginBottom: 4,
+  },
+  commentTextInput: {
+    flex: 1,
+    backgroundColor: theme.surface,
+    borderRadius: theme.radiusMedium,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: theme.textPrimary,
+    borderWidth: 1,
+    borderColor: theme.border,
+    maxHeight: 100,
+  },
+  commentSendBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+
+  // Comments loading
+  commentsLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 24,
+  },
+  commentsLoadingText: {
+    ...typography.caption,
+    color: theme.textMuted,
+  },
+
+  // No comments
+  noComments: {
+    alignItems: 'center',
+    paddingVertical: 28,
+    gap: 6,
+  },
+  noCommentsTitle: {
+    ...typography.bodyBold,
+    color: theme.textSecondary,
+  },
+  noCommentsText: {
+    ...typography.caption,
+    color: theme.textMuted,
+  },
+
+  // Comment card
+  commentsList: {
+    gap: 4,
+  },
+  commentCard: {
+    flexDirection: 'row',
+    backgroundColor: theme.surface,
+    borderRadius: theme.radiusMedium,
+    padding: 12,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  commentCardReply: {
+    backgroundColor: theme.surfaceElevated,
+    borderColor: theme.borderLight,
+  },
+  commentAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    marginRight: 10,
+    marginTop: 2,
+  },
+  commentBody: {
+    flex: 1,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  commentUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  commentUsername: {
+    ...typography.captionBold,
+    color: theme.textPrimary,
+    fontSize: 13,
+  },
+  commentTime: {
+    ...typography.small,
+    color: theme.textMuted,
+    fontSize: 10,
+  },
+  commentContent: {
+    ...typography.body,
+    fontSize: 14,
+    lineHeight: 20,
+    color: theme.textSecondary,
+  },
+  commentActions: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 6,
+  },
+  commentAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  commentActionText: {
+    ...typography.small,
+    color: theme.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  // Show more
+  showMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  showMoreText: {
+    ...typography.captionBold,
+    color: theme.accent,
+  },
 
   // Report Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
