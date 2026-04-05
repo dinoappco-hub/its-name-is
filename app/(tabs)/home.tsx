@@ -14,6 +14,7 @@ import { ObjectSubmission, User } from '../../services/types';
 import AdBanner from '../../components/AdBanner';
 import { shareObject } from '../../services/shareService';
 import { CommunityStats, fetchCommunityStats, fetchRecentActiveUsers } from '../../services/communityService';
+import NavigationDrawer from '../../components/NavigationDrawer';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 10;
@@ -30,6 +31,7 @@ export default function FeedScreen() {
   const [sortMode, setSortMode] = useState<SortMode>('trending');
   const [communityStats, setCommunityStats] = useState<CommunityStats | null>(null);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   useEffect(() => {
     loadCommunityData();
@@ -301,6 +303,15 @@ export default function FeedScreen() {
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
       <View style={styles.titleRow}>
+        <Pressable
+          style={styles.headerBtn}
+          onPress={() => {
+            Haptics.selectionAsync();
+            setDrawerVisible(true);
+          }}
+        >
+          <MaterialIcons name="menu" size={22} color={theme.textSecondary} />
+        </Pressable>
         <Text style={styles.title}>its name is.</Text>
         <View style={styles.headerActions}>
           <Pressable
@@ -341,6 +352,8 @@ export default function FeedScreen() {
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id}
       />
+
+      <NavigationDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
     </SafeAreaView>
   );
 }
