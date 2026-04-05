@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, Dimensions, Platform, BackHandler } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Dimensions, Platform, BackHandler, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -228,6 +228,29 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
             </View>
           ))}
 
+          {/* Social Links */}
+          <View style={styles.socialRow}>
+            {[
+              { icon: 'instagram', color: '#E1306C', url: config.socials.instagram },
+              { icon: 'music-note', color: '#00F2EA', url: config.socials.tiktok },
+              { icon: 'alternate-email', color: '#1DA1F2', url: config.socials.twitter },
+              { icon: 'play-circle-filled', color: '#FF0000', url: config.socials.youtube },
+              { icon: 'facebook', color: '#1877F2', url: config.socials.facebook },
+            ].map((s) => (
+              <Pressable
+                key={s.icon}
+                style={styles.socialIcon}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  Linking.openURL(s.url);
+                }}
+                hitSlop={6}
+              >
+                <MaterialIcons name={s.icon as any} size={18} color={s.color} />
+              </Pressable>
+            ))}
+          </View>
+
           {/* Footer */}
           <View style={styles.drawerFooter}>
             <Text style={styles.footerAppName}>{config.appName}</Text>
@@ -393,6 +416,24 @@ const styles = StyleSheet.create({
   },
   navBadgeTextPro: {
     color: theme.background,
+  },
+
+  // Social
+  socialRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    paddingTop: 20,
+    paddingBottom: 4,
+  },
+  socialIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: theme.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Footer
