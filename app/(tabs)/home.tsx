@@ -13,6 +13,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { ObjectSubmission, User } from '../../services/types';
 import { CommunityStats, fetchCommunityStats, fetchRecentActiveUsers } from '../../services/communityService';
 import NavigationDrawer from '../../components/NavigationDrawer';
+import DinoLoader from '../../components/DinoLoader';
 import { useAccessibility } from '../../hooks/useAccessibility';
 import { useAppTheme } from '../../hooks/useTheme';
 
@@ -203,7 +204,7 @@ export default function FeedScreen() {
 
   const renderEmpty = () => {
     if (loading) return (
-      <View style={styles.emptyWrap}><ActivityIndicator size="large" color={t.primary} /><Text style={[styles.emptyText, { color: t.textSecondary }]}>Loading community...</Text></View>
+      <View style={styles.emptyWrap}><DinoLoader message="Loading community" size="large" /></View>
     );
     return (
       <View style={styles.emptyWrap}>

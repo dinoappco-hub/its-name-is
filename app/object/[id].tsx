@@ -1,13 +1,16 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Modal, Share } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useAuth, useAlert } from '@/template';
 import { useAppTheme } from '../../hooks/useTheme';
+import DinoLoader from '../../components/DinoLoader';
 import { useApp } from '../../contexts/AppContext';
 import { SuggestedName } from '../../services/types';
 
@@ -50,6 +53,7 @@ export default function ObjectDetailScreen() {
   const [replyingTo, setReplyingTo] = useState<{ id: string; username: string } | null>(null);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const object = useMemo(() => objects.find(o => o.id === id), [objects, id]);
 
@@ -69,6 +73,38 @@ export default function ObjectDetailScreen() {
     setComments(data);
     setCommentsLoading(false);
   };
+
+  const handleShare = useCallback(async () => {
+    if (!object || sharing) return;
+    setSharing(true);
+    triggerHaptic('selection');
+    const topN = [...object.suggestedNames].sort((a, b) => b.votes - a.votes)[0];
+    const shareText = topN
+      ? `Check out "${topN.name}" on its name is. app!`
+      : `Check out this object on its name is. app!`;
+
+    try {
+      if (Platform.OS !== 'web') {
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          const fileUri = `${FileSystem.cacheDirectory}share_${object.id}.jpg`;
+          const download = await FileSystem.downloadAsync(object.imageUri, fileUri);
+          if (download.status === 200) {
+            await Sharing.shareAsync(download.uri, {
+              mimeType: 'image/jpeg',
+              dialogTitle: shareText,
+            });
+            setSharing(false);
+            return;
+          }
+        }
+      }
+      await Share.share({ message: shareText, url: object.imageUri });
+    } catch {
+      // user cancelled or error
+    }
+    setSharing(false);
+  }, [object, sharing, triggerHaptic]);
 
   // Check if user already reported this object
   useEffect(() => {
@@ -366,10 +402,21 @@ export default function ObjectDetailScreen() {
                 <View style={styles.heroRightActions}>
                   {object.isFeatured ? (
                     <View style={styles.heroFeaturedBadge}>
-                      <MaterialIcons name="star" size={12} color={theme.background} />
-                      <Text style={styles.heroFeaturedText}>FEATURED</Text>
+                      <MaterialIcons name="star" size={12} color={t.background} />
+                      <Text style={[styles.heroFeaturedText, { color: t.background }]}>FEATURED</Text>
                     </View>
                   ) : null}
+                  <Pressable
+                    style={styles.heroShareBtn}
+                    onPress={handleShare}
+                    disabled={sharing}
+                  >
+                    {sharing ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <MaterialIcons name="share" size={20} color="#fff" />
+                    )}
+                  </Pressable>
                   <Pressable
                     style={styles.heroReportBtn}
                     onPress={() => openReportModal()}
@@ -699,8 +746,9 @@ const styles = StyleSheet.create({
 
   heroReportBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   heroBack: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  heroShareBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   heroFeaturedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: staticTheme.primary, borderRadius: 9999, paddingHorizontal: 10, paddingVertical: 5 },
-  heroFeaturedText: { fontSize: 10, fontWeight: '800', color: staticTheme.background },
+  heroFeaturedText: { fontSize: 10, fontWeight: '800' },
   heroBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, paddingTop: 60, backgroundColor: 'rgba(0,0,0,0.01)' },
   heroName: { fontSize: 28, fontWeight: '700', color: '#fff', textShadowColor: 'rgba(0,0,0,0.9)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8, marginBottom: 8 },
   heroStats: { flexDirection: 'row', gap: 16 },
@@ -773,7 +821,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   commentCountBadge: {
-    borderRadius: theme.radiusFull,
+    borderRadius: 9999,
     paddingHorizontal: 10,
     paddingVertical: 3,
     minWidth: 28,

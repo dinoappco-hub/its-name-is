@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth, useAlert } from '@/template';
 import { useApp } from '../../contexts/AppContext';
+import DinoLoader from '../../components/DinoLoader';
 import { useAccessibility } from '../../hooks/useAccessibility';
 import { useAppTheme } from '../../hooks/useTheme';
 
@@ -90,7 +91,7 @@ export default function ProfileScreen() {
         </View>
 
         {loading ? (
-          <View style={styles.loadingWrap}><ActivityIndicator size="large" color={t.primary} /></View>
+          <View style={styles.loadingWrap}><DinoLoader message="Loading submissions" /></View>
         ) : userObjects.length === 0 ? (
           <View style={styles.emptyState}>
             <Image source={require('../../assets/images/empty-state.png')} style={styles.emptyImage} contentFit="contain" />
