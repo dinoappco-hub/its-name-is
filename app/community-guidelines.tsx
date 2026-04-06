@@ -229,20 +229,8 @@ export default function CommunityGuidelinesScreen() {
           </P>
         </Section>
 
-        {/* Section 5: Premium Members */}
-        <Section number="5" title="Premium Members" icon="workspace-premium">
-          <P>
-            Premium members enjoy unlimited submissions and the ability to feature objects. With greater access comes greater responsibility.
-          </P>
-
-          <Bullet>Premium status does not exempt you from any community guidelines</Bullet>
-          <Bullet>Featured objects must still meet all content standards</Bullet>
-          <Bullet>Do not abuse unlimited submissions to flood the feed with low-quality content</Bullet>
-          <Bullet>Premium badges are a mark of support, not authority over other users</Bullet>
-        </Section>
-
-        {/* Section 6: Moderation & Enforcement */}
-        <Section number="6" title="Moderation and Enforcement" icon="gavel">
+        {/* Section 5: Moderation & Enforcement */}
+        <Section number="5" title="Moderation and Enforcement" icon="gavel">
           <P>
             Our moderation team reviews reports and flagged content to keep the community safe. Actions are proportional to the severity of the violation.
           </P>
@@ -286,8 +274,8 @@ export default function CommunityGuidelinesScreen() {
           </P>
         </Section>
 
-        {/* Section 7: Reporting */}
-        <Section number="7" title="Reporting Violations" icon="flag">
+        {/* Section 6: Reporting */}
+        <Section number="6" title="Reporting Violations" icon="flag">
           <P>
             If you see content that violates these guidelines, please report it. Your reports help us maintain a safe and creative community.
           </P>
@@ -299,8 +287,8 @@ export default function CommunityGuidelinesScreen() {
           <Bullet>False or malicious reports may result in action against the reporter</Bullet>
         </Section>
 
-        {/* Section 8: Intellectual Property */}
-        <Section number="8" title="Intellectual Property" icon="copyright">
+        {/* Section 7: Intellectual Property */}
+        <Section number="7" title="Intellectual Property" icon="copyright">
           <P>Respect the intellectual property of others when submitting content:</P>
 
           <Bullet>Only submit photos you have taken yourself or have permission to use</Bullet>
@@ -309,8 +297,8 @@ export default function CommunityGuidelinesScreen() {
           <Bullet>If your content is used without permission, contact us for a takedown request</Bullet>
         </Section>
 
-        {/* Section 9: Updates */}
-        <Section number="9" title="Guideline Updates" icon="update">
+        {/* Section 8: Updates */}
+        <Section number="8" title="Guideline Updates" icon="update">
           <P>
             These guidelines may be updated as our community grows. We will notify users of significant changes through the app. Continued use of {config.appName} after updates constitutes acceptance of the revised guidelines.
           </P>
@@ -319,8 +307,8 @@ export default function CommunityGuidelinesScreen() {
           </P>
         </Section>
 
-        {/* Section 10: Contact */}
-        <Section number="10" title="Questions or Concerns" icon="help-outline">
+        {/* Section 9: Contact */}
+        <Section number="9" title="Questions or Concerns" icon="help-outline">
           <P>If you have questions about these guidelines or need to report an issue, contact us:</P>
           <View style={styles.contactCard}>
             <MaterialIcons name="mail" size={18} color={theme.primary} />

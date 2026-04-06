@@ -199,12 +199,7 @@ export default function EditProfileScreen() {
                 <Text style={styles.previewName}>{displayName.trim() || 'Display Name'}</Text>
                 <Text style={styles.previewUsername}>@{username.trim() || 'username'}</Text>
               </View>
-              {currentUser.isPremium ? (
-                <View style={styles.previewBadge}>
-                  <MaterialIcons name="star" size={10} color={theme.background} />
-                  <Text style={styles.previewBadgeText}>PRO</Text>
-                </View>
-              ) : null}
+
             </View>
           </Animated.View>
         </ScrollView>
@@ -286,10 +281,5 @@ const styles = StyleSheet.create({
   previewInfo: { flex: 1, marginLeft: 12 },
   previewName: { ...typography.bodyBold, fontSize: 16 },
   previewUsername: { ...typography.caption, marginTop: 2 },
-  previewBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: theme.primary, borderRadius: theme.radiusFull,
-    paddingHorizontal: 8, paddingVertical: 3,
-  },
-  previewBadgeText: { fontSize: 9, fontWeight: '800', color: theme.background },
+
 });

@@ -9,7 +9,6 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth, useAlert } from '@/template';
 import { theme, typography } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
-import AdBanner from '../../components/AdBanner';
 import { useAccessibility } from '../../hooks/useAccessibility';
 
 
@@ -18,7 +17,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { showAlert } = useAlert();
-  const { currentUser, getUserObjects, isPremium, objects, loading } = useApp();
+  const { currentUser, getUserObjects, objects, loading } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor } = useAccessibility();
   const userObjects = useMemo(() => getUserObjects(currentUser.id), [currentUser.id, getUserObjects]);
 
@@ -78,12 +77,7 @@ export default function ProfileScreen() {
           <View style={styles.profileInfo}>
             <View style={styles.nameRow}>
               <Text style={[styles.displayName, { fontSize: scaledSize(18), fontWeight: fw('700') }]}>{displayName}</Text>
-              {isPremium ? (
-                <View style={styles.premiumBadge}>
-                  <MaterialIcons name="star" size={12} color={theme.background} />
-                  <Text style={styles.premiumBadgeText}>PRO</Text>
-                </View>
-              ) : null}
+
             </View>
             {displayEmail ? <Text style={styles.email}>{displayEmail}</Text> : null}
             <Text style={styles.joined}>Joined {new Date(currentUser.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</Text>
@@ -96,22 +90,6 @@ export default function ProfileScreen() {
           </Pressable>
         </Animated.View>
 
-        {!isPremium ? (
-          <Pressable
-            style={styles.upgradeCard}
-            onPress={() => { Haptics.selectionAsync(); router.push('/premium'); }}
-          >
-            <View style={styles.upgradeLeft}>
-              <MaterialIcons name="workspace-premium" size={28} color={theme.primary} />
-              <View>
-                <Text style={styles.upgradeTitle}>Go Premium</Text>
-                <Text style={styles.upgradeSubtitle}>Unlimited submissions & more</Text>
-              </View>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color={theme.primary} />
-          </Pressable>
-        ) : null}
-
         <View style={styles.statsGrid}>
           {stats.map((stat, i) => (
             <Animated.View key={stat.label} entering={shouldAnimate ? FadeInDown.delay(i * 80).duration(400) : undefined} style={styles.statCard}>
@@ -121,8 +99,6 @@ export default function ProfileScreen() {
             </Animated.View>
           ))}
         </View>
-
-        <AdBanner style={{ marginBottom: 16 }} />
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Your Submissions</Text>
@@ -184,14 +160,10 @@ const styles = StyleSheet.create({
   profileInfo: { flex: 1, marginLeft: 14 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   displayName: { ...typography.subtitle, fontSize: 18 },
-  premiumBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: theme.primary, borderRadius: theme.radiusFull, paddingHorizontal: 8, paddingVertical: 3 },
-  premiumBadgeText: { fontSize: 10, fontWeight: '800', color: theme.background },
+
   email: { ...typography.caption, marginTop: 2 },
   joined: { ...typography.small, marginTop: 4 },
-  upgradeCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,215,0,0.08)', borderRadius: theme.radiusMedium, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,215,0,0.2)' },
-  upgradeLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  upgradeTitle: { ...typography.bodyBold, color: theme.primary },
-  upgradeSubtitle: { ...typography.small, color: theme.textSecondary },
+
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
   statCard: { width: '48%', flexGrow: 1, backgroundColor: theme.surface, borderRadius: theme.radiusMedium, padding: 14, alignItems: 'center', gap: 6, borderWidth: 1, borderColor: theme.border },
   statValue: { ...typography.cardValue, fontSize: 22 },

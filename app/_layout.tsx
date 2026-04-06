@@ -21,7 +21,7 @@ export default function RootLayout() {
                 <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="object/[id]" options={{ animation: 'slide_from_bottom' }} />
-                <Stack.Screen name="premium" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+
                 <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="notification-settings" options={{ animation: 'slide_from_right' }} />

@@ -10,7 +10,6 @@ import { useAuth, useAlert } from '@/template';
 import { theme, typography } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import { SuggestedName } from '../../services/types';
-import AdBanner from '../../components/AdBanner';
 
 import { REPORT_REASONS, submitReport, hasUserReported } from '../../services/reportService';
 import { Comment, fetchComments, addComment, deleteComment } from '../../services/commentService';
@@ -243,9 +242,7 @@ export default function ObjectDetailScreen() {
                 <Text style={styles.commentUsername} numberOfLines={1}>
                   {comment.user.displayName}
                 </Text>
-                {comment.user.isPremium ? (
-                  <MaterialIcons name="verified" size={12} color={theme.primary} />
-                ) : null}
+
               </Pressable>
               <Text style={styles.commentTime}>{timeAgo(comment.createdAt)}</Text>
             </View>
@@ -312,9 +309,7 @@ export default function ObjectDetailScreen() {
             <Pressable style={styles.nameSubmitter} onPress={() => navigateToUser(item.submittedBy.id)} hitSlop={4}>
               <Image source={{ uri: item.submittedBy.avatar }} style={styles.nameAvatar} contentFit="cover" />
               <Text style={styles.nameUsername}>@{item.submittedBy.username}</Text>
-              {item.submittedBy.isPremium ? (
-                <MaterialIcons name="verified" size={12} color={theme.primary} />
-              ) : null}
+
               <Text style={styles.nameTime}>{timeAgo(item.submittedAt)}</Text>
             </Pressable>
           </View>
@@ -411,9 +406,7 @@ export default function ObjectDetailScreen() {
                 <View style={styles.submitterInfo}>
                   <View style={styles.submitterNameRow}>
                     <Text style={styles.submitterName}>{object.submittedBy.displayName}</Text>
-                    {object.submittedBy.isPremium ? (
-                      <MaterialIcons name="verified" size={14} color={theme.primary} />
-                    ) : null}
+
                     <MaterialIcons name="chevron-right" size={16} color={theme.textMuted} />
                   </View>
                   <Text style={styles.submitterMeta}>
@@ -459,8 +452,6 @@ export default function ObjectDetailScreen() {
                 <MaterialIcons name="open-in-new" size={18} color={theme.textMuted} />
               </Pressable>
             </Animated.View>
-
-            <AdBanner style={{ marginBottom: 12 }} />
 
             <View style={styles.namesSection}>
               <View style={styles.namesSectionHeader}>

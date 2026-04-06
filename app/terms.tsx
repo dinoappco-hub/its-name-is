@@ -105,21 +105,11 @@ export default function TermsScreen() {
           <P>We may moderate names and remove those that violate community guidelines.</P>
         </Section>
 
-        <Section number="5" title="Premium Subscription">
-          <P>The {config.appName} Premium subscription ({config.premium.price}/{config.premium.period}) provides enhanced features including:</P>
-          <Bullet>Unlimited daily submissions</Bullet>
-          <Bullet>Ability to feature objects</Bullet>
-          <Bullet>Ad-free experience</Bullet>
-          <Bullet>Premium badge on your profile</Bullet>
-          <P>Subscriptions automatically renew unless canceled at least 24 hours before the end of the current billing period. You can manage or cancel your subscription through your device settings.</P>
-          <P>Refunds are handled according to the policies of the Apple App Store or Google Play Store.</P>
+        <Section number="5" title="Usage Limits">
+          <P>Users are limited to {config.submissionsPerDay} object submissions per day. This limit resets daily at midnight.</P>
         </Section>
 
-        <Section number="6" title="Free Tier Limitations">
-          <P>Free users are limited to {config.premium.freeSubmissionsPerDay} object submissions per day. This limit resets daily at midnight. The app may display advertisements to free users. Upgrade to Premium to remove ads and unlock unlimited submissions.</P>
-        </Section>
-
-        <Section number="7" title="Prohibited Conduct">
+        <Section number="6" title="Prohibited Conduct">
           <P>You agree not to:</P>
           <Bullet>Use the app for any illegal purpose</Bullet>
           <Bullet>Attempt to reverse-engineer, decompile, or hack the application</Bullet>
@@ -129,26 +119,25 @@ export default function TermsScreen() {
           <Bullet>Interfere with the proper functioning of the app</Bullet>
         </Section>
 
-        <Section number="8" title="Intellectual Property">
+        <Section number="7" title="Intellectual Property">
           <P>The {config.appName} app, including its design, logo, features, and underlying code, is the intellectual property of {config.appName} and is protected by copyright and trademark laws. You may not copy, modify, or distribute any part of the application without written permission.</P>
         </Section>
 
-        <Section number="9" title="Termination">
+        <Section number="8" title="Termination">
           <P>We may suspend or terminate your account at any time if you violate these terms. Upon termination:</P>
           <Bullet>Your right to use the app ceases immediately</Bullet>
           <Bullet>Your submitted content may remain visible to other users</Bullet>
-          <Bullet>Active premium subscriptions should be canceled through your device</Bullet>
         </Section>
 
-        <Section number="10" title="Disclaimer of Warranties">
+        <Section number="9" title="Disclaimer of Warranties">
           <P>The app is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not guarantee that the app will be uninterrupted, error-free, or free of harmful components.</P>
         </Section>
 
-        <Section number="11" title="Limitation of Liability">
+        <Section number="10" title="Limitation of Liability">
           <P>To the maximum extent permitted by law, {config.appName} shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the app.</P>
         </Section>
 
-        <Section number="12" title="Contact Us">
+        <Section number="11" title="Contact Us">
           <P>If you have questions about these Terms of Service, please contact us at:</P>
           <View style={styles.contactCard}>
             <MaterialIcons name="mail" size={18} color={theme.primary} />

@@ -10,7 +10,7 @@ export interface AppNotification {
   fromUser: {
     username: string;
     avatar: string;
-    isPremium: boolean;
+
   };
   read: boolean;
   createdAt: string;

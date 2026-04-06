@@ -11,20 +11,19 @@ import { theme, typography } from '../../constants/theme';
 import { config } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
 import { useRouter } from 'expo-router';
-import AdBanner from '../../components/AdBanner';
 
 export default function SnapScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { addSubmission, submissionsToday, isPremium } = useApp();
+  const { addSubmission, submissionsToday } = useApp();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { showAlert } = useAlert();
-  const canSubmit = isPremium || submissionsToday < config.premium.freeSubmissionsPerDay;
-  const remaining = config.premium.freeSubmissionsPerDay - submissionsToday;
+  const canSubmit = submissionsToday < config.submissionsPerDay;
+  const remaining = config.submissionsPerDay - submissionsToday;
 
   const pickImage = async (source: 'camera' | 'gallery') => {
     try {
@@ -62,7 +61,7 @@ export default function SnapScreen() {
     }
     if (!canSubmit) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      router.push('/premium');
+      showAlert('Limit Reached', 'You have reached your daily submission limit. Try again tomorrow!');
       return;
     }
 
@@ -101,7 +100,6 @@ export default function SnapScreen() {
           <Animated.Text entering={FadeInUp.delay(450)} style={styles.successSubtitle}>
             Your object is live. The community can now name it.
           </Animated.Text>
-          <AdBanner style={{ marginBottom: 16, width: '100%' }} />
           <Animated.View entering={FadeInUp.delay(600)} style={styles.successActions}>
             <Pressable style={styles.primaryBtn} onPress={resetForm}>
               <MaterialIcons name="camera-alt" size={20} color={theme.background} />
@@ -126,18 +124,11 @@ export default function SnapScreen() {
         >
           <View style={styles.header}>
             <Text style={styles.pageTitle}>Snap It</Text>
-            {!isPremium ? (
-              <View style={styles.limitBadge}>
-                <Text style={styles.limitText}>
-                  {remaining > 0 ? `${remaining} left today` : 'Limit reached'}
-                </Text>
-              </View>
-            ) : (
-              <View style={[styles.limitBadge, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
-                <MaterialIcons name="star" size={12} color={theme.primary} />
-                <Text style={[styles.limitText, { color: theme.primary }]}>Unlimited</Text>
-              </View>
-            )}
+            <View style={styles.limitBadge}>
+              <Text style={styles.limitText}>
+                {remaining > 0 ? `${remaining} left today` : 'Limit reached'}
+              </Text>
+            </View>
           </View>
 
           {!imageUri ? (

@@ -46,7 +46,7 @@ interface NavSection {
 export default function NavigationDrawer({ visible, onClose }: NavigationDrawerProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { currentUser, isPremium, subscriptionEnd } = useApp();
+  const { currentUser } = useApp();
   const { unreadCount } = useNotifications();
   const { activeCount: a11yActiveCount, triggerHaptic, scaledSize, fontWeight: fw, shouldAnimate, settings: a11ySettings } = useAccessibility();
 
@@ -114,13 +114,6 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
       title: 'Account',
       items: [
         { icon: 'edit', label: 'Edit Profile', route: '/edit-profile' },
-        {
-          icon: 'workspace-premium',
-          label: isPremium ? 'Premium Active' : 'Go Premium',
-          route: '/premium',
-          color: theme.primary,
-          badge: isPremium ? 'PRO' : undefined,
-        },
         { icon: 'tune', label: 'Notification Settings', route: '/notification-settings' },
         { icon: 'accessibility-new', label: 'Accessibility', route: '/accessibility', badge: a11yActiveCount > 0 ? `${a11yActiveCount}` : undefined },
         { icon: 'settings', label: 'Settings', route: '/settings' },
@@ -156,15 +149,13 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
           style={styles.profileSection}
           onPress={() => handleNavigate('/(tabs)/profile')}
         >
-          <View style={[styles.avatarWrap, isPremium && styles.avatarWrapPremium]}>
+          <View style={styles.avatarWrap}>
             <Image source={{ uri: currentUser.avatar }} style={styles.avatar} contentFit="cover" />
           </View>
           <View style={styles.profileInfo}>
             <View style={styles.profileNameRow}>
               <Text style={styles.profileName} numberOfLines={1}>{displayName}</Text>
-              {isPremium ? (
-                <MaterialIcons name="verified" size={16} color={theme.primary} />
-              ) : null}
+
             </View>
             {displayUsername ? (
               <Text style={styles.profileUsername} numberOfLines={1}>{displayUsername}</Text>
@@ -186,8 +177,8 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{isPremium ? 'PRO' : 'Free'}</Text>
-            <Text style={styles.statLabel}>Plan</Text>
+            <Text style={styles.statValue}>{currentUser.totalSubmissions + (currentUser.totalVotesReceived || 0)}</Text>
+            <Text style={styles.statLabel}>Activity</Text>
           </View>
         </View>
 

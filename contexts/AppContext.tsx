@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { Linking } from 'react-native';
 import { useAuth } from '@/template';
 import { User, ObjectSubmission, SuggestedName, toUser } from '../services/types';
 import {
@@ -15,25 +14,20 @@ import {
   uploadAvatarImage,
   updateUserProfile,
 } from '../services/objectService';
-import { checkSubscription, SubscriptionStatus } from '../services/subscriptionService';
 import { useNotifications } from '../hooks/useNotifications';
 
 interface AppContextType {
   currentUser: User;
   objects: ObjectSubmission[];
   submissionsToday: number;
-  isPremium: boolean;
-  subscriptionEnd: string | null;
   loading: boolean;
   refreshing: boolean;
-  checkingSubscription: boolean;
   addSubmission: (imageUri: string, name: string, description: string) => Promise<{ error: string | null }>;
   addNameSuggestion: (objectId: string, name: string) => Promise<{ error: string | null }>;
   vote: (objectId: string, nameId: string, direction: 'up' | 'down') => void;
   searchObjects: (query: string) => ObjectSubmission[];
   getUserObjects: (userId: string) => ObjectSubmission[];
   refreshObjects: () => Promise<void>;
-  refreshSubscription: () => Promise<void>;
   trackView: (objectId: string) => void;
   updateProfile: (params: { displayName: string; username: string; avatarLocalUri?: string }) => Promise<{ error: string | null }>;
 }
@@ -43,7 +37,6 @@ const defaultUser: User = {
   username: 'guest',
   displayName: 'Guest',
   avatar: 'https://api.dicebear.com/7.x/initials/png?seed=guest',
-  isPremium: false,
   totalSubmissions: 0,
   totalVotesReceived: 0,
   joinedAt: new Date().toISOString(),
@@ -58,13 +51,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User>(defaultUser);
   const [objects, setObjects] = useState<ObjectSubmission[]>([]);
   const [submissionsToday, setSubmissionsToday] = useState(0);
-  const [isPremium, setIsPremium] = useState(false);
-  const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [checkingSubscription, setCheckingSubscription] = useState(false);
   const viewedRef = useRef<Set<string>>(new Set());
-  const subCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load data when auth user changes
   useEffect(() => {
@@ -74,48 +63,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCurrentUser(defaultUser);
       setObjects([]);
       setSubmissionsToday(0);
-      setIsPremium(false);
-      setSubscriptionEnd(null);
       setLoading(false);
     }
   }, [authUser?.id]);
-
-  // Periodic subscription check (every 60 seconds)
-  useEffect(() => {
-    if (authUser?.id) {
-      subCheckIntervalRef.current = setInterval(() => {
-        refreshSubscriptionSilent();
-      }, 60000);
-    }
-    return () => {
-      if (subCheckIntervalRef.current) {
-        clearInterval(subCheckIntervalRef.current);
-        subCheckIntervalRef.current = null;
-      }
-    };
-  }, [authUser?.id]);
-
-  // Deep link listener for Stripe redirect
-  useEffect(() => {
-    const handleDeepLink = (event: { url: string }) => {
-      if (event.url.includes('subscription/success')) {
-        // User completed checkout — refresh subscription status
-        setTimeout(() => refreshSubscriptionSilent(), 2000);
-      }
-    };
-
-    const sub = Linking.addEventListener('url', handleDeepLink);
-    return () => sub.remove();
-  }, []);
-
-  const refreshSubscriptionSilent = async () => {
-    const { data } = await checkSubscription();
-    if (data) {
-      setIsPremium(data.subscribed);
-      setSubscriptionEnd(data.subscriptionEnd);
-      setCurrentUser(prev => ({ ...prev, isPremium: data.subscribed }));
-    }
-  };
 
   const loadData = async (userId: string) => {
     setLoading(true);
@@ -129,7 +79,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (profileRes.data) {
         setCurrentUser(toUser(profileRes.data, stats));
-        setIsPremium(profileRes.data.is_premium);
       }
 
       if (objectsRes.data) {
@@ -137,15 +86,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       setSubmissionsToday(todayCount);
-
-      // Check Stripe subscription status (async, non-blocking)
-      checkSubscription().then(({ data }) => {
-        if (data) {
-          setIsPremium(data.subscribed);
-          setSubscriptionEnd(data.subscriptionEnd);
-          setCurrentUser(prev => ({ ...prev, isPremium: data.subscribed }));
-        }
-      });
     } catch (err) {
       console.error('Failed to load app data:', err);
     } finally {
@@ -175,17 +115,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setRefreshing(false);
     }
   }, [authUser?.id]);
-
-  const refreshSubscription = useCallback(async () => {
-    setCheckingSubscription(true);
-    const { data } = await checkSubscription();
-    if (data) {
-      setIsPremium(data.subscribed);
-      setSubscriptionEnd(data.subscriptionEnd);
-      setCurrentUser(prev => ({ ...prev, isPremium: data.subscribed }));
-    }
-    setCheckingSubscription(false);
-  }, []);
 
   const addSubmission = useCallback(async (imageUri: string, name: string, description: string): Promise<{ error: string | null }> => {
     if (!authUser?.id) return { error: 'Not authenticated' };
@@ -217,7 +146,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         fromUser: {
           username: currentUser.username,
           avatar: currentUser.avatar,
-          isPremium: currentUser.isPremium,
         },
       });
     }
@@ -263,7 +191,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             fromUser: {
               username: currentUser.username,
               avatar: currentUser.avatar,
-              isPremium: currentUser.isPremium,
             },
           });
         }
@@ -327,10 +254,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      currentUser, objects, submissionsToday, isPremium, subscriptionEnd,
-      loading, refreshing, checkingSubscription,
+      currentUser, objects, submissionsToday,
+      loading, refreshing,
       addSubmission, addNameSuggestion, vote,
-      searchObjects, getUserObjects, refreshObjects, refreshSubscription,
+      searchObjects, getUserObjects, refreshObjects,
       trackView, updateProfile,
     }}>
       {children}

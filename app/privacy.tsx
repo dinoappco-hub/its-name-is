@@ -95,7 +95,7 @@ export default function PrivacyScreen() {
           <Bullet>Provide and operate the {config.appName} application</Bullet>
           <Bullet>Authenticate your identity and manage your account</Bullet>
           <Bullet>Display your submissions and activity to the community</Bullet>
-          <Bullet>Process premium subscription payments through Stripe</Bullet>
+
           <Bullet>Send notifications about votes, name suggestions, and app updates</Bullet>
           <Bullet>Improve app performance and fix bugs</Bullet>
           <Bullet>Enforce our Terms of Service and Community Guidelines</Bullet>
@@ -106,8 +106,6 @@ export default function PrivacyScreen() {
           <Text style={styles.subHeading}>Community Visibility</Text>
           <P>Your username, avatar, submissions, name suggestions, and votes are visible to other {config.appName} users as part of the community experience.</P>
           <Text style={styles.subHeading}>Service Providers</Text>
-          <Bullet>Stripe — for processing premium subscription payments</Bullet>
-          <Bullet>Google AdMob — for serving advertisements to free users (subject to Google privacy policies)</Bullet>
           <Bullet>Cloud hosting providers — for storing your data securely</Bullet>
           <Text style={styles.subHeading}>Legal Requirements</Text>
           <P>We may disclose information if required by law, legal process, or to protect the rights and safety of our users.</P>
@@ -118,15 +116,7 @@ export default function PrivacyScreen() {
           <P>While we strive to protect your data, no method of transmission over the internet is 100% secure. We cannot guarantee absolute security.</P>
         </Section>
 
-        <Section number="5" title="Advertising">
-          <P>Free users may see advertisements served by Google AdMob. AdMob may collect and use certain data to provide personalized or non-personalized ads, including:</P>
-          <Bullet>Device advertising identifier</Bullet>
-          <Bullet>General location data</Bullet>
-          <Bullet>App usage information</Bullet>
-          <P>Premium subscribers enjoy an ad-free experience. You can opt out of personalized ads through your device settings.</P>
-        </Section>
-
-        <Section number="6" title="Your Rights">
+        <Section number="5" title="Your Rights">
           <P>You have the right to:</P>
           <Bullet>Access your personal data stored in the app</Bullet>
           <Bullet>Update or correct your account information</Bullet>
@@ -136,12 +126,12 @@ export default function PrivacyScreen() {
           <P>To exercise any of these rights, contact us at support@itsnameis.app.</P>
         </Section>
 
-        <Section number="7" title="Camera and Photo Access">
+        <Section number="6" title="Camera and Photo Access">
           <P>{config.appName} requests access to your device camera and photo library solely for the purpose of capturing or selecting images of objects to submit to the community. We do not access your camera or photos for any other purpose.</P>
           <P>Photos are uploaded to our secure servers and made publicly viewable within the app. You can delete your submissions at any time.</P>
         </Section>
 
-        <Section number="8" title="Notifications">
+        <Section number="7" title="Notifications">
           <P>With your permission, we send push notifications about:</P>
           <Bullet>Votes on your submitted objects</Bullet>
           <Bullet>New name suggestions for your objects</Bullet>
@@ -150,11 +140,11 @@ export default function PrivacyScreen() {
           <P>You can manage notification preferences in the app settings at any time, including disabling all notifications.</P>
         </Section>
 
-        <Section number="9" title="Children's Privacy">
+        <Section number="8" title="Children's Privacy">
           <P>{config.appName} is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us with personal information, please contact us immediately so we can delete it.</P>
         </Section>
 
-        <Section number="10" title="Data Retention">
+        <Section number="9" title="Data Retention">
           <P>We retain your data for as long as your account is active. When you delete your account:</P>
           <Bullet>Your profile information is permanently removed</Bullet>
           <Bullet>Your submitted content may be anonymized or removed</Bullet>
@@ -162,11 +152,11 @@ export default function PrivacyScreen() {
           <P>Backup copies may persist for up to 30 days after deletion.</P>
         </Section>
 
-        <Section number="11" title="Changes to This Policy">
+        <Section number="10" title="Changes to This Policy">
           <P>We may update this Privacy Policy from time to time. We will notify you of significant changes through the app or via email. Your continued use of the app after changes constitutes acceptance of the updated policy.</P>
         </Section>
 
-        <Section number="12" title="Contact Us">
+        <Section number="11" title="Contact Us">
           <P>If you have questions or concerns about this Privacy Policy, please contact us:</P>
           <View style={styles.contactCard}>
             <MaterialIcons name="mail" size={18} color={theme.accent} />

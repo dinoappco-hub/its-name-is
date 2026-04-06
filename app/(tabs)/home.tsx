@@ -11,7 +11,6 @@ import { theme, typography } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { ObjectSubmission, User } from '../../services/types';
-import AdBanner from '../../components/AdBanner';
 
 import { CommunityStats, fetchCommunityStats, fetchRecentActiveUsers } from '../../services/communityService';
 import NavigationDrawer from '../../components/NavigationDrawer';
@@ -114,9 +113,7 @@ export default function FeedScreen() {
             >
               <Image source={{ uri: item.submittedBy.avatar }} style={styles.cardAvatar} contentFit="cover" />
               <Text style={styles.cardUsername} numberOfLines={1}>@{item.submittedBy.username}</Text>
-              {item.submittedBy.isPremium ? (
-                <MaterialIcons name="verified" size={12} color={theme.primary} />
-              ) : null}
+
             </Pressable>
           </View>
         </Pressable>
@@ -241,8 +238,6 @@ export default function FeedScreen() {
           </View>
         </View>
       ) : null}
-
-      <AdBanner style={{ marginBottom: 12 }} />
 
       <View style={styles.sortRow}>
         <Text style={styles.sectionTitle}>Community</Text>

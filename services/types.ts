@@ -16,7 +16,6 @@ export interface User {
   username: string;
   displayName: string;
   avatar: string;
-  isPremium: boolean;
   totalSubmissions: number;
   totalVotesReceived: number;
   joinedAt: string;
@@ -79,7 +78,6 @@ export function toUser(profile: UserProfile, stats?: { submissions: number; vote
     username: profile.username || profile.email.split('@')[0],
     displayName: profile.display_name || profile.username || profile.email.split('@')[0],
     avatar: profile.avatar_url || `https://api.dicebear.com/7.x/initials/png?seed=${profile.username || profile.email}`,
-    isPremium: profile.is_premium,
     totalSubmissions: stats?.submissions ?? 0,
     totalVotesReceived: stats?.votesReceived ?? 0,
     joinedAt: profile.created_at,

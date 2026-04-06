@@ -8,7 +8,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth, useAlert } from '@/template';
 import { theme, typography } from '../constants/theme';
 import { config } from '../constants/config';
-import { useApp } from '../contexts/AppContext';
 
 
 interface SettingsItem {
@@ -24,7 +23,6 @@ interface SettingsItem {
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { isPremium, subscriptionEnd } = useApp();
   const { showAlert } = useAlert();
   const { logout } = useAuth();
 
@@ -63,15 +61,6 @@ export default function SettingsScreen() {
     {
       title: 'Account',
       items: [
-        {
-          icon: 'workspace-premium',
-          label: isPremium ? 'Premium Active' : 'Upgrade to Premium',
-          subtitle: isPremium ? (subscriptionEnd ? `Renews ${new Date(subscriptionEnd).toLocaleDateString()}` : 'Manage your subscription') : `${config.premium.price}/${config.premium.period} — Unlimited everything`,
-          onPress: () => router.push('/premium'),
-          color: theme.primary,
-          showChevron: true,
-          badge: isPremium ? 'PRO' : undefined,
-        },
         {
           icon: 'notifications',
           label: 'Notifications',

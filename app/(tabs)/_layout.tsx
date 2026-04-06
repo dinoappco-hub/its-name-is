@@ -3,11 +3,9 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Platform, View } from 'react-native';
 import { theme } from '../../constants/theme';
-import { useApp } from '../../contexts/AppContext';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const { isPremium } = useApp();
 
   return (
     <Tabs

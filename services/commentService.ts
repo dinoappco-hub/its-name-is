@@ -14,7 +14,6 @@ export interface Comment {
     username: string;
     displayName: string;
     avatar: string;
-    isPremium: boolean;
   };
   replies: Comment[];
 }
@@ -48,7 +47,6 @@ function mapComment(raw: RawComment): Omit<Comment, 'replies'> {
       username: raw.user_profiles?.username || 'unknown',
       displayName: raw.user_profiles?.display_name || 'Unknown',
       avatar: raw.user_profiles?.avatar_url || `https://api.dicebear.com/7.x/initials/png?seed=${raw.user_id}`,
-      isPremium: raw.user_profiles?.is_premium || false,
     },
   };
 }
