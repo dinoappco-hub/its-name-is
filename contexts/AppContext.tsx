@@ -241,16 +241,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const { error } = await updateUserProfile(authUser.id, updates);
     if (error) return { error };
 
+    const newDisplayName = params.displayName;
+    const newUsername = params.username;
+    const newAvatar = updates.avatar_url;
+
+    // Instant currentUser update
     setCurrentUser(prev => ({
       ...prev,
-      displayName: params.displayName,
-      username: params.username,
-      avatar: updates.avatar_url || prev.avatar,
+      displayName: newDisplayName,
+      username: newUsername,
+      avatar: newAvatar || prev.avatar,
     }));
 
-    await refreshObjects();
+    // Instant update across all objects referencing this user
+    setObjects(prev => prev.map(obj => {
+      const patchUser = (u: User) => {
+        if (u.id !== authUser.id) return u;
+        return { ...u, displayName: newDisplayName, username: newUsername, avatar: newAvatar || u.avatar };
+      };
+
+      const patchedSubmittedBy = patchUser(obj.submittedBy);
+      const patchedNames = obj.suggestedNames.map(n => ({
+        ...n,
+        submittedBy: patchUser(n.submittedBy),
+      }));
+
+      if (patchedSubmittedBy === obj.submittedBy && patchedNames.every((n, i) => n.submittedBy === obj.suggestedNames[i]?.submittedBy)) {
+        return obj;
+      }
+      return { ...obj, submittedBy: patchedSubmittedBy, suggestedNames: patchedNames };
+    }));
+
     return { error: null };
-  }, [authUser?.id, refreshObjects]);
+  }, [authUser?.id]);
 
   return (
     <AppContext.Provider value={{
