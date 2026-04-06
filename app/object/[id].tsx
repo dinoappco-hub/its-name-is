@@ -11,6 +11,7 @@ import { theme, typography } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import { SuggestedName } from '../../services/types';
 
+import { CATEGORIES } from '../../constants/config';
 import { REPORT_REASONS, submitReport, hasUserReported } from '../../services/reportService';
 import { Comment, fetchComments, addComment, deleteComment } from '../../services/commentService';
 import { useAccessibility } from '../../hooks/useAccessibility';
@@ -416,6 +417,22 @@ export default function ObjectDetailScreen() {
               </Animated.View>
             </Pressable>
 
+            {/* Category Badge */}
+            {object.category ? (
+              <Animated.View entering={shouldAnimate ? FadeInUp.delay(230) : undefined}>
+                {(() => {
+                  const cat = CATEGORIES.find(c => c.key === object.category);
+                  if (!cat || cat.key === 'all') return null;
+                  return (
+                    <View style={[styles.categoryBadge, { backgroundColor: `${cat.color}15`, borderColor: `${cat.color}30` }]}>
+                      <MaterialIcons name={cat.icon} size={14} color={cat.color} />
+                      <Text style={[styles.categoryBadgeText, { color: cat.color }]}>{cat.label}</Text>
+                    </View>
+                  );
+                })()}
+              </Animated.View>
+            ) : null}
+
             {object.description ? (
               <Animated.View entering={shouldAnimate ? FadeInUp.delay(250) : undefined}>
                 <Text style={styles.description}>{object.description}</Text>
@@ -728,6 +745,15 @@ const styles = StyleSheet.create({
   submitterNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   submitterName: { ...typography.bodyBold },
   submitterMeta: { ...typography.small, marginTop: 2 },
+  categoryBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: theme.radiusFull,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  categoryBadgeText: { ...typography.small, fontWeight: '700' },
   description: { ...typography.body, color: theme.textSecondary, marginBottom: 16, lineHeight: 22 },
   googleCard: {
     flexDirection: 'row', alignItems: 'center',

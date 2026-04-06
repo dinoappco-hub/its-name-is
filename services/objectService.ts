@@ -115,6 +115,7 @@ export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error:
         id: obj.id,
         imageUri: obj.image_url,
         description: obj.description,
+        category: obj.category || 'random',
         suggestedNames,
         submittedBy: toUser(profile),
         submittedAt: obj.created_at,
@@ -137,12 +138,13 @@ export async function createSubmission(
   imageUrl: string,
   name: string,
   description: string,
+  category: string = 'random',
 ): Promise<{ data: { objectId: string; nameId: string } | null; error: string | null }> {
   try {
     // Insert object
     const { data: obj, error: objErr } = await supabase
       .from('object_submissions')
-      .insert({ user_id: userId, image_url: imageUrl, description })
+      .insert({ user_id: userId, image_url: imageUrl, description, category })
       .select('id')
       .single();
 

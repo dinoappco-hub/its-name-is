@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { theme, typography } from '../../constants/theme';
+import { CATEGORIES, CategoryKey } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { ObjectSubmission, User } from '../../services/types';
@@ -33,6 +34,7 @@ export default function FeedScreen() {
   const [communityStats, setCommunityStats] = useState<CommunityStats | null>(null);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('all');
 
   useEffect(() => {
     loadCommunityData();
@@ -48,13 +50,16 @@ export default function FeedScreen() {
   };
 
   const filteredObjects = useMemo(() => {
-    const list = search ? searchObjects(search) : objects;
+    let list = search ? searchObjects(search) : objects;
+    if (selectedCategory !== 'all') {
+      list = list.filter(o => o.category === selectedCategory);
+    }
     switch (sortMode) {
       case 'new': return [...list].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
       case 'top': return [...list].sort((a, b) => b.totalVotes - a.totalVotes);
       default: return [...list].sort((a, b) => (b.totalVotes * 0.7 + b.viewCount * 0.3) - (a.totalVotes * 0.7 + a.viewCount * 0.3));
     }
-  }, [objects, search, sortMode, searchObjects]);
+  }, [objects, search, sortMode, searchObjects, selectedCategory]);
 
   const featuredObjects = useMemo(() => objects.filter(o => o.isFeatured).slice(0, 3), [objects]);
 
@@ -196,6 +201,38 @@ export default function FeedScreen() {
           </HScrollView>
         </View>
       ) : null}
+
+      {/* Category Filter Bar */}
+      <View style={styles.categoryBarWrap}>
+        <HScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryBarScroll}
+        >
+          {CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat.key;
+            const count = cat.key === 'all' ? objects.length : objects.filter(o => o.category === cat.key).length;
+            return (
+              <Pressable
+                key={cat.key}
+                style={[styles.categoryPill, isSelected && { backgroundColor: cat.color, borderColor: cat.color }]}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setSelectedCategory(cat.key);
+                }}
+              >
+                <MaterialIcons name={cat.icon} size={15} color={isSelected ? '#fff' : cat.color} />
+                <Text style={[styles.categoryPillText, isSelected && { color: '#fff' }]}>{cat.label}</Text>
+                {count > 0 ? (
+                  <View style={[styles.categoryCount, isSelected && { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
+                    <Text style={[styles.categoryCountText, isSelected && { color: '#fff' }]}>{count}</Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </HScrollView>
+      </View>
 
       {!search && featuredObjects.length > 0 ? (
         <View style={styles.featuredSection}>
@@ -353,6 +390,27 @@ const styles = StyleSheet.create({
   searchRow: { marginBottom: 14 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.surface, borderRadius: theme.radiusMedium, paddingHorizontal: 12, height: 44, gap: 8 },
   searchInput: { flex: 1, fontSize: 15, color: theme.textPrimary },
+
+  // Category Bar
+  categoryBarWrap: { marginBottom: 14 },
+  categoryBarScroll: { gap: 8 },
+  categoryPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    backgroundColor: theme.surface,
+    borderWidth: 1.5, borderColor: theme.border,
+  },
+  categoryPillText: { ...typography.small, fontWeight: '600', color: theme.textSecondary },
+  categoryCount: {
+    backgroundColor: theme.surfaceElevated,
+    borderRadius: 10,
+    minWidth: 20, height: 20,
+    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  categoryCountText: { fontSize: 10, fontWeight: '700', color: theme.textMuted },
 
   // Community Banner
   communityBanner: {

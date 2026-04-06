@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { useAlert } from '@/template';
 import { theme, typography } from '../../constants/theme';
-import { config } from '../../constants/config';
+import { config, CATEGORIES } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
 import { useRouter } from 'expo-router';
 
@@ -19,6 +19,9 @@ export default function SnapScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('random');
+
+  const selectableCategories = CATEGORIES.filter(c => c.key !== 'all');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { showAlert } = useAlert();
@@ -66,7 +69,7 @@ export default function SnapScreen() {
     }
 
     setSubmitting(true);
-    const { error } = await addSubmission(imageUri, name.trim(), description.trim() || 'Community submission');
+    const { error } = await addSubmission(imageUri, name.trim(), description.trim() || 'Community submission', category);
     setSubmitting(false);
 
     if (error) {
@@ -82,6 +85,7 @@ export default function SnapScreen() {
     setImageUri(null);
     setName('');
     setDescription('');
+    setCategory('random');
     setSubmitted(false);
   };
 
@@ -171,6 +175,29 @@ export default function SnapScreen() {
               </View>
 
               <View style={styles.formGroup}>
+                <Text style={styles.label}>Category</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.categoryScroll}
+                >
+                  {selectableCategories.map((cat) => {
+                    const selected = category === cat.key;
+                    return (
+                      <Pressable
+                        key={cat.key}
+                        style={[styles.categoryChip, selected && { backgroundColor: cat.color, borderColor: cat.color }]}
+                        onPress={() => { Haptics.selectionAsync(); setCategory(cat.key); }}
+                      >
+                        <MaterialIcons name={cat.icon} size={16} color={selected ? '#fff' : cat.color} />
+                        <Text style={[styles.categoryChipText, selected && { color: '#fff' }]}>{cat.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              <View style={styles.formGroup}>
                 <Text style={styles.label}>Description (optional)</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
@@ -228,6 +255,15 @@ const styles = StyleSheet.create({
   charCount: { ...typography.small, textAlign: 'right', marginTop: 4 },
   submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: theme.primary, borderRadius: theme.radiusMedium, height: 52, marginTop: 8 },
   submitBtnDisabled: { opacity: 0.4 },
+  categoryScroll: { gap: 8, paddingBottom: 4 },
+  categoryChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 14, paddingVertical: 9,
+    borderRadius: theme.radiusFull,
+    backgroundColor: theme.surface,
+    borderWidth: 1.5, borderColor: theme.border,
+  },
+  categoryChipText: { ...typography.small, fontWeight: '600', color: theme.textSecondary },
   submitBtnText: { ...typography.button },
   successContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
   successIcon: { marginBottom: 20 },

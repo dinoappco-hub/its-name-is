@@ -26,6 +26,7 @@ export interface DbObjectSubmission {
   user_id: string;
   image_url: string;
   description: string;
+  category: string;
   is_featured: boolean;
   view_count: number;
   created_at: string;
@@ -63,6 +64,7 @@ export interface ObjectSubmission {
   id: string;
   imageUri: string;
   description: string;
+  category: string;
   suggestedNames: SuggestedName[];
   submittedBy: User;
   submittedAt: string;

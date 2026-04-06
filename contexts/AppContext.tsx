@@ -22,7 +22,7 @@ interface AppContextType {
   submissionsToday: number;
   loading: boolean;
   refreshing: boolean;
-  addSubmission: (imageUri: string, name: string, description: string) => Promise<{ error: string | null }>;
+  addSubmission: (imageUri: string, name: string, description: string, category?: string) => Promise<{ error: string | null }>;
   addNameSuggestion: (objectId: string, name: string) => Promise<{ error: string | null }>;
   vote: (objectId: string, nameId: string, direction: 'up' | 'down') => void;
   searchObjects: (query: string) => ObjectSubmission[];
@@ -116,13 +116,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [authUser?.id]);
 
-  const addSubmission = useCallback(async (imageUri: string, name: string, description: string): Promise<{ error: string | null }> => {
+  const addSubmission = useCallback(async (imageUri: string, name: string, description: string, category: string = 'random'): Promise<{ error: string | null }> => {
     if (!authUser?.id) return { error: 'Not authenticated' };
 
     const { url, error: uploadErr } = await uploadObjectImage(authUser.id, imageUri);
     if (uploadErr || !url) return { error: uploadErr || 'Image upload failed' };
 
-    const { data, error } = await createSubmission(authUser.id, url, name, description);
+    const { data, error } = await createSubmission(authUser.id, url, name, description, category);
     if (error) return { error };
 
     await refreshObjects();
