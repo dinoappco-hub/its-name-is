@@ -28,6 +28,7 @@ export default function RootLayout() {
                 <Stack.Screen name="accessibility" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="our-story" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="edit-profile" options={{ animation: 'slide_from_right' }} />
+                <Stack.Screen name="report-problem" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="community-guidelines" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="terms" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="privacy" options={{ animation: 'slide_from_right' }} />

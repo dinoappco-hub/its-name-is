@@ -103,8 +103,8 @@ export default function SettingsScreen() {
         {
           icon: 'flag',
           label: 'Report a Problem',
-          subtitle: 'Report inappropriate content',
-          onPress: handleContact,
+          subtitle: 'Report bugs, issues, or feedback',
+          onPress: () => router.push('/report-problem'),
           showChevron: true,
         },
       ],
