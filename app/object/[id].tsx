@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Modal, Linking } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,11 +7,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useAuth, useAlert } from '@/template';
-import { theme, typography } from '../../constants/theme';
+import { useAppTheme } from '../../hooks/useTheme';
 import { useApp } from '../../contexts/AppContext';
 import { SuggestedName } from '../../services/types';
 
 import { CATEGORIES } from '../../constants/config';
+import { theme as staticTheme } from '../../constants/theme';
 import { REPORT_REASONS, submitReport, hasUserReported } from '../../services/reportService';
 import { Comment, fetchComments, addComment, deleteComment } from '../../services/commentService';
 import { useAccessibility } from '../../hooks/useAccessibility';
@@ -26,6 +27,7 @@ export default function ObjectDetailScreen() {
     router.push(`/user/${userId}`);
   }, [router]);
   const { user: authUser } = useAuth();
+  const { colors: t, typo } = useAppTheme();
   const { objects, vote, addNameSuggestion, currentUser, trackView } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, a11yProps } = useAccessibility();
   const [newName, setNewName] = useState('');
@@ -176,12 +178,12 @@ export default function ObjectDetailScreen() {
 
   if (!object) {
     return (
-      <SafeAreaView edges={['top']} style={styles.container}>
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
         <View style={styles.notFound}>
-          <MaterialIcons name="error-outline" size={48} color={theme.textMuted} />
-          <Text style={styles.notFoundText}>Object not found</Text>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backBtnText}>Go Back</Text>
+          <MaterialIcons name="error-outline" size={48} color={t.textMuted} />
+          <Text style={[styles.notFoundText, { color: t.textSecondary }]}>Object not found</Text>
+          <Pressable style={[styles.backBtn, { backgroundColor: t.surface }]} onPress={() => router.back()}>
+            <Text style={[styles.backBtnText, { color: t.textPrimary }]}>Go Back</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -233,29 +235,28 @@ export default function ObjectDetailScreen() {
 
     return (
       <View key={comment.id} style={{ marginLeft: indent }}>
-        <View style={[styles.commentCard, depth > 0 && styles.commentCardReply]}>
+        <View style={[styles.commentCard, { backgroundColor: t.surface, borderColor: t.border }, depth > 0 && { backgroundColor: t.surfaceElevated, borderColor: t.borderLight }]}>
           <Pressable onPress={() => navigateToUser(comment.user.id)} hitSlop={4}>
             <Image source={{ uri: comment.user.avatar }} style={styles.commentAvatar} contentFit="cover" />
           </Pressable>
           <View style={styles.commentBody}>
             <View style={styles.commentHeader}>
               <Pressable style={styles.commentUserRow} onPress={() => navigateToUser(comment.user.id)} hitSlop={4}>
-                <Text style={styles.commentUsername} numberOfLines={1}>
+                <Text style={[styles.commentUsername, { color: t.textPrimary }]} numberOfLines={1}>
                   {comment.user.displayName}
                 </Text>
-
               </Pressable>
-              <Text style={styles.commentTime}>{timeAgo(comment.createdAt)}</Text>
+              <Text style={[styles.commentTime, { color: t.textMuted }]}>{timeAgo(comment.createdAt)}</Text>
             </View>
-            <Text style={styles.commentContent}>{comment.content}</Text>
+            <Text style={[styles.commentContent, { color: t.textSecondary }]}>{comment.content}</Text>
             <View style={styles.commentActions}>
               <Pressable
                 style={styles.commentAction}
                 onPress={() => handleReply(comment.id, comment.user.username || comment.user.displayName)}
                 hitSlop={8}
               >
-                <MaterialIcons name="reply" size={14} color={theme.textMuted} />
-                <Text style={styles.commentActionText}>Reply</Text>
+                <MaterialIcons name="reply" size={14} color={t.textMuted} />
+                <Text style={[styles.commentActionText, { color: t.textMuted }]}>Reply</Text>
               </Pressable>
               {isOwn ? (
                 <Pressable
@@ -263,8 +264,8 @@ export default function ObjectDetailScreen() {
                   onPress={() => handleDeleteComment(comment.id)}
                   hitSlop={8}
                 >
-                  <MaterialIcons name="delete-outline" size={14} color={theme.error} />
-                  <Text style={[styles.commentActionText, { color: theme.error }]}>Delete</Text>
+                  <MaterialIcons name="delete-outline" size={14} color={t.error} />
+                  <Text style={[styles.commentActionText, { color: t.error }]}>Delete</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -286,60 +287,59 @@ export default function ObjectDetailScreen() {
         key={item.id}
         entering={shouldAnimate ? FadeInDown.delay(index * 60).duration(350) : undefined}
       >
-        <View style={[styles.nameRow, isTop && styles.nameRowTop]}>
+        <View style={[styles.nameRow, { backgroundColor: t.surface, borderColor: t.border }, isTop && { borderColor: `${t.primary}40`, backgroundColor: `${t.primary}08` }]}>
           <View style={styles.nameRank}>
             {isTop ? (
-              <View style={styles.crownBadge}>
-                <MaterialIcons name="emoji-events" size={16} color={theme.primary} />
+              <View style={[styles.crownBadge, { backgroundColor: `${t.primary}20` }]}>
+                <MaterialIcons name="emoji-events" size={16} color={t.primary} />
               </View>
             ) : (
-              <Text style={styles.rankNumber}>#{index + 1}</Text>
+              <Text style={[styles.rankNumber, { color: t.textMuted }]}>#{index + 1}</Text>
             )}
           </View>
           <View style={styles.nameContent}>
             <View style={styles.nameHeader}>
-              <Text style={[styles.nameText, isTop && styles.nameTextTop]} numberOfLines={1}>{item.name}</Text>
+              <Text style={[styles.nameText, { color: t.textPrimary }, isTop && { color: t.primary }]} numberOfLines={1}>{item.name}</Text>
               <Pressable
                 style={styles.nameReportBtn}
                 onPress={() => openReportModal(item.id)}
                 hitSlop={8}
               >
-                <MaterialIcons name="more-vert" size={16} color={theme.textMuted} />
+                <MaterialIcons name="more-vert" size={16} color={t.textMuted} />
               </Pressable>
             </View>
             <Pressable style={styles.nameSubmitter} onPress={() => navigateToUser(item.submittedBy.id)} hitSlop={4}>
               <Image source={{ uri: item.submittedBy.avatar }} style={styles.nameAvatar} contentFit="cover" />
-              <Text style={styles.nameUsername}>@{item.submittedBy.username}</Text>
-
-              <Text style={styles.nameTime}>{timeAgo(item.submittedAt)}</Text>
+              <Text style={[styles.nameUsername, { color: t.textSecondary }]}>@{item.submittedBy.username}</Text>
+              <Text style={[styles.nameTime, { color: t.textMuted }]}>{timeAgo(item.submittedAt)}</Text>
             </Pressable>
           </View>
           <View style={styles.voteSection}>
             <Pressable
-              style={[styles.voteBtn, item.userVote === 'up' && styles.voteBtnActiveUp]}
+              style={[styles.voteBtn, { backgroundColor: t.surfaceElevated }, item.userVote === 'up' && styles.voteBtnActiveUp]}
               onPress={() => handleVote(item.id, 'up')}
             >
               <MaterialIcons
                 name="arrow-upward"
                 size={16}
-                color={item.userVote === 'up' ? '#fff' : theme.textMuted}
+                color={item.userVote === 'up' ? '#fff' : t.textMuted}
               />
             </Pressable>
             <Text style={[
-              styles.voteCount,
+              styles.voteCount, { color: t.textSecondary },
               item.votes > 0 && styles.voteCountPositive,
               item.votes < 0 && styles.voteCountNegative,
             ]}>
               {item.votes}
             </Text>
             <Pressable
-              style={[styles.voteBtn, item.userVote === 'down' && styles.voteBtnActiveDown]}
+              style={[styles.voteBtn, { backgroundColor: t.surfaceElevated }, item.userVote === 'down' && styles.voteBtnActiveDown]}
               onPress={() => handleVote(item.id, 'down')}
             >
               <MaterialIcons
                 name="arrow-downward"
                 size={16}
-                color={item.userVote === 'down' ? '#fff' : theme.textMuted}
+                color={item.userVote === 'down' ? '#fff' : t.textMuted}
               />
             </Pressable>
           </View>
@@ -349,7 +349,7 @@ export default function ObjectDetailScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: t.background }]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -374,7 +374,7 @@ export default function ObjectDetailScreen() {
                     style={styles.heroReportBtn}
                     onPress={() => openReportModal()}
                   >
-                    <MaterialIcons name="flag" size={20} color={alreadyReported ? theme.warning : '#fff'} />
+                    <MaterialIcons name="flag" size={20} color={alreadyReported ? t.warning : '#fff'} />
                   </Pressable>
                 </View>
               </View>
@@ -384,15 +384,15 @@ export default function ObjectDetailScreen() {
                 ) : null}
                 <View style={styles.heroStats}>
                   <View style={styles.heroStat}>
-                    <MaterialIcons name="arrow-upward" size={14} color={theme.upvote} />
+                    <MaterialIcons name="arrow-upward" size={14} color={t.upvote} />
                     <Text style={styles.heroStatText}>{object.totalVotes} votes</Text>
                   </View>
                   <View style={styles.heroStat}>
-                    <MaterialIcons name="chat-bubble" size={14} color={theme.accent} />
+                    <MaterialIcons name="chat-bubble" size={14} color={t.accent} />
                     <Text style={styles.heroStatText}>{object.suggestedNames.length} names</Text>
                   </View>
                   <View style={styles.heroStat}>
-                    <MaterialIcons name="visibility" size={14} color={theme.textMuted} />
+                    <MaterialIcons name="visibility" size={14} color={t.textMuted} />
                     <Text style={styles.heroStatText}>{object.viewCount} views</Text>
                   </View>
                 </View>
@@ -406,11 +406,10 @@ export default function ObjectDetailScreen() {
                 <Image source={{ uri: object.submittedBy.avatar }} style={styles.submitterAvatar} contentFit="cover" />
                 <View style={styles.submitterInfo}>
                   <View style={styles.submitterNameRow}>
-                    <Text style={styles.submitterName}>{object.submittedBy.displayName}</Text>
-
-                    <MaterialIcons name="chevron-right" size={16} color={theme.textMuted} />
+                    <Text style={[styles.submitterName, { color: t.textPrimary }]}>{object.submittedBy.displayName}</Text>
+                    <MaterialIcons name="chevron-right" size={16} color={t.textMuted} />
                   </View>
-                  <Text style={styles.submitterMeta}>
+                  <Text style={[styles.submitterMeta, { color: t.textMuted }]}>
                     {timeAgo(object.submittedAt)} · {object.submittedBy.totalSubmissions} submissions
                   </Text>
                 </View>
@@ -435,76 +434,45 @@ export default function ObjectDetailScreen() {
 
             {object.description ? (
               <Animated.View entering={shouldAnimate ? FadeInUp.delay(250) : undefined}>
-                <Text style={styles.description}>{object.description}</Text>
+                <Text style={[styles.description, { color: t.textSecondary }]}>{object.description}</Text>
               </Animated.View>
             ) : null}
 
-            {/* Google It Card */}
-            <Animated.View entering={shouldAnimate ? FadeInUp.delay(300) : undefined}>
-              <Pressable
-                style={styles.googleCard}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  const query = topName?.name || object.description || 'unknown object';
-                  const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-                  Linking.openURL(url);
-                }}
-              >
-                <View style={styles.googleIconWrap}>
-                  <Text style={styles.googleG}>
-                    <Text style={{ color: '#4285F4' }}>G</Text>
-                    <Text style={{ color: '#EA4335' }}>o</Text>
-                    <Text style={{ color: '#FBBC05' }}>o</Text>
-                    <Text style={{ color: '#4285F4' }}>g</Text>
-                    <Text style={{ color: '#34A853' }}>l</Text>
-                    <Text style={{ color: '#EA4335' }}>e</Text>
-                  </Text>
-                </View>
-                <View style={styles.googleTextWrap}>
-                  <Text style={styles.googleTitle}>Google It</Text>
-                  <Text style={styles.googleSubtitle} numberOfLines={1}>
-                    Search for "{topName?.name || 'this object'}"
-                  </Text>
-                </View>
-                <MaterialIcons name="open-in-new" size={18} color={theme.textMuted} />
-              </Pressable>
-            </Animated.View>
-
             <View style={styles.namesSection}>
               <View style={styles.namesSectionHeader}>
-                <Text style={styles.namesSectionTitle}>Suggested Names</Text>
+                <Text style={[styles.namesSectionTitle, { color: t.textPrimary }]}>Suggested Names</Text>
                 <Pressable
-                  style={styles.suggestBtn}
+                  style={[styles.suggestBtn, { borderColor: `${t.primary}40`, backgroundColor: `${t.primary}15` }]}
                   onPress={() => {
                     triggerHaptic('selection');
                     setShowInput(!showInput);
                   }}
                 >
-                  <MaterialIcons name="add" size={16} color={theme.primary} />
-                  <Text style={styles.suggestBtnText}>Suggest</Text>
+                  <MaterialIcons name="add" size={16} color={t.primary} />
+                  <Text style={[styles.suggestBtnText, { color: t.primary }]}>Suggest</Text>
                 </Pressable>
               </View>
 
               {showInput ? (
                 <Animated.View entering={shouldAnimate ? FadeInDown.duration(300) : undefined} style={styles.suggestInput}>
                   <TextInput
-                    style={styles.suggestTextInput}
+                    style={[styles.suggestTextInput, { backgroundColor: t.surface, color: t.textPrimary, borderColor: t.border }]}
                     placeholder="Your name idea..."
-                    placeholderTextColor={theme.textMuted}
+                    placeholderTextColor={t.textMuted}
                     value={newName}
                     onChangeText={setNewName}
                     maxLength={50}
                     autoFocus
                   />
                   <Pressable
-                    style={[styles.suggestSubmit, (!newName.trim() || suggesting) && { opacity: 0.4 }]}
+                    style={[styles.suggestSubmit, { backgroundColor: t.primary }, (!newName.trim() || suggesting) && { opacity: 0.4 }]}
                     onPress={handleSuggestName}
                     disabled={suggesting}
                   >
                     {suggesting ? (
-                      <ActivityIndicator size="small" color={theme.background} />
+                      <ActivityIndicator size="small" color={t.background} />
                     ) : (
-                      <MaterialIcons name="send" size={18} color={theme.background} />
+                      <MaterialIcons name="send" size={18} color={t.background} />
                     )}
                   </Pressable>
                 </Animated.View>
@@ -512,7 +480,7 @@ export default function ObjectDetailScreen() {
 
               {sortedNames.length === 0 ? (
                 <View style={styles.noNames}>
-                  <Text style={styles.noNamesText}>No names yet. Be the first to suggest one!</Text>
+                  <Text style={[styles.noNamesText, { color: t.textMuted }]}>No names yet. Be the first to suggest one!</Text>
                 </View>
               ) : null}
 
@@ -520,12 +488,12 @@ export default function ObjectDetailScreen() {
             </View>
 
             {/* Comments Section */}
-            <Animated.View entering={shouldAnimate ? FadeInUp.delay(400) : undefined} style={styles.commentsSection}>
+            <Animated.View entering={shouldAnimate ? FadeInUp.delay(400) : undefined} style={[styles.commentsSection, { borderTopColor: t.border }]}>
               <View style={styles.commentsSectionHeader}>
                 <View style={styles.commentsTitleRow}>
-                  <MaterialIcons name="forum" size={20} color={theme.accent} />
-                  <Text style={[styles.commentsSectionTitle, { fontSize: scaledSize(18), fontWeight: fw('700') }]}>Discussion</Text>
-                  <View style={styles.commentCountBadge}>
+                  <MaterialIcons name="forum" size={20} color={t.accent} />
+                  <Text style={[styles.commentsSectionTitle, { fontSize: scaledSize(18), fontWeight: fw('700'), color: t.textPrimary }]}>Discussion</Text>
+                  <View style={[styles.commentCountBadge, { backgroundColor: t.accent }]}>
                     <Text style={styles.commentCountText}>{totalCommentCount}</Text>
                   </View>
                 </View>
@@ -533,9 +501,9 @@ export default function ObjectDetailScreen() {
 
               {/* Reply indicator */}
               {replyingTo ? (
-                <View style={styles.replyIndicator}>
-                  <MaterialIcons name="reply" size={14} color={theme.accent} />
-                  <Text style={styles.replyIndicatorText}>
+                <View style={[styles.replyIndicator, { backgroundColor: `${t.accent}15`, borderLeftColor: t.accent }]}>
+                  <MaterialIcons name="reply" size={14} color={t.accent} />
+                  <Text style={[styles.replyIndicatorText, { color: t.accent }]}>
                     Replying to @{replyingTo.username}
                   </Text>
                   <Pressable
@@ -545,7 +513,7 @@ export default function ObjectDetailScreen() {
                     }}
                     hitSlop={8}
                   >
-                    <MaterialIcons name="close" size={16} color={theme.textMuted} />
+                    <MaterialIcons name="close" size={16} color={t.textMuted} />
                   </Pressable>
                 </View>
               ) : null}
@@ -558,23 +526,23 @@ export default function ObjectDetailScreen() {
                   contentFit="cover"
                 />
                 <TextInput
-                  style={styles.commentTextInput}
+                  style={[styles.commentTextInput, { backgroundColor: t.surface, color: t.textPrimary, borderColor: t.border }]}
                   placeholder="Add a comment..."
-                  placeholderTextColor={theme.textMuted}
+                  placeholderTextColor={t.textMuted}
                   value={commentText}
                   onChangeText={setCommentText}
                   maxLength={500}
                   multiline
                 />
                 <Pressable
-                  style={[styles.commentSendBtn, (!commentText.trim() || submittingComment) && { opacity: 0.3 }]}
+                  style={[styles.commentSendBtn, { backgroundColor: t.accent }, (!commentText.trim() || submittingComment) && { opacity: 0.3 }]}
                   onPress={handlePostComment}
                   disabled={!commentText.trim() || submittingComment}
                 >
                   {submittingComment ? (
-                    <ActivityIndicator size="small" color={theme.background} />
+                    <ActivityIndicator size="small" color={t.background} />
                   ) : (
-                    <MaterialIcons name="send" size={16} color={theme.background} />
+                    <MaterialIcons name="send" size={16} color={t.background} />
                   )}
                 </Pressable>
               </View>
@@ -582,14 +550,14 @@ export default function ObjectDetailScreen() {
               {/* Comments list */}
               {commentsLoading ? (
                 <View style={styles.commentsLoading}>
-                  <ActivityIndicator size="small" color={theme.accent} />
-                  <Text style={styles.commentsLoadingText}>Loading discussion...</Text>
+                  <ActivityIndicator size="small" color={t.accent} />
+                  <Text style={[styles.commentsLoadingText, { color: t.textMuted }]}>Loading discussion...</Text>
                 </View>
               ) : comments.length === 0 ? (
                 <View style={styles.noComments}>
-                  <MaterialIcons name="chat-bubble-outline" size={32} color={theme.textMuted} />
-                  <Text style={styles.noCommentsTitle}>No comments yet</Text>
-                  <Text style={styles.noCommentsText}>Start the discussion about this object</Text>
+                  <MaterialIcons name="chat-bubble-outline" size={32} color={t.textMuted} />
+                  <Text style={[styles.noCommentsTitle, { color: t.textSecondary }]}>No comments yet</Text>
+                  <Text style={[styles.noCommentsText, { color: t.textMuted }]}>Start the discussion about this object</Text>
                 </View>
               ) : (
                 <View style={styles.commentsList}>
@@ -602,10 +570,10 @@ export default function ObjectDetailScreen() {
                         setShowAllComments(true);
                       }}
                     >
-                      <Text style={styles.showMoreText}>
+                      <Text style={[styles.showMoreText, { color: t.accent }]}>
                         Show all {totalCommentCount} comments
                       </Text>
-                      <MaterialIcons name="expand-more" size={18} color={theme.accent} />
+                      <MaterialIcons name="expand-more" size={18} color={t.accent} />
                     </Pressable>
                   ) : null}
                 </View>
@@ -624,21 +592,21 @@ export default function ObjectDetailScreen() {
       >
         <View style={styles.modalOverlay}>
           <Pressable style={styles.modalBackdrop} onPress={() => setShowReportModal(false)} />
-          <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
+          <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20, backgroundColor: t.background }]}>
             <View style={styles.modalHandle} />
 
             <View style={styles.modalHeader}>
-              <View style={styles.modalHeaderIcon}>
-                <MaterialIcons name="flag" size={22} color={theme.error} />
+              <View style={[styles.modalHeaderIcon, { backgroundColor: `${t.error}15` }]}>
+                <MaterialIcons name="flag" size={22} color={t.error} />
               </View>
               <View style={styles.modalHeaderText}>
-                <Text style={styles.modalTitle}>Report Content</Text>
-                <Text style={styles.modalSubtitle}>
+                <Text style={[styles.modalTitle, { color: t.textPrimary }]}>Report Content</Text>
+                <Text style={[styles.modalSubtitle, { color: t.textSecondary }]}>
                   {reportNameId ? 'Report this suggested name' : 'Report this submission'}
                 </Text>
               </View>
-              <Pressable style={styles.modalCloseBtn} onPress={() => setShowReportModal(false)}>
-                <MaterialIcons name="close" size={20} color={theme.textMuted} />
+              <Pressable style={[styles.modalCloseBtn, { backgroundColor: t.surface }]} onPress={() => setShowReportModal(false)}>
+                <MaterialIcons name="close" size={20} color={t.textMuted} />
               </Pressable>
             </View>
 
@@ -647,42 +615,42 @@ export default function ObjectDetailScreen() {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <Text style={styles.reasonLabel}>Why are you reporting this?</Text>
+              <Text style={[styles.reasonLabel, { color: t.textMuted }]}>Why are you reporting this?</Text>
               {REPORT_REASONS.map((reason) => {
                 const selected = reportReason === reason.key;
                 return (
                   <Pressable
                     key={reason.key}
-                    style={[styles.reasonRow, selected && styles.reasonRowSelected]}
+                    style={[styles.reasonRow, { backgroundColor: t.surface, borderColor: t.border }, selected && { borderColor: `${t.error}50`, backgroundColor: `${t.error}08` }]}
                     onPress={() => {
                       Haptics.selectionAsync();
                       setReportReason(reason.key);
                     }}
                   >
-                    <View style={[styles.reasonIcon, selected && styles.reasonIconSelected]}>
+                    <View style={[styles.reasonIcon, { backgroundColor: t.surfaceElevated }, selected && { backgroundColor: `${t.error}15` }]}>
                       <MaterialIcons
                         name={reason.icon}
                         size={18}
-                        color={selected ? theme.error : theme.textMuted}
+                        color={selected ? t.error : t.textMuted}
                       />
                     </View>
-                    <Text style={[styles.reasonText, selected && styles.reasonTextSelected]}>
+                    <Text style={[styles.reasonText, { color: t.textPrimary }, selected && { color: t.error }]}>
                       {reason.label}
                     </Text>
                     {selected ? (
-                      <MaterialIcons name="check-circle" size={20} color={theme.error} />
+                      <MaterialIcons name="check-circle" size={20} color={t.error} />
                     ) : (
-                      <View style={styles.reasonRadio} />
+                      <View style={[styles.reasonRadio, { borderColor: t.borderLight }]} />
                     )}
                   </Pressable>
                 );
               })}
 
-              <Text style={styles.detailsLabel}>Additional details (optional)</Text>
+              <Text style={[styles.detailsLabel, { color: t.textMuted }]}>Additional details (optional)</Text>
               <TextInput
-                style={styles.detailsInput}
+                style={[styles.detailsInput, { backgroundColor: t.surface, color: t.textPrimary, borderColor: t.border }]}
                 placeholder="Tell us more about the issue..."
-                placeholderTextColor={theme.textMuted}
+                placeholderTextColor={t.textMuted}
                 value={reportDescription}
                 onChangeText={setReportDescription}
                 multiline
@@ -690,24 +658,24 @@ export default function ObjectDetailScreen() {
                 maxLength={500}
                 textAlignVertical="top"
               />
-              <Text style={styles.detailsCount}>{reportDescription.length}/500</Text>
+              <Text style={[styles.detailsCount, { color: t.textMuted }]}>{reportDescription.length}/500</Text>
 
               <Pressable
-                style={[styles.submitReportBtn, (!reportReason || submittingReport) && styles.submitReportBtnDisabled]}
+                style={[styles.submitReportBtn, { backgroundColor: t.error }, (!reportReason || submittingReport) && styles.submitReportBtnDisabled]}
                 onPress={handleSubmitReport}
                 disabled={!reportReason || submittingReport}
               >
                 {submittingReport ? (
-                  <ActivityIndicator size="small" color={theme.background} />
+                  <ActivityIndicator size="small" color={t.background} />
                 ) : (
                   <>
-                    <MaterialIcons name="send" size={18} color={theme.background} />
+                    <MaterialIcons name="send" size={18} color={t.background} />
                     <Text style={styles.submitReportText}>Submit Report</Text>
                   </>
                 )}
               </Pressable>
 
-              <Text style={styles.reportDisclaimer}>
+              <Text style={[styles.reportDisclaimer, { color: t.textMuted }]}>
                 Our moderation team reviews all reports within 24 hours. False reports may result in account restrictions.
               </Text>
             </ScrollView>
@@ -719,11 +687,11 @@ export default function ObjectDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
+  container: { flex: 1 },
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  notFoundText: { ...typography.body, color: theme.textSecondary },
-  backBtn: { backgroundColor: theme.surface, borderRadius: theme.radiusMedium, paddingHorizontal: 20, paddingVertical: 10, marginTop: 8 },
-  backBtnText: { ...typography.bodyBold, color: theme.textPrimary },
+  notFoundText: { fontSize: 15 },
+  backBtn: { borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10, marginTop: 8 },
+  backBtnText: { fontSize: 15, fontWeight: '600' },
   heroWrap: { width: '100%', aspectRatio: 1, position: 'relative' },
   heroImage: { width: '100%', height: '100%' },
   heroOverlay: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 54, paddingHorizontal: 16 },
@@ -731,8 +699,8 @@ const styles = StyleSheet.create({
 
   heroReportBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   heroBack: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
-  heroFeaturedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.primary, borderRadius: theme.radiusFull, paddingHorizontal: 10, paddingVertical: 5 },
-  heroFeaturedText: { fontSize: 10, fontWeight: '800', color: theme.background },
+  heroFeaturedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: staticTheme.primary, borderRadius: 9999, paddingHorizontal: 10, paddingVertical: 5 },
+  heroFeaturedText: { fontSize: 10, fontWeight: '800', color: staticTheme.background },
   heroBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, paddingTop: 60, backgroundColor: 'rgba(0,0,0,0.01)' },
   heroName: { fontSize: 28, fontWeight: '700', color: '#fff', textShadowColor: 'rgba(0,0,0,0.9)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8, marginBottom: 8 },
   heroStats: { flexDirection: 'row', gap: 16 },
@@ -743,72 +711,52 @@ const styles = StyleSheet.create({
   submitterAvatar: { width: 40, height: 40, borderRadius: 20 },
   submitterInfo: { flex: 1, marginLeft: 10 },
   submitterNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  submitterName: { ...typography.bodyBold },
-  submitterMeta: { ...typography.small, marginTop: 2 },
+  submitterName: { fontSize: 15, fontWeight: '600' },
+  submitterMeta: { fontSize: 12, marginTop: 2 },
   categoryBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     alignSelf: 'flex-start',
     paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: theme.radiusFull,
+    borderRadius: 9999,
     borderWidth: 1,
     marginBottom: 12,
   },
-  categoryBadgeText: { ...typography.small, fontWeight: '700' },
-  description: { ...typography.body, color: theme.textSecondary, marginBottom: 16, lineHeight: 22 },
-  googleCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusMedium,
-    padding: 14, marginBottom: 16, gap: 12,
-    borderWidth: 1, borderColor: theme.border,
-  },
-  googleIconWrap: {
-    width: 42, height: 42, borderRadius: 12,
-    backgroundColor: '#fff',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: '#e0e0e0',
-  },
-  googleG: { fontSize: 18, fontWeight: '700', letterSpacing: -0.5 },
-  googleTextWrap: { flex: 1 },
-  googleTitle: { ...typography.bodyBold, fontSize: 15 },
-  googleSubtitle: { ...typography.small, color: theme.textSecondary, marginTop: 2 },
+  categoryBadgeText: { fontSize: 12, fontWeight: '700' },
+  description: { fontSize: 15, marginBottom: 16, lineHeight: 22 },
   namesSection: { marginTop: 4 },
   namesSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  namesSectionTitle: { ...typography.subtitle, fontSize: 18 },
-  suggestBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,215,0,0.1)', borderRadius: theme.radiusFull, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: 'rgba(255,215,0,0.25)' },
-  suggestBtnText: { ...typography.small, color: theme.primary, fontWeight: '700' },
+  namesSectionTitle: { fontSize: 18, fontWeight: '700' },
+  suggestBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1 },
+  suggestBtnText: { fontSize: 12, fontWeight: '700' },
   suggestInput: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  suggestTextInput: { flex: 1, backgroundColor: theme.surface, borderRadius: theme.radiusMedium, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: theme.textPrimary, borderWidth: 1, borderColor: theme.border },
-  suggestSubmit: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center' },
+  suggestTextInput: { flex: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, borderWidth: 1 },
+  suggestSubmit: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   noNames: { alignItems: 'center', paddingVertical: 24 },
-  noNamesText: { ...typography.caption, textAlign: 'center' },
-  nameRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.surface, borderRadius: theme.radiusMedium, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: theme.border },
-  nameRowTop: { borderColor: 'rgba(255,215,0,0.3)', backgroundColor: 'rgba(255,215,0,0.05)' },
+  noNamesText: { fontSize: 13, textAlign: 'center' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1 },
   nameRank: { width: 32, alignItems: 'center' },
-  crownBadge: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255,215,0,0.15)', alignItems: 'center', justifyContent: 'center' },
-  rankNumber: { ...typography.captionBold, color: theme.textMuted },
+  crownBadge: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  rankNumber: { fontSize: 13, fontWeight: '600' },
   nameContent: { flex: 1, marginLeft: 8 },
   nameHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  nameText: { ...typography.bodyBold, flex: 1, marginRight: 8 },
-  nameTextTop: { color: theme.primary },
-  nameTime: { ...typography.small, marginLeft: 6 },
+  nameText: { fontSize: 15, fontWeight: '600', flex: 1, marginRight: 8 },
+  nameTime: { fontSize: 12, marginLeft: 6 },
   nameSubmitter: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   nameAvatar: { width: 16, height: 16, borderRadius: 8 },
-  nameUsername: { ...typography.small },
+  nameUsername: { fontSize: 12 },
   nameReportBtn: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   voteSection: { alignItems: 'center', gap: 2, marginLeft: 8 },
-  voteBtn: { width: 32, height: 28, borderRadius: theme.radiusSmall, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.surfaceElevated },
-  voteBtnActiveUp: { backgroundColor: theme.upvote },
-  voteBtnActiveDown: { backgroundColor: theme.downvote },
-  voteCount: { ...typography.captionBold, color: theme.textSecondary, minWidth: 20, textAlign: 'center' },
-  voteCountPositive: { color: theme.upvote },
-  voteCountNegative: { color: theme.downvote },
+  voteBtn: { width: 32, height: 28, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  voteBtnActiveUp: { backgroundColor: staticTheme.upvote },
+  voteBtnActiveDown: { backgroundColor: staticTheme.downvote },
+  voteCount: { fontSize: 13, fontWeight: '600', minWidth: 20, textAlign: 'center' },
+  voteCountPositive: { color: staticTheme.upvote },
+  voteCountNegative: { color: staticTheme.downvote },
 
   // Comments Section
   commentsSection: {
     marginTop: 28,
     borderTopWidth: 1,
-    borderTopColor: theme.border,
     paddingTop: 20,
   },
   commentsSectionHeader: {
@@ -820,12 +768,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   commentsSectionTitle: {
-    ...typography.subtitle,
     fontSize: 18,
+    fontWeight: '700',
     flex: 1,
   },
   commentCountBadge: {
-    backgroundColor: theme.accent,
     borderRadius: theme.radiusFull,
     paddingHorizontal: 10,
     paddingVertical: 3,
@@ -843,17 +790,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: `${theme.accent}15`,
-    borderRadius: theme.radiusSmall,
+    borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 8,
     borderLeftWidth: 3,
-    borderLeftColor: theme.accent,
   },
   replyIndicatorText: {
-    ...typography.small,
-    color: theme.accent,
+    fontSize: 12,
     flex: 1,
     fontWeight: '600',
   },
@@ -873,21 +817,17 @@ const styles = StyleSheet.create({
   },
   commentTextInput: {
     flex: 1,
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusMedium,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 14,
-    color: theme.textPrimary,
     borderWidth: 1,
-    borderColor: theme.border,
     maxHeight: 100,
   },
   commentSendBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: theme.accent,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
@@ -902,8 +842,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   commentsLoadingText: {
-    ...typography.caption,
-    color: theme.textMuted,
+    fontSize: 13,
   },
 
   // No comments
@@ -913,12 +852,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   noCommentsTitle: {
-    ...typography.bodyBold,
-    color: theme.textSecondary,
+    fontSize: 15,
+    fontWeight: '600',
   },
   noCommentsText: {
-    ...typography.caption,
-    color: theme.textMuted,
+    fontSize: 13,
   },
 
   // Comment card
@@ -927,16 +865,10 @@ const styles = StyleSheet.create({
   },
   commentCard: {
     flexDirection: 'row',
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusMedium,
+    borderRadius: 12,
     padding: 12,
     marginBottom: 6,
     borderWidth: 1,
-    borderColor: theme.border,
-  },
-  commentCardReply: {
-    backgroundColor: theme.surfaceElevated,
-    borderColor: theme.borderLight,
   },
   commentAvatar: {
     width: 28,
@@ -961,20 +893,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   commentUsername: {
-    ...typography.captionBold,
-    color: theme.textPrimary,
     fontSize: 13,
+    fontWeight: '600',
   },
   commentTime: {
-    ...typography.small,
-    color: theme.textMuted,
     fontSize: 10,
   },
   commentContent: {
-    ...typography.body,
     fontSize: 14,
     lineHeight: 20,
-    color: theme.textSecondary,
   },
   commentActions: {
     flexDirection: 'row',
@@ -987,8 +914,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   commentActionText: {
-    ...typography.small,
-    color: theme.textMuted,
     fontSize: 11,
     fontWeight: '600',
   },
@@ -1003,15 +928,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   showMoreText: {
-    ...typography.captionBold,
-    color: theme.accent,
+    fontSize: 13,
+    fontWeight: '600',
   },
 
   // Report Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
   modalContent: {
-    backgroundColor: theme.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '80%',
@@ -1019,7 +943,7 @@ const styles = StyleSheet.create({
   },
   modalHandle: {
     width: 40, height: 4, borderRadius: 2,
-    backgroundColor: theme.borderLight,
+    backgroundColor: 'rgba(128,128,128,0.3)',
     alignSelf: 'center', marginBottom: 16,
   },
   modalHeader: {
@@ -1028,77 +952,63 @@ const styles = StyleSheet.create({
   },
   modalHeaderIcon: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: `${theme.error}15`,
     alignItems: 'center', justifyContent: 'center',
   },
   modalHeaderText: { flex: 1 },
-  modalTitle: { ...typography.subtitle, fontSize: 18 },
-  modalSubtitle: { ...typography.caption, marginTop: 2 },
+  modalTitle: { fontSize: 18, fontWeight: '700' },
+  modalSubtitle: { fontSize: 13, marginTop: 2 },
   modalCloseBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: theme.surface,
     alignItems: 'center', justifyContent: 'center',
   },
   modalScroll: { paddingHorizontal: 20 },
 
   reasonLabel: {
-    ...typography.captionBold, color: theme.textMuted,
+    fontSize: 13, fontWeight: '600',
     textTransform: 'uppercase', letterSpacing: 1,
     marginBottom: 10,
   },
   reasonRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusMedium,
+    borderRadius: 12,
     padding: 14, marginBottom: 8, gap: 12,
-    borderWidth: 1, borderColor: theme.border,
-  },
-  reasonRowSelected: {
-    borderColor: `${theme.error}50`,
-    backgroundColor: `${theme.error}08`,
+    borderWidth: 1,
   },
   reasonIcon: {
     width: 36, height: 36, borderRadius: 10,
-    backgroundColor: theme.surfaceElevated,
     alignItems: 'center', justifyContent: 'center',
   },
-  reasonIconSelected: {
-    backgroundColor: `${theme.error}15`,
-  },
-  reasonText: { ...typography.bodyBold, fontSize: 15, flex: 1 },
-  reasonTextSelected: { color: theme.error },
+  reasonText: { fontSize: 15, fontWeight: '600', flex: 1 },
   reasonRadio: {
     width: 20, height: 20, borderRadius: 10,
-    borderWidth: 2, borderColor: theme.borderLight,
+    borderWidth: 2,
   },
 
   detailsLabel: {
-    ...typography.captionBold, color: theme.textMuted,
+    fontSize: 13, fontWeight: '600',
     textTransform: 'uppercase', letterSpacing: 1,
     marginTop: 12, marginBottom: 8,
   },
   detailsInput: {
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusMedium,
-    padding: 14, fontSize: 15, color: theme.textPrimary,
-    borderWidth: 1, borderColor: theme.border,
+    borderRadius: 12,
+    padding: 14, fontSize: 15,
+    borderWidth: 1,
     minHeight: 80,
   },
-  detailsCount: { ...typography.small, textAlign: 'right', marginTop: 4, marginBottom: 16 },
+  detailsCount: { fontSize: 12, textAlign: 'right', marginTop: 4, marginBottom: 16 },
 
   submitReportBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8,
-    backgroundColor: theme.error,
-    borderRadius: theme.radiusMedium,
+    borderRadius: 12,
     paddingVertical: 16,
     marginBottom: 12,
   },
   submitReportBtnDisabled: { opacity: 0.4 },
-  submitReportText: { ...typography.button, color: '#fff', fontSize: 16 },
+  submitReportText: { fontSize: 16, fontWeight: '700', color: '#fff' },
 
   reportDisclaimer: {
-    ...typography.small, color: theme.textMuted,
+    fontSize: 12,
     textAlign: 'center', lineHeight: 16,
     marginBottom: 8,
   },
