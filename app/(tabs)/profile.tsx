@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -17,7 +17,7 @@ export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const { showAlert } = useAlert();
   const { colors: t, typo } = useAppTheme();
-  const { currentUser, getUserObjects, objects, loading } = useApp();
+  const { currentUser, getUserObjects, objects, loading, refreshing, refreshObjects } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor } = useAccessibility();
   const userObjects = useMemo(() => getUserObjects(currentUser.id), [currentUser.id, getUserObjects]);
 
@@ -47,7 +47,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshObjects} tintColor={t.primary} colors={[t.primary]} />}>
         <View style={styles.headerRow}>
           <Text style={[styles.pageTitle, { color: t.textPrimary }]}>Profile</Text>
           <View style={styles.headerActions}>
