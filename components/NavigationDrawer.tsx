@@ -9,17 +9,14 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withSpring,
-  runOnJS,
   Easing,
-  FadeIn,
-  FadeInLeft,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme, typography } from '../constants/theme';
 import { config } from '../constants/config';
 import { useApp } from '../contexts/AppContext';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAccessibility } from '../hooks/useAccessibility';
+import { useAppTheme } from '../hooks/useTheme';
 
 const SCREEN_W = Dimensions.get('window').width;
 const DRAWER_W = Math.min(SCREEN_W * 0.82, 340);
@@ -46,9 +43,10 @@ interface NavSection {
 export default function NavigationDrawer({ visible, onClose }: NavigationDrawerProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors: t, typo } = useAppTheme();
   const { currentUser } = useApp();
   const { unreadCount } = useNotifications();
-  const { activeCount: a11yActiveCount, triggerHaptic, scaledSize, fontWeight: fw, shouldAnimate, settings: a11ySettings } = useAccessibility();
+  const { activeCount: a11yActiveCount, triggerHaptic } = useAccessibility();
 
   const translateX = useSharedValue(-DRAWER_W);
   const backdropOpacity = useSharedValue(0);
@@ -63,30 +61,19 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
     }
   }, [visible]);
 
-  // Handle Android back button
   useEffect(() => {
     if (!visible) return;
-    const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-      onClose();
-      return true;
-    });
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => { onClose(); return true; });
     return () => handler.remove();
   }, [visible, onClose]);
 
-  const drawerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-
-  const backdropStyle = useAnimatedStyle(() => ({
-    opacity: backdropOpacity.value,
-  }));
+  const drawerStyle = useAnimatedStyle(() => ({ transform: [{ translateX: translateX.value }] }));
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropOpacity.value }));
 
   const handleNavigate = useCallback((route: string) => {
     Haptics.selectionAsync();
     onClose();
-    setTimeout(() => {
-      router.push(route as any);
-    }, 180);
+    setTimeout(() => { router.push(route as any); }, 180);
   }, [onClose, router]);
 
   const sections: NavSection[] = [
@@ -102,12 +89,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
       title: 'Community',
       items: [
         { icon: 'emoji-events', label: 'Leaderboard', route: '/leaderboard' },
-        {
-          icon: 'notifications',
-          label: 'Notifications',
-          route: '/notifications',
-          badge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount) : undefined,
-        },
+        { icon: 'notifications', label: 'Notifications', route: '/notifications', badge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount) : undefined },
       ],
     },
     {
@@ -122,7 +104,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
     {
       title: 'About',
       items: [
-        { icon: 'auto-stories', label: 'Our Story', route: '/our-story', color: theme.primary },
+        { icon: 'auto-stories', label: 'Our Story', route: '/our-story', color: t.primary },
         { icon: 'gavel', label: 'Community Guidelines', route: '/community-guidelines' },
         { icon: 'description', label: 'Terms of Service', route: '/terms' },
         { icon: 'privacy-tip', label: 'Privacy Policy', route: '/privacy' },
@@ -137,95 +119,59 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {/* Backdrop */}
       <Animated.View style={[styles.backdrop, backdropStyle]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
 
-      {/* Drawer */}
-      <Animated.View style={[styles.drawer, drawerStyle, { width: DRAWER_W, paddingTop: insets.top + 8 }]}>
-        {/* Profile Header */}
-        <Pressable
-          style={styles.profileSection}
-          onPress={() => handleNavigate('/(tabs)/profile')}
-        >
-          <View style={styles.avatarWrap}>
+      <Animated.View style={[styles.drawer, drawerStyle, { width: DRAWER_W, paddingTop: insets.top + 8, backgroundColor: t.background, borderRightColor: t.border }]}>
+        <Pressable style={[styles.profileSection, { borderBottomColor: t.border }]} onPress={() => handleNavigate('/(tabs)/profile')}>
+          <View style={[styles.avatarWrap, { borderColor: t.border }]}>
             <Image source={{ uri: currentUser.avatar }} style={styles.avatar} contentFit="cover" />
           </View>
           <View style={styles.profileInfo}>
-            <View style={styles.profileNameRow}>
-              <Text style={styles.profileName} numberOfLines={1}>{displayName}</Text>
-
-            </View>
-            {displayUsername ? (
-              <Text style={styles.profileUsername} numberOfLines={1}>{displayUsername}</Text>
-            ) : null}
+            <Text style={[styles.profileName, { color: t.textPrimary }]} numberOfLines={1}>{displayName}</Text>
+            {displayUsername ? <Text style={[styles.profileUsername, { color: t.textSecondary }]} numberOfLines={1}>{displayUsername}</Text> : null}
           </View>
-          <MaterialIcons name="chevron-right" size={20} color={theme.textMuted} />
+          <MaterialIcons name="chevron-right" size={20} color={t.textMuted} />
         </Pressable>
 
-        {/* Stats row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{currentUser.totalSubmissions}</Text>
-            <Text style={styles.statLabel}>Objects</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{currentUser.totalVotesReceived}</Text>
-            <Text style={styles.statLabel}>Votes</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{currentUser.totalSubmissions + (currentUser.totalVotesReceived || 0)}</Text>
-            <Text style={styles.statLabel}>Activity</Text>
-          </View>
+        <View style={[styles.statsRow, { borderBottomColor: t.border }]}>
+          <View style={styles.statItem}><Text style={[styles.statValue, { color: t.primary }]}>{currentUser.totalSubmissions}</Text><Text style={[styles.statLabel, { color: t.textMuted }]}>Objects</Text></View>
+          <View style={[styles.statDivider, { backgroundColor: t.border }]} />
+          <View style={styles.statItem}><Text style={[styles.statValue, { color: t.primary }]}>{currentUser.totalVotesReceived}</Text><Text style={[styles.statLabel, { color: t.textMuted }]}>Votes</Text></View>
+          <View style={[styles.statDivider, { backgroundColor: t.border }]} />
+          <View style={styles.statItem}><Text style={[styles.statValue, { color: t.primary }]}>{currentUser.totalSubmissions + (currentUser.totalVotesReceived || 0)}</Text><Text style={[styles.statLabel, { color: t.textMuted }]}>Activity</Text></View>
         </View>
 
-        {/* Navigation Sections */}
-        <Animated.ScrollView
-          style={styles.navScroll}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-          showsVerticalScrollIndicator={false}
-        >
+        <Animated.ScrollView style={styles.navScroll} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
           {sections.map((section) => (
             <View key={section.title} style={styles.navSection}>
-              <Text style={styles.navSectionTitle}>{section.title}</Text>
+              <Text style={[styles.navSectionTitle, { color: t.textMuted }]}>{section.title}</Text>
               {section.items.map((item) => (
                 <Pressable
                   key={item.label}
-                  style={({ pressed }) => [styles.navItem, pressed && styles.navItemPressed]}
-                  onPress={() => {
-                    if (item.onPress) {
-                      triggerHaptic('selection');
-                      item.onPress();
-                    } else if (item.route) {
-                      handleNavigate(item.route);
-                    }
-                  }}
+                  style={({ pressed }) => [styles.navItem, pressed && { backgroundColor: t.surface }]}
+                  onPress={() => { if (item.onPress) { triggerHaptic('selection'); item.onPress(); } else if (item.route) { handleNavigate(item.route); } }}
                 >
-                  <View style={[styles.navIcon, { backgroundColor: `${item.color || theme.accent}12` }]}>
-                    <MaterialIcons name={item.icon} size={19} color={item.color || theme.accent} />
+                  <View style={[styles.navIcon, { backgroundColor: `${item.color || t.accent}12` }]}>
+                    <MaterialIcons name={item.icon} size={19} color={item.color || t.accent} />
                   </View>
-                  <Text style={styles.navLabel} numberOfLines={1}>{item.label}</Text>
+                  <Text style={[styles.navLabel, { color: t.textPrimary }]} numberOfLines={1}>{item.label}</Text>
                   {item.badge ? (
-                    <View style={[styles.navBadge, typeof item.badge === 'string' && item.badge === 'PRO' && styles.navBadgePro]}>
-                      <Text style={[styles.navBadgeText, typeof item.badge === 'string' && item.badge === 'PRO' && styles.navBadgeTextPro]}>
-                        {item.badge}
-                      </Text>
+                    <View style={[styles.navBadge, typeof item.badge === 'string' && item.badge === 'PRO' && { backgroundColor: t.primary }]}>
+                      <Text style={styles.navBadgeText}>{item.badge}</Text>
                     </View>
                   ) : (
-                    <MaterialIcons name="chevron-right" size={18} color={theme.textMuted} style={{ opacity: 0.5 }} />
+                    <MaterialIcons name="chevron-right" size={18} color={t.textMuted} style={{ opacity: 0.5 }} />
                   )}
                 </Pressable>
               ))}
             </View>
           ))}
 
-          {/* Footer */}
           <View style={styles.drawerFooter}>
-            <Text style={styles.footerAppName}>{config.appName}</Text>
-            <Text style={styles.footerVersion}>v{config.version}</Text>
+            <Text style={[styles.footerAppName, { color: t.primary }]}>{config.appName}</Text>
+            <Text style={[styles.footerVersion, { color: t.textMuted }]}>v{config.version}</Text>
           </View>
         </Animated.ScrollView>
       </Animated.View>
@@ -234,176 +180,36 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
   drawer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    backgroundColor: theme.background,
+    position: 'absolute', top: 0, left: 0, bottom: 0,
     borderRightWidth: 1,
-    borderRightColor: theme.border,
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.35, shadowRadius: 16 },
       android: { elevation: 16 },
       default: {},
     }),
   },
-
-  // Profile
-  profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  avatarWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: theme.border,
-    overflow: 'hidden',
-  },
-  avatarWrapPremium: {
-    borderColor: theme.primary,
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  profileName: {
-    ...typography.bodyBold,
-    fontSize: 16,
-  },
-  profileUsername: {
-    ...typography.small,
-    color: theme.textSecondary,
-    marginTop: 2,
-  },
-
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    ...typography.bodyBold,
-    fontSize: 15,
-    color: theme.primary,
-  },
-  statLabel: {
-    ...typography.small,
-    color: theme.textMuted,
-    fontSize: 10,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: theme.border,
-  },
-
-  // Nav
-  navScroll: {
-    flex: 1,
-  },
-  navSection: {
-    paddingTop: 16,
-    paddingHorizontal: 12,
-  },
-  navSectionTitle: {
-    ...typography.captionBold,
-    color: theme.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    fontSize: 10,
-    marginBottom: 6,
-    marginLeft: 8,
-  },
-  navItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 11,
-    paddingHorizontal: 8,
-    borderRadius: theme.radiusMedium,
-    gap: 12,
-  },
-  navItemPressed: {
-    backgroundColor: theme.surface,
-  },
-  navIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navLabel: {
-    ...typography.body,
-    fontSize: 14,
-    fontWeight: '500',
-    flex: 1,
-  },
-  navBadge: {
-    backgroundColor: theme.error,
-    borderRadius: theme.radiusFull,
-    minWidth: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 7,
-  },
-  navBadgePro: {
-    backgroundColor: theme.primary,
-  },
-  navBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#fff',
-  },
-  navBadgeTextPro: {
-    color: theme.background,
-  },
-
-  // Footer
-  drawerFooter: {
-    alignItems: 'center',
-    paddingTop: 24,
-    paddingBottom: 8,
-    gap: 2,
-  },
-  footerAppName: {
-    ...typography.captionBold,
-    color: theme.primary,
-    fontSize: 13,
-  },
-  footerVersion: {
-    ...typography.small,
-    color: theme.textMuted,
-    fontSize: 10,
-  },
+  profileSection: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, gap: 12, borderBottomWidth: 1 },
+  avatarWrap: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, overflow: 'hidden' },
+  avatar: { width: '100%', height: '100%' },
+  profileInfo: { flex: 1 },
+  profileName: { fontSize: 16, fontWeight: '600' },
+  profileUsername: { fontSize: 11, fontWeight: '500', marginTop: 2 },
+  statsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, paddingHorizontal: 20, borderBottomWidth: 1 },
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 15, fontWeight: '600' },
+  statLabel: { fontSize: 10, fontWeight: '500', marginTop: 2 },
+  statDivider: { width: 1, height: 24 },
+  navScroll: { flex: 1 },
+  navSection: { paddingTop: 16, paddingHorizontal: 12 },
+  navSectionTitle: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6, marginLeft: 8 },
+  navItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, paddingHorizontal: 8, borderRadius: 12, gap: 12 },
+  navIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  navLabel: { fontSize: 14, fontWeight: '500', flex: 1 },
+  navBadge: { backgroundColor: '#EF4444', borderRadius: 9999, minWidth: 22, height: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 7 },
+  navBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
+  drawerFooter: { alignItems: 'center', paddingTop: 24, paddingBottom: 8, gap: 2 },
+  footerAppName: { fontSize: 13, fontWeight: '600' },
+  footerVersion: { fontSize: 10, fontWeight: '500' },
 });

@@ -6,7 +6,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { theme, typography } from '../constants/theme';
 import {
   LeaderboardEntry,
   CommunityStats,
@@ -15,6 +14,7 @@ import {
   fetchTopNamers,
   fetchMostVotedUsers,
 } from '../services/communityService';
+import { useAppTheme } from '../hooks/useTheme';
 
 type LeaderboardTab = 'contributors' | 'namers' | 'popular';
 
@@ -27,6 +27,7 @@ const TABS: { key: LeaderboardTab; label: string; icon: keyof typeof MaterialIco
 export default function LeaderboardScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors: t, typo } = useAppTheme();
 
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('contributors');
   const [stats, setStats] = useState<CommunityStats | null>(null);
@@ -36,88 +37,46 @@ export default function LeaderboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadAll();
-  }, []);
+  useEffect(() => { loadAll(); }, []);
 
   const loadAll = async () => {
     setLoading(true);
-    const [s, c, n, p] = await Promise.all([
-      fetchCommunityStats(),
-      fetchTopContributors(10),
-      fetchTopNamers(10),
-      fetchMostVotedUsers(10),
-    ]);
-    setStats(s);
-    setContributors(c);
-    setNamers(n);
-    setPopular(p);
-    setLoading(false);
+    const [s, c, n, p] = await Promise.all([fetchCommunityStats(), fetchTopContributors(10), fetchTopNamers(10), fetchMostVotedUsers(10)]);
+    setStats(s); setContributors(c); setNamers(n); setPopular(p); setLoading(false);
   };
 
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadAll();
-    setRefreshing(false);
-  }, []);
+  const handleRefresh = useCallback(async () => { setRefreshing(true); await loadAll(); setRefreshing(false); }, []);
 
   const getActiveList = (): LeaderboardEntry[] => {
-    switch (activeTab) {
-      case 'contributors': return contributors;
-      case 'namers': return namers;
-      case 'popular': return popular;
-    }
+    switch (activeTab) { case 'contributors': return contributors; case 'namers': return namers; case 'popular': return popular; }
   };
 
   const getScoreLabel = (): string => {
-    switch (activeTab) {
-      case 'contributors': return 'objects';
-      case 'namers': return 'names';
-      case 'popular': return 'votes';
-    }
+    switch (activeTab) { case 'contributors': return 'objects'; case 'namers': return 'names'; case 'popular': return 'votes'; }
   };
 
   const renderPodium = (list: LeaderboardEntry[]) => {
     if (list.length < 1) return null;
     const top3 = list.slice(0, 3);
-    const podiumOrder = top3.length >= 3
-      ? [top3[1], top3[0], top3[2]]
-      : top3.length === 2
-        ? [top3[1], top3[0]]
-        : [top3[0]];
-
+    const podiumOrder = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3.length === 2 ? [top3[1], top3[0]] : [top3[0]];
     return (
       <Animated.View entering={FadeIn.duration(500)} style={styles.podiumSection}>
         <View style={styles.podiumRow}>
-          {podiumOrder.map((entry, idx) => {
+          {podiumOrder.map((entry) => {
             const isFirst = entry.rank === 1;
             const avatarSize = isFirst ? 68 : 54;
             const podiumHeight = isFirst ? 90 : entry.rank === 2 ? 68 : 52;
-
             return (
-              <Pressable
-                key={entry.user.id}
-                style={styles.podiumItem}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  router.push(`/user/${entry.user.id}`);
-                }}
-              >
-                <View style={[styles.podiumAvatarWrap, isFirst && styles.podiumAvatarFirst]}>
+              <Pressable key={entry.user.id} style={styles.podiumItem} onPress={() => { Haptics.selectionAsync(); router.push(`/user/${entry.user.id}`); }}>
+                <View style={styles.podiumAvatarWrap}>
                   <Image source={{ uri: entry.user.avatar }} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }} contentFit="cover" />
-                  <View style={[styles.rankBadge, isFirst && styles.rankBadgeFirst]}>
-                    {isFirst ? (
-                      <MaterialIcons name="emoji-events" size={12} color={theme.background} />
-                    ) : (
-                      <Text style={styles.rankBadgeText}>{entry.rank}</Text>
-                    )}
+                  <View style={[styles.rankBadge, isFirst && { backgroundColor: t.primary }]}>
+                    {isFirst ? <MaterialIcons name="emoji-events" size={12} color={t.background} /> : <Text style={styles.rankBadgeText}>{entry.rank}</Text>}
                   </View>
                 </View>
-                <Text style={[styles.podiumName, isFirst && styles.podiumNameFirst]} numberOfLines={1}>
-                  {entry.user.displayName}
-                </Text>
-                <Text style={styles.podiumScore}>{entry.score} {getScoreLabel()}</Text>
-                <View style={[styles.podiumBar, { height: podiumHeight }, isFirst && styles.podiumBarFirst]} />
+                <Text style={[styles.podiumName, { color: t.textPrimary }, isFirst && { color: t.primary }]} numberOfLines={1}>{entry.user.displayName}</Text>
+                <Text style={[styles.podiumScore, { color: t.textSecondary }]}>{entry.score} {getScoreLabel()}</Text>
+                <View style={[styles.podiumBar, { height: podiumHeight, backgroundColor: t.surface, borderColor: t.border }, isFirst && { backgroundColor: 'rgba(255,215,0,0.08)', borderColor: 'rgba(255,215,0,0.25)' }]} />
               </Pressable>
             );
           })}
@@ -129,100 +88,72 @@ export default function LeaderboardScreen() {
   const list = getActiveList();
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
       <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={22} color={theme.textPrimary} />
+        <Pressable style={[styles.backBtn, { backgroundColor: t.surface }]} onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back" size={22} color={t.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Community</Text>
+        <Text style={[styles.headerTitle, { color: t.textPrimary }]}>Community</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.primary} colors={[theme.primary]} />
-        }
-      >
-        {/* Community Stats Banner */}
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={t.primary} colors={[t.primary]} />}>
+        
         {stats ? (
-          <Animated.View entering={FadeInDown.duration(400)} style={styles.statsBanner}>
+          <Animated.View entering={FadeInDown.duration(400)} style={[styles.statsBanner, { backgroundColor: t.surface, borderColor: t.border }]}>
             <View style={styles.statsRow}>
               {[
                 { value: stats.totalUsers, label: 'Members', icon: 'people' as const },
                 { value: stats.totalObjects, label: 'Objects', icon: 'camera-alt' as const },
                 { value: stats.totalNames, label: 'Names', icon: 'label' as const },
                 { value: stats.totalVotes, label: 'Votes', icon: 'how-to-vote' as const },
-              ].map((s, i) => (
+              ].map((s) => (
                 <View key={s.label} style={styles.statsItem}>
-                  <MaterialIcons name={s.icon} size={18} color={theme.primary} />
-                  <Text style={styles.statsValue}>{s.value.toLocaleString()}</Text>
-                  <Text style={styles.statsLabel}>{s.label}</Text>
+                  <MaterialIcons name={s.icon} size={18} color={t.primary} />
+                  <Text style={[styles.statsValue, { color: t.textPrimary }]}>{s.value.toLocaleString()}</Text>
+                  <Text style={[styles.statsLabel, { color: t.textMuted }]}>{s.label}</Text>
                 </View>
               ))}
             </View>
           </Animated.View>
         ) : null}
 
-        {/* Tabs */}
         <View style={styles.tabRow}>
           {TABS.map((tab) => {
             const active = activeTab === tab.key;
             return (
-              <Pressable
-                key={tab.key}
-                style={[styles.tab, active && styles.tabActive]}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setActiveTab(tab.key);
-                }}
-              >
-                <MaterialIcons name={tab.icon} size={16} color={active ? theme.background : theme.textSecondary} />
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab.label}</Text>
+              <Pressable key={tab.key} style={[styles.tab, { backgroundColor: t.surface, borderColor: t.border }, active && { backgroundColor: t.primary, borderColor: t.primary }]} onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.key); }}>
+                <MaterialIcons name={tab.icon} size={16} color={active ? t.background : t.textSecondary} />
+                <Text style={[styles.tabText, { color: t.textSecondary }, active && { color: t.background }]}>{tab.label}</Text>
               </Pressable>
             );
           })}
         </View>
 
         {loading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={theme.primary} />
-          </View>
+          <View style={styles.loadingWrap}><ActivityIndicator size="large" color={t.primary} /></View>
         ) : list.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialIcons name="emoji-events" size={48} color={theme.textMuted} />
-            <Text style={styles.emptyTitle}>No rankings yet</Text>
-            <Text style={styles.emptySubtitle}>Be the first to contribute to the community!</Text>
+            <MaterialIcons name="emoji-events" size={48} color={t.textMuted} />
+            <Text style={[styles.emptyTitle, { color: t.textPrimary }]}>No rankings yet</Text>
+            <Text style={[styles.emptySubtitle, { color: t.textSecondary }]}>Be the first to contribute to the community!</Text>
           </View>
         ) : (
           <View style={styles.listContent}>
             {renderPodium(list)}
-
-            {/* Rest of the list (rank 4+) */}
             {list.slice(3).map((entry, idx) => (
               <Animated.View key={entry.user.id} entering={FadeInDown.delay(idx * 50).duration(300)}>
-                <Pressable
-                  style={styles.listRow}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    router.push(`/user/${entry.user.id}`);
-                  }}
-                >
-                  <Text style={styles.listRank}>{entry.rank}</Text>
+                <Pressable style={[styles.listRow, { backgroundColor: t.surface, borderColor: t.border }]} onPress={() => { Haptics.selectionAsync(); router.push(`/user/${entry.user.id}`); }}>
+                  <Text style={[styles.listRank, { color: t.textMuted }]}>{entry.rank}</Text>
                   <Image source={{ uri: entry.user.avatar }} style={styles.listAvatar} contentFit="cover" />
                   <View style={styles.listInfo}>
-                    <View style={styles.listNameRow}>
-                      <Text style={styles.listName} numberOfLines={1}>{entry.user.displayName}</Text>
-                      {entry.user.isPremium ? (
-                        <MaterialIcons name="verified" size={14} color={theme.primary} />
-                      ) : null}
-                    </View>
-                    <Text style={styles.listUsername}>@{entry.user.username}</Text>
+                    <Text style={[styles.listName, { color: t.textPrimary }]} numberOfLines={1}>{entry.user.displayName}</Text>
+                    <Text style={[styles.listUsername, { color: t.textSecondary }]}>@{entry.user.username}</Text>
                   </View>
                   <View style={styles.listScoreWrap}>
-                    <Text style={styles.listScore}>{entry.score}</Text>
-                    <Text style={styles.listScoreLabel}>{getScoreLabel()}</Text>
+                    <Text style={[styles.listScore, { color: t.primary }]}>{entry.score}</Text>
+                    <Text style={[styles.listScoreLabel, { color: t.textMuted }]}>{getScoreLabel()}</Text>
                   </View>
                 </Pressable>
               </Animated.View>
@@ -235,93 +166,39 @@ export default function LeaderboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10,
-  },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: theme.surface,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  headerTitle: { ...typography.bodyBold, fontSize: 17 },
-
-  statsBanner: {
-    marginHorizontal: 16, marginBottom: 16,
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusLarge,
-    padding: 16,
-    borderWidth: 1, borderColor: theme.border,
-  },
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '600' },
+  statsBanner: { marginHorizontal: 16, marginBottom: 16, borderRadius: 16, padding: 16, borderWidth: 1 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   statsItem: { alignItems: 'center', gap: 4 },
-  statsValue: { ...typography.cardValue, fontSize: 18 },
-  statsLabel: { ...typography.small },
-
-  tabRow: {
-    flexDirection: 'row', gap: 8,
-    marginHorizontal: 16, marginBottom: 20,
-  },
-  tab: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 10,
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusMedium,
-    borderWidth: 1, borderColor: theme.border,
-  },
-  tabActive: { backgroundColor: theme.primary, borderColor: theme.primary },
-  tabText: { ...typography.captionBold, color: theme.textSecondary },
-  tabTextActive: { color: theme.background },
-
+  statsValue: { fontSize: 18, fontWeight: '700' },
+  statsLabel: { fontSize: 11, fontWeight: '500' },
+  tabRow: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginBottom: 20 },
+  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
+  tabText: { fontSize: 13, fontWeight: '600' },
   loadingWrap: { alignItems: 'center', paddingVertical: 60 },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 10 },
-  emptyTitle: { ...typography.bodyBold },
-  emptySubtitle: { ...typography.caption, textAlign: 'center' },
-
+  emptyTitle: { fontSize: 15, fontWeight: '600' },
+  emptySubtitle: { fontSize: 13, fontWeight: '400', textAlign: 'center' },
   listContent: { paddingHorizontal: 16 },
-
-  // Podium
   podiumSection: { marginBottom: 24 },
   podiumRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 12 },
   podiumItem: { alignItems: 'center', width: 100 },
   podiumAvatarWrap: { position: 'relative', marginBottom: 8 },
-  podiumAvatarFirst: { marginBottom: 10 },
-  rankBadge: {
-    position: 'absolute', bottom: -4, right: -4,
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: theme.accent,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: theme.background,
-  },
-  rankBadgeFirst: { backgroundColor: theme.primary },
+  rankBadge: { position: 'absolute', bottom: -4, right: -4, width: 22, height: 22, borderRadius: 11, backgroundColor: '#7C5CFC', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
   rankBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
-  podiumName: { ...typography.captionBold, textAlign: 'center', marginBottom: 2 },
-  podiumNameFirst: { color: theme.primary },
-  podiumScore: { ...typography.small, color: theme.textSecondary, marginBottom: 6 },
-  podiumBar: {
-    width: '100%', backgroundColor: theme.surface,
-    borderTopLeftRadius: theme.radiusMedium, borderTopRightRadius: theme.radiusMedium,
-    borderWidth: 1, borderBottomWidth: 0, borderColor: theme.border,
-  },
-  podiumBarFirst: { backgroundColor: 'rgba(255,215,0,0.08)', borderColor: 'rgba(255,215,0,0.25)' },
-
-  // List rows (rank 4+)
-  listRow: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusMedium,
-    padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: theme.border,
-    gap: 12,
-  },
-  listRank: { ...typography.captionBold, color: theme.textMuted, width: 24, textAlign: 'center' },
+  podiumName: { fontSize: 13, fontWeight: '600', textAlign: 'center', marginBottom: 2 },
+  podiumScore: { fontSize: 11, fontWeight: '500', marginBottom: 6 },
+  podiumBar: { width: '100%', borderTopLeftRadius: 12, borderTopRightRadius: 12, borderWidth: 1, borderBottomWidth: 0 },
+  listRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, gap: 12 },
+  listRank: { fontSize: 13, fontWeight: '600', width: 24, textAlign: 'center' },
   listAvatar: { width: 40, height: 40, borderRadius: 20 },
   listInfo: { flex: 1 },
-  listNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  listName: { ...typography.bodyBold, fontSize: 15, flex: 1 },
-  listUsername: { ...typography.small, color: theme.textSecondary, marginTop: 2 },
+  listName: { fontSize: 15, fontWeight: '600', flex: 1 },
+  listUsername: { fontSize: 11, fontWeight: '500', marginTop: 2 },
   listScoreWrap: { alignItems: 'flex-end' },
-  listScore: { ...typography.bodyBold, color: theme.primary, fontSize: 18 },
-  listScoreLabel: { ...typography.small, color: theme.textMuted },
+  listScore: { fontSize: 18, fontWeight: '600' },
+  listScoreLabel: { fontSize: 11, fontWeight: '500' },
 });

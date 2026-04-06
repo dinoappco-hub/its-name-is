@@ -6,9 +6,8 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth, useAlert } from '@/template';
-import { theme, typography } from '../constants/theme';
 import { config } from '../constants/config';
-
+import { useAppTheme } from '../hooks/useTheme';
 
 interface SettingsItem {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -25,6 +24,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { showAlert } = useAlert();
   const { logout } = useAuth();
+  const { colors: t, typo, mode, isDark, toggleMode } = useAppTheme();
 
   const handleResetOnboarding = async () => {
     await AsyncStorage.removeItem('snapname_onboarded');
@@ -52,12 +52,28 @@ export default function SettingsScreen() {
     ]);
   };
 
-
   const handleContact = () => {
     Linking.openURL('mailto:support@itsnameis.app?subject=its%20name%20is.%20Support');
   };
 
   const sections: { title: string; items: SettingsItem[] }[] = [
+    {
+      title: 'Appearance',
+      items: [
+        {
+          icon: isDark ? 'dark-mode' : 'light-mode',
+          label: isDark ? 'Dark Mode' : 'Light Mode',
+          subtitle: `Tap to switch to ${isDark ? 'light' : 'dark'} mode`,
+          onPress: () => {
+            Haptics.selectionAsync();
+            toggleMode();
+          },
+          color: isDark ? '#7C5CFC' : '#F59E0B',
+          showChevron: false,
+          badge: isDark ? 'DARK' : 'LIGHT',
+        },
+      ],
+    },
     {
       title: 'Account',
       items: [
@@ -85,7 +101,7 @@ export default function SettingsScreen() {
           label: 'Our Story',
           subtitle: 'Why I built this app',
           onPress: () => router.push('/our-story'),
-          color: theme.primary,
+          color: t.primary,
           showChevron: true,
         },
       ],
@@ -119,7 +135,6 @@ export default function SettingsScreen() {
           onPress: handleRateApp,
           showChevron: true,
         },
-
         {
           icon: 'mail',
           label: 'Contact Support',
@@ -129,7 +144,6 @@ export default function SettingsScreen() {
         },
       ],
     },
-
     {
       title: 'Legal',
       items: [
@@ -161,7 +175,7 @@ export default function SettingsScreen() {
           label: 'Clear Local Data',
           subtitle: 'Reset app to default state',
           onPress: handleClearData,
-          color: theme.error,
+          color: t.error,
           showChevron: false,
         },
         {
@@ -181,7 +195,7 @@ export default function SettingsScreen() {
               },
             ]);
           },
-          color: theme.error,
+          color: t.error,
           showChevron: false,
         },
       ],
@@ -189,12 +203,12 @@ export default function SettingsScreen() {
   ];
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
       <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={22} color={theme.textPrimary} />
+        <Pressable style={[styles.backBtn, { backgroundColor: t.surface }]} onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back" size={22} color={t.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: t.textPrimary }]}>Settings</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -202,55 +216,53 @@ export default function SettingsScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {sections.map((section) => {
-          return (
-            <View key={section.title} style={styles.section}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
-              <View style={styles.sectionCard}>
-                {section.items.map((item, idx) => (
-                  <Pressable
-                    key={item.label}
-                    style={[
-                      styles.settingsRow,
-                      idx < section.items.length - 1 && styles.settingsRowBorder,
-                    ]}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      item.onPress();
-                    }}
-                  >
-                    <View style={[styles.settingsIcon, { backgroundColor: `${item.color || theme.accent}15` }]}>
-                      <MaterialIcons name={item.icon} size={20} color={item.color || theme.accent} />
-                    </View>
-                    <View style={styles.settingsContent}>
-                      <View style={styles.settingsLabelRow}>
-                        <Text style={[styles.settingsLabel, item.color === theme.error && { color: theme.error }]}>
-                          {item.label}
-                        </Text>
-                        {item.badge ? (
-                          <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{item.badge}</Text>
-                          </View>
-                        ) : null}
-                      </View>
-                      {item.subtitle ? (
-                        <Text style={styles.settingsSubtitle} numberOfLines={1}>{item.subtitle}</Text>
+        {sections.map((section) => (
+          <View key={section.title} style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: t.textMuted }]}>{section.title}</Text>
+            <View style={[styles.sectionCard, { backgroundColor: t.surface, borderColor: t.border }]}>
+              {section.items.map((item, idx) => (
+                <Pressable
+                  key={item.label}
+                  style={[
+                    styles.settingsRow,
+                    idx < section.items.length - 1 && [styles.settingsRowBorder, { borderBottomColor: t.border }],
+                  ]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    item.onPress();
+                  }}
+                >
+                  <View style={[styles.settingsIcon, { backgroundColor: `${item.color || t.accent}15` }]}>
+                    <MaterialIcons name={item.icon} size={20} color={item.color || t.accent} />
+                  </View>
+                  <View style={styles.settingsContent}>
+                    <View style={styles.settingsLabelRow}>
+                      <Text style={[styles.settingsLabel, { color: t.textPrimary }, item.color === t.error && { color: t.error }]}>
+                        {item.label}
+                      </Text>
+                      {item.badge ? (
+                        <View style={[styles.badge, { backgroundColor: t.primary }]}>
+                          <Text style={[styles.badgeText, { color: t.background }]}>{item.badge}</Text>
+                        </View>
                       ) : null}
                     </View>
-                    {item.showChevron ? (
-                      <MaterialIcons name="chevron-right" size={20} color={theme.textMuted} />
+                    {item.subtitle ? (
+                      <Text style={[styles.settingsSubtitle, { color: t.textSecondary }]} numberOfLines={1}>{item.subtitle}</Text>
                     ) : null}
-                  </Pressable>
-                ))}
-              </View>
+                  </View>
+                  {item.showChevron ? (
+                    <MaterialIcons name="chevron-right" size={20} color={t.textMuted} />
+                  ) : null}
+                </Pressable>
+              ))}
             </View>
-          );
-        })}
+          </View>
+        ))}
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>{config.appName}</Text>
-          <Text style={styles.footerVersion}>Version {config.version} · Build 1</Text>
-          <Text style={styles.footerCopy}>Made with passion</Text>
+          <Text style={[styles.footerText, { color: t.primary }]}>{config.appName}</Text>
+          <Text style={[styles.footerVersion, { color: t.textMuted }]}>Version {config.version} · Build 1</Text>
+          <Text style={[styles.footerCopy, { color: t.textMuted }]}>Made with passion</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -258,54 +270,24 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10,
-  },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: theme.surface,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  headerTitle: { ...typography.bodyBold, fontSize: 17 },
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '600' },
   section: { marginBottom: 24 },
-  sectionTitle: {
-    ...typography.captionBold, color: theme.textMuted,
-    textTransform: 'uppercase', letterSpacing: 1,
-    marginBottom: 8, marginLeft: 4,
-  },
-  sectionCard: {
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusLarge,
-    borderWidth: 1,
-    borderColor: theme.border,
-    overflow: 'hidden',
-  },
-  settingsRow: {
-    flexDirection: 'row', alignItems: 'center',
-    padding: 14, gap: 12,
-  },
-  settingsRowBorder: {
-    borderBottomWidth: 1, borderBottomColor: theme.border,
-  },
-  settingsIcon: {
-    width: 36, height: 36, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  sectionTitle: { fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
+  sectionCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
+  settingsRowBorder: { borderBottomWidth: 1 },
+  settingsIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   settingsContent: { flex: 1 },
   settingsLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  settingsLabel: { ...typography.bodyBold, fontSize: 15 },
-  settingsSubtitle: { ...typography.small, color: theme.textSecondary, marginTop: 2 },
-  badge: {
-    backgroundColor: theme.primary, borderRadius: theme.radiusFull,
-    paddingHorizontal: 8, paddingVertical: 2,
-  },
-  badgeText: { fontSize: 9, fontWeight: '800', color: theme.background },
+  settingsLabel: { fontSize: 15, fontWeight: '600' },
+  settingsSubtitle: { fontSize: 11, fontWeight: '500', marginTop: 2 },
+  badge: { borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 2 },
+  badgeText: { fontSize: 9, fontWeight: '800' },
   footer: { alignItems: 'center', paddingVertical: 32 },
-  footerText: { ...typography.bodyBold, color: theme.primary, marginBottom: 4 },
-  footerVersion: { ...typography.small, color: theme.textMuted, marginBottom: 4 },
-  footerCopy: { ...typography.small, color: theme.textMuted },
-
-
+  footerText: { fontSize: 15, fontWeight: '600', marginBottom: 4 },
+  footerVersion: { fontSize: 11, fontWeight: '500', marginBottom: 4 },
+  footerCopy: { fontSize: 11, fontWeight: '500' },
 });

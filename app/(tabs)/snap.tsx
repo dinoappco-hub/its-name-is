@@ -1,23 +1,25 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Dimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+import * as ImageManipulator from 'expo-image-manipulator';
 import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { useAlert } from '@/template';
-import { theme, typography } from '../../constants/theme';
 import { config, CATEGORIES } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
 import { useRouter } from 'expo-router';
+import { useAppTheme } from '../../hooks/useTheme';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 export default function SnapScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors: t, typo } = useAppTheme();
   const { addSubmission, submissionsToday } = useApp();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -38,8 +40,12 @@ export default function SnapScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [capturing, setCapturing] = useState(false);
 
+  // Crop/Edit state
+  const [rawImageUri, setRawImageUri] = useState<string | null>(null);
+  const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
+  const [processing, setProcessing] = useState(false);
+
   const openCamera = async () => {
-    // On web, use ImagePicker camera (browser webcam) since CameraView is native-only
     if (Platform.OS === 'web') {
       try {
         const camPerm = await ImagePicker.requestCameraPermissionsAsync();
@@ -74,14 +80,11 @@ export default function SnapScreen() {
     if (!cameraRef.current || capturing) return;
     setCapturing(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
-      });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
       if (photo?.uri) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setImageUri(photo.uri);
+        setRawImageUri(photo.uri);
         setShowCamera(false);
-        setSubmitted(false);
       }
     } catch {
       showAlert('Error', 'Failed to capture photo. Please try again.');
@@ -102,9 +105,9 @@ export default function SnapScreen() {
         showAlert('Permission needed', 'Gallery access is required to upload objects.');
         return;
       }
-      const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: true, aspect: [1, 1] });
+      const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: false });
       if (!result.canceled && result.assets[0]) {
-        setImageUri(result.assets[0].uri);
+        setRawImageUri(result.assets[0].uri);
         setShowCamera(false);
         setSubmitted(false);
         Haptics.selectionAsync();
@@ -112,6 +115,46 @@ export default function SnapScreen() {
     } catch {
       showAlert('Error', 'Could not access your photos.');
     }
+  };
+
+  // Crop actions
+  const handleCropConfirm = async () => {
+    if (!rawImageUri) return;
+    setProcessing(true);
+    try {
+      const result = await ImageManipulator.manipulateAsync(
+        rawImageUri,
+        [{ resize: { width: 1080 } }],
+        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      setImageUri(result.uri);
+      setRawImageUri(null);
+      setSubmitted(false);
+    } catch {
+      showAlert('Error', 'Failed to process image. Please try again.');
+    }
+    setProcessing(false);
+  };
+
+  const handleCropRetake = () => {
+    setRawImageUri(null);
+    openCamera();
+  };
+
+  const handleCropRotate = async () => {
+    if (!rawImageUri) return;
+    setProcessing(true);
+    try {
+      const result = await ImageManipulator.manipulateAsync(
+        rawImageUri,
+        [{ rotate: 90 }],
+        { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      setRawImageUri(result.uri);
+    } catch {
+      showAlert('Error', 'Failed to rotate image.');
+    }
+    setProcessing(false);
   };
 
   const handleSubmit = async () => {
@@ -141,35 +184,39 @@ export default function SnapScreen() {
 
   const resetForm = () => {
     setImageUri(null);
+    setRawImageUri(null);
     setName('');
     setDescription('');
     setCategory('random');
     setSubmitted(false);
   };
 
+  const styles = useMemo(() => createStyles(t, typo), [t, typo]);
+  const FRAME_SIZE = SCREEN_W * 0.65;
+
   // ─── Success Screen ───
   if (submitted) {
     return (
-      <SafeAreaView edges={['top']} style={styles.container}>
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
         <View style={styles.successContainer}>
           <Animated.View entering={ZoomIn.duration(500)}>
             <View style={styles.successIcon}>
-              <MaterialIcons name="check-circle" size={80} color={theme.success} />
+              <MaterialIcons name="check-circle" size={80} color={t.success} />
             </View>
           </Animated.View>
-          <Animated.Text entering={FadeInUp.delay(300)} style={styles.successTitle}>
+          <Animated.Text entering={FadeInUp.delay(300)} style={[styles.successTitle, { color: t.textPrimary }]}>
             Submitted!
           </Animated.Text>
-          <Animated.Text entering={FadeInUp.delay(450)} style={styles.successSubtitle}>
+          <Animated.Text entering={FadeInUp.delay(450)} style={[styles.successSubtitle, { color: t.textSecondary }]}>
             Your object is live. The community can now name it.
           </Animated.Text>
           <Animated.View entering={FadeInUp.delay(600)} style={styles.successActions}>
-            <Pressable style={styles.primaryBtn} onPress={resetForm}>
-              <MaterialIcons name="camera-alt" size={20} color={theme.background} />
-              <Text style={styles.primaryBtnText}>Snap Another</Text>
+            <Pressable style={[styles.primaryBtn, { backgroundColor: t.primary }]} onPress={resetForm}>
+              <MaterialIcons name="camera-alt" size={20} color={t.background} />
+              <Text style={[styles.primaryBtnText, { color: t.background }]}>Snap Another</Text>
             </Pressable>
-            <Pressable style={styles.secondaryBtn} onPress={() => router.navigate('/(tabs)')}>
-              <Text style={styles.secondaryBtnText}>View Feed</Text>
+            <Pressable style={[styles.secondaryBtn, { borderColor: t.border }]} onPress={() => router.navigate('/(tabs)')}>
+              <Text style={[styles.secondaryBtnText, { color: t.textSecondary }]}>View Feed</Text>
             </Pressable>
           </Animated.View>
         </View>
@@ -177,39 +224,110 @@ export default function SnapScreen() {
     );
   }
 
+  // ─── Crop/Edit Screen ───
+  if (rawImageUri) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        <SafeAreaView edges={['top']} style={styles.cropTopBar}>
+          <Pressable
+            style={styles.cropTopBtn}
+            onPress={() => { Haptics.selectionAsync(); setRawImageUri(null); }}
+          >
+            <MaterialIcons name="close" size={24} color="#fff" />
+          </Pressable>
+          <Text style={styles.cropTitle}>Adjust Photo</Text>
+          <View style={{ width: 44 }} />
+        </SafeAreaView>
+
+        <View style={styles.cropImageContainer}>
+          <Image
+            source={{ uri: rawImageUri }}
+            style={styles.cropImage}
+            contentFit="contain"
+            transition={200}
+          />
+          {processing ? (
+            <View style={styles.cropProcessingOverlay}>
+              <ActivityIndicator size="large" color={t.primary} />
+            </View>
+          ) : null}
+        </View>
+
+        {/* Edit Tools */}
+        <View style={styles.cropToolBar}>
+          <Pressable style={styles.cropToolBtn} onPress={handleCropRotate} disabled={processing}>
+            <MaterialIcons name="rotate-right" size={24} color="#fff" />
+            <Text style={styles.cropToolText}>Rotate</Text>
+          </Pressable>
+          <Pressable
+            style={styles.cropToolBtn}
+            onPress={handleCropRetake}
+            disabled={processing}
+          >
+            <MaterialIcons name="camera-alt" size={24} color="#fff" />
+            <Text style={styles.cropToolText}>Retake</Text>
+          </Pressable>
+          <Pressable
+            style={styles.cropToolBtn}
+            onPress={async () => {
+              if (!rawImageUri) return;
+              setProcessing(true);
+              try {
+                const result = await ImageManipulator.manipulateAsync(
+                  rawImageUri,
+                  [{ flip: ImageManipulator.FlipType.Horizontal }],
+                  { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+                );
+                setRawImageUri(result.uri);
+              } catch {}
+              setProcessing(false);
+            }}
+            disabled={processing}
+          >
+            <MaterialIcons name="flip" size={24} color="#fff" />
+            <Text style={styles.cropToolText}>Flip</Text>
+          </Pressable>
+        </View>
+
+        <SafeAreaView edges={['bottom']} style={styles.cropBottomBar}>
+          <Pressable
+            style={[styles.cropConfirmBtn, processing && { opacity: 0.5 }]}
+            onPress={handleCropConfirm}
+            disabled={processing}
+          >
+            {processing ? (
+              <ActivityIndicator size="small" color={t.background} />
+            ) : (
+              <>
+                <MaterialIcons name="check" size={20} color={t.background} />
+                <Text style={[styles.cropConfirmText, { color: t.background }]}>Use This Photo</Text>
+              </>
+            )}
+          </Pressable>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
   // ─── Live Camera View ───
   if (showCamera) {
     return (
       <View style={styles.cameraContainer}>
-        <CameraView
-          ref={cameraRef}
-          style={styles.cameraView}
-          facing={facing}
-        >
-          {/* Top bar */}
+        <CameraView ref={cameraRef} style={styles.cameraView} facing={facing}>
           <SafeAreaView edges={['top']} style={styles.cameraTopBar}>
-            <Pressable
-              style={styles.cameraTopBtn}
-              onPress={() => {
-                Haptics.selectionAsync();
-                setShowCamera(false);
-              }}
-            >
+            <Pressable style={styles.cameraTopBtn} onPress={() => { Haptics.selectionAsync(); setShowCamera(false); }}>
               <MaterialIcons name="close" size={24} color="#fff" />
             </Pressable>
             <View style={styles.cameraLimitBadge}>
-              <Text style={styles.cameraLimitText}>
-                {remaining > 0 ? `${remaining} left today` : 'Limit reached'}
-              </Text>
+              <Text style={styles.cameraLimitText}>{remaining > 0 ? `${remaining} left today` : 'Limit reached'}</Text>
             </View>
             <Pressable style={styles.cameraTopBtn} onPress={toggleFacing}>
               <MaterialIcons name="flip-camera-ios" size={24} color="#fff" />
             </Pressable>
           </SafeAreaView>
 
-          {/* Center guide frame */}
           <View style={styles.cameraGuide}>
-            <View style={styles.cameraFrame}>
+            <View style={[styles.cameraFrame, { width: FRAME_SIZE, height: FRAME_SIZE }]}>
               <View style={[styles.cameraCorner, styles.cameraCornerTL]} />
               <View style={[styles.cameraCorner, styles.cameraCornerTR]} />
               <View style={[styles.cameraCorner, styles.cameraCornerBL]} />
@@ -218,7 +336,6 @@ export default function SnapScreen() {
             <Text style={styles.cameraHint}>Center your object</Text>
           </View>
 
-          {/* Bottom controls */}
           <SafeAreaView edges={['bottom']} style={styles.cameraBottomBar}>
             <Pressable style={styles.cameraGalleryBtn} onPress={pickFromGallery}>
               <MaterialIcons name="photo-library" size={26} color="#fff" />
@@ -232,7 +349,7 @@ export default function SnapScreen() {
             >
               <View style={styles.captureBtnInner}>
                 {capturing ? (
-                  <ActivityIndicator size="small" color={theme.primary} />
+                  <ActivityIndicator size="small" color={t.primary} />
                 ) : (
                   <View style={styles.captureBtnDot} />
                 )}
@@ -240,7 +357,6 @@ export default function SnapScreen() {
             </Pressable>
 
             <View style={styles.cameraGalleryBtn}>
-              {/* Spacer for symmetry */}
               <MaterialIcons name="flip-camera-ios" size={26} color="transparent" />
             </View>
           </SafeAreaView>
@@ -251,7 +367,7 @@ export default function SnapScreen() {
 
   // ─── Main Form / Picker Screen ───
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 100 }}
@@ -259,9 +375,9 @@ export default function SnapScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Text style={styles.pageTitle}>Snap It</Text>
-            <View style={styles.limitBadge}>
-              <Text style={styles.limitText}>
+            <Text style={[styles.pageTitle, { color: t.textPrimary }]}>Snap It</Text>
+            <View style={[styles.limitBadge, { backgroundColor: t.surface }]}>
+              <Text style={[styles.limitText, { color: t.textSecondary }]}>
                 {remaining > 0 ? `${remaining} left today` : 'Limit reached'}
               </Text>
             </View>
@@ -269,36 +385,33 @@ export default function SnapScreen() {
 
           {!imageUri ? (
             <Animated.View entering={FadeIn.duration(400)}>
-              {/* Camera Card */}
-              <Pressable style={styles.cameraCard} onPress={openCamera}>
+              <Pressable style={[styles.cameraCard, { backgroundColor: t.surface, borderColor: t.border }]} onPress={openCamera}>
                 <View style={styles.cameraCardIcon}>
-                  <MaterialIcons name="camera-alt" size={48} color={theme.primary} />
+                  <MaterialIcons name="camera-alt" size={48} color={t.primary} />
                 </View>
-                <Text style={styles.cameraCardTitle}>Open Camera</Text>
-                <Text style={styles.cameraCardSubtitle}>Use the live viewfinder to snap your object</Text>
+                <Text style={[styles.cameraCardTitle, { color: t.textPrimary }]}>Open Camera</Text>
+                <Text style={[styles.cameraCardSubtitle, { color: t.textSecondary }]}>Use the live viewfinder to snap your object</Text>
                 <View style={styles.cameraCardBadge}>
-                  <MaterialIcons name="videocam" size={14} color={theme.primary} />
-                  <Text style={styles.cameraCardBadgeText}>Live Preview</Text>
+                  <MaterialIcons name="videocam" size={14} color={t.primary} />
+                  <Text style={[styles.cameraCardBadgeText, { color: t.primary }]}>Live Preview</Text>
                 </View>
               </Pressable>
 
-              {/* Divider */}
               <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
-                <View style={styles.dividerLine} />
+                <View style={[styles.dividerLine, { backgroundColor: t.border }]} />
+                <Text style={[styles.dividerText, { color: t.textMuted }]}>or</Text>
+                <View style={[styles.dividerLine, { backgroundColor: t.border }]} />
               </View>
 
-              {/* Gallery Card */}
-              <Pressable style={styles.galleryCard} onPress={pickFromGallery}>
+              <Pressable style={[styles.galleryCard, { backgroundColor: t.surface, borderColor: t.border }]} onPress={pickFromGallery}>
                 <View style={styles.galleryCardIcon}>
-                  <MaterialIcons name="photo-library" size={32} color={theme.accent} />
+                  <MaterialIcons name="photo-library" size={32} color={t.accent} />
                 </View>
                 <View style={styles.galleryCardText}>
-                  <Text style={styles.galleryCardTitle}>Upload from Gallery</Text>
-                  <Text style={styles.galleryCardSubtitle}>Choose a photo from your library</Text>
+                  <Text style={[styles.galleryCardTitle, { color: t.textPrimary }]}>Upload from Gallery</Text>
+                  <Text style={[styles.galleryCardSubtitle, { color: t.textSecondary }]}>Choose a photo from your library</Text>
                 </View>
-                <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
+                <MaterialIcons name="chevron-right" size={22} color={t.textMuted} />
               </Pressable>
             </Animated.View>
           ) : (
@@ -308,48 +421,38 @@ export default function SnapScreen() {
                 <Pressable style={styles.removeBtn} onPress={() => { setImageUri(null); Haptics.selectionAsync(); }}>
                   <MaterialIcons name="close" size={20} color="#fff" />
                 </Pressable>
-                <Pressable
-                  style={styles.retakeBtn}
-                  onPress={() => {
-                    setImageUri(null);
-                    openCamera();
-                  }}
-                >
+                <Pressable style={styles.retakeBtn} onPress={() => { setImageUri(null); openCamera(); }}>
                   <MaterialIcons name="camera-alt" size={16} color="#fff" />
                   <Text style={styles.retakeBtnText}>Retake</Text>
                 </Pressable>
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Name this object *</Text>
+                <Text style={[styles.label, { color: t.textSecondary }]}>Name this object *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: t.surface, color: t.textPrimary, borderColor: t.border }]}
                   placeholder="Give it a creative name..."
-                  placeholderTextColor={theme.textMuted}
+                  placeholderTextColor={t.textMuted}
                   value={name}
                   onChangeText={setName}
                   maxLength={50}
                 />
-                <Text style={styles.charCount}>{name.length}/50</Text>
+                <Text style={[styles.charCount, { color: t.textMuted }]}>{name.length}/50</Text>
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Category</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.categoryScroll}
-                >
+                <Text style={[styles.label, { color: t.textSecondary }]}>Category</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
                   {selectableCategories.map((cat) => {
                     const selected = category === cat.key;
                     return (
                       <Pressable
                         key={cat.key}
-                        style={[styles.categoryChip, selected && { backgroundColor: cat.color, borderColor: cat.color }]}
+                        style={[styles.categoryChip, { backgroundColor: t.surface, borderColor: t.border }, selected && { backgroundColor: cat.color, borderColor: cat.color }]}
                         onPress={() => { Haptics.selectionAsync(); setCategory(cat.key); }}
                       >
                         <MaterialIcons name={cat.icon} size={16} color={selected ? '#fff' : cat.color} />
-                        <Text style={[styles.categoryChipText, selected && { color: '#fff' }]}>{cat.label}</Text>
+                        <Text style={[styles.categoryChipText, { color: t.textSecondary }, selected && { color: '#fff' }]}>{cat.label}</Text>
                       </Pressable>
                     );
                   })}
@@ -357,31 +460,31 @@ export default function SnapScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Description (optional)</Text>
+                <Text style={[styles.label, { color: t.textSecondary }]}>Description (optional)</Text>
                 <TextInput
-                  style={[styles.input, styles.textArea]}
+                  style={[styles.input, styles.textArea, { backgroundColor: t.surface, color: t.textPrimary, borderColor: t.border }]}
                   placeholder="What is this object?"
-                  placeholderTextColor={theme.textMuted}
+                  placeholderTextColor={t.textMuted}
                   value={description}
                   onChangeText={setDescription}
                   maxLength={150}
                   multiline
                   numberOfLines={3}
                 />
-                <Text style={styles.charCount}>{description.length}/150</Text>
+                <Text style={[styles.charCount, { color: t.textMuted }]}>{description.length}/150</Text>
               </View>
 
               <Pressable
-                style={[styles.submitBtn, (!name.trim() || !canSubmit || submitting) && styles.submitBtnDisabled]}
+                style={[styles.submitBtn, { backgroundColor: t.primary }, (!name.trim() || !canSubmit || submitting) && styles.submitBtnDisabled]}
                 onPress={handleSubmit}
                 disabled={submitting}
               >
                 {submitting ? (
-                  <ActivityIndicator size="small" color={theme.background} />
+                  <ActivityIndicator size="small" color={t.background} />
                 ) : (
-                  <MaterialIcons name="send" size={20} color={theme.background} />
+                  <MaterialIcons name="send" size={20} color={t.background} />
                 )}
-                <Text style={styles.submitBtnText}>
+                <Text style={[styles.submitBtnText, { color: t.background }]}>
                   {submitting ? 'Uploading...' : canSubmit ? 'Submit to Community' : 'Limit Reached'}
                 </Text>
               </Pressable>
@@ -393,226 +496,94 @@ export default function SnapScreen() {
   );
 }
 
-const FRAME_SIZE = SCREEN_W * 0.65;
+function createStyles(t: any, typo: any) {
+  return StyleSheet.create({
+    container: { flex: 1 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
+    pageTitle: { ...typo.subtitle },
+    limitBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9999 },
+    limitText: { ...typo.small },
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
-  pageTitle: { ...typography.subtitle },
-  limitBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.surface, paddingHorizontal: 10, paddingVertical: 5, borderRadius: theme.radiusFull },
-  limitText: { ...typography.small, color: theme.textSecondary },
+    cameraCard: { borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 1.5, marginTop: 16 },
+    cameraCardIcon: { width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(255,215,0,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    cameraCardTitle: { ...typo.subtitle, fontSize: 20, marginBottom: 6 },
+    cameraCardSubtitle: { ...typo.caption, textAlign: 'center', lineHeight: 20, marginBottom: 12 },
+    cameraCardBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,215,0,0.1)', borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1, borderColor: 'rgba(255,215,0,0.2)' },
+    cameraCardBadgeText: { ...typo.small, fontWeight: '700' },
 
-  // Camera Card
-  cameraCard: {
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusLarge,
-    padding: 32,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: theme.border,
-    marginTop: 16,
-  },
-  cameraCardIcon: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: 'rgba(255,215,0,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  cameraCardTitle: { ...typography.subtitle, fontSize: 20, marginBottom: 6 },
-  cameraCardSubtitle: { ...typography.caption, textAlign: 'center', lineHeight: 20, marginBottom: 12 },
-  cameraCardBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255,215,0,0.1)',
-    borderRadius: theme.radiusFull,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.2)',
-  },
-  cameraCardBadgeText: { ...typography.small, color: theme.primary, fontWeight: '700' },
+    dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 20, paddingHorizontal: 20 },
+    dividerLine: { flex: 1, height: 1 },
+    dividerText: { ...typo.caption, marginHorizontal: 16, fontSize: 13 },
 
-  // Divider
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 20, paddingHorizontal: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: theme.border },
-  dividerText: { ...typography.caption, color: theme.textMuted, marginHorizontal: 16, fontSize: 13 },
+    galleryCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 18, borderWidth: 1, gap: 14 },
+    galleryCardIcon: { width: 52, height: 52, borderRadius: 14, backgroundColor: 'rgba(124,92,252,0.1)', alignItems: 'center', justifyContent: 'center' },
+    galleryCardText: { flex: 1 },
+    galleryCardTitle: { ...typo.bodyBold, fontSize: 15, marginBottom: 2 },
+    galleryCardSubtitle: { ...typo.small },
 
-  // Gallery Card
-  galleryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusLarge,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: theme.border,
-    gap: 14,
-  },
-  galleryCardIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: 'rgba(124,92,252,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  galleryCardText: { flex: 1 },
-  galleryCardTitle: { ...typography.bodyBold, fontSize: 15, marginBottom: 2 },
-  galleryCardSubtitle: { ...typography.small, color: theme.textSecondary },
+    // Crop/Edit Screen
+    cropTopBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+    cropTopBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+    cropTitle: { fontSize: 17, fontWeight: '600', color: '#fff' },
+    cropImageContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
+    cropImage: { width: '100%', height: '100%', borderRadius: 12 },
+    cropProcessingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+    cropToolBar: { flexDirection: 'row', justifyContent: 'center', gap: 32, paddingVertical: 16 },
+    cropToolBtn: { alignItems: 'center', gap: 4 },
+    cropToolText: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
+    cropBottomBar: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 16 },
+    cropConfirmBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: t.primary, borderRadius: 12, height: 56 },
+    cropConfirmText: { fontSize: 17, fontWeight: '700' },
 
-  // Live Camera
-  cameraContainer: { flex: 1, backgroundColor: '#000' },
-  cameraView: { flex: 1 },
-  cameraTopBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  cameraTopBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraLimitBadge: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: theme.radiusFull,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  cameraLimitText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+    // Camera
+    cameraContainer: { flex: 1, backgroundColor: '#000' },
+    cameraView: { flex: 1 },
+    cameraTopBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
+    cameraTopBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+    cameraLimitBadge: { backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 9999, paddingHorizontal: 14, paddingVertical: 6 },
+    cameraLimitText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+    cameraGuide: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    cameraFrame: { position: 'relative' },
+    cameraCorner: { position: 'absolute', width: 28, height: 28, borderColor: 'rgba(255,215,0,0.8)' },
+    cameraCornerTL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 8 },
+    cameraCornerTR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 8 },
+    cameraCornerBL: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 8 },
+    cameraCornerBR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 8 },
+    cameraHint: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginTop: 16, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+    cameraBottomBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 32, paddingTop: 16, paddingBottom: 20, backgroundColor: 'rgba(0,0,0,0.3)' },
+    cameraGalleryBtn: { alignItems: 'center', gap: 4, width: 60 },
+    cameraGalleryText: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.8)' },
+    captureBtn: { width: 76, height: 76, borderRadius: 38, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
+    captureBtnActive: { opacity: 0.6 },
+    captureBtnInner: { width: 62, height: 62, borderRadius: 31, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+    captureBtnDot: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#fff' },
 
-  // Camera Guide
-  cameraGuide: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraFrame: {
-    width: FRAME_SIZE,
-    height: FRAME_SIZE,
-    position: 'relative',
-  },
-  cameraCorner: {
-    position: 'absolute',
-    width: 28,
-    height: 28,
-    borderColor: 'rgba(255,215,0,0.8)',
-  },
-  cameraCornerTL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 8 },
-  cameraCornerTR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 8 },
-  cameraCornerBL: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 8 },
-  cameraCornerBR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 8 },
-  cameraHint: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 16,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
+    previewWrap: { borderRadius: 16, overflow: 'hidden', marginBottom: 20 },
+    previewImage: { width: '100%', aspectRatio: 1, borderRadius: 16 },
+    removeBtn: { position: 'absolute', top: 12, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
+    retakeBtn: { position: 'absolute', bottom: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 8 },
+    retakeBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
 
-  // Bottom Controls
-  cameraBottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 32,
-    paddingTop: 16,
-    paddingBottom: 20,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  cameraGalleryBtn: {
-    alignItems: 'center',
-    gap: 4,
-    width: 60,
-  },
-  cameraGalleryText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.8)',
-  },
-  captureBtn: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 4,
-    borderColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  captureBtnActive: { opacity: 0.6 },
-  captureBtnInner: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  captureBtnDot: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#fff',
-  },
+    formGroup: { marginBottom: 16 },
+    label: { ...typo.captionBold, marginBottom: 8 },
+    input: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, fontSize: 15, borderWidth: 1 },
+    textArea: { height: 80, textAlignVertical: 'top' },
+    charCount: { ...typo.small, textAlign: 'right', marginTop: 4 },
+    submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, height: 52, marginTop: 8 },
+    submitBtnDisabled: { opacity: 0.4 },
+    categoryScroll: { gap: 8, paddingBottom: 4 },
+    categoryChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 9999, borderWidth: 1.5 },
+    categoryChipText: { ...typo.small, fontWeight: '600' },
+    submitBtnText: { ...typo.button, fontSize: 16 },
 
-  // Preview
-  previewWrap: { borderRadius: theme.radiusLarge, overflow: 'hidden', marginBottom: 20 },
-  previewImage: { width: '100%', aspectRatio: 1, borderRadius: theme.radiusLarge },
-  removeBtn: { position: 'absolute', top: 12, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
-  retakeBtn: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: theme.radiusFull,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  retakeBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
-
-  // Form
-  formGroup: { marginBottom: 16 },
-  label: { ...typography.captionBold, marginBottom: 8 },
-  input: { backgroundColor: theme.surface, borderRadius: theme.radiusMedium, paddingHorizontal: 14, paddingVertical: 14, fontSize: 15, color: theme.textPrimary, borderWidth: 1, borderColor: theme.border },
-  textArea: { height: 80, textAlignVertical: 'top' },
-  charCount: { ...typography.small, textAlign: 'right', marginTop: 4 },
-  submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: theme.primary, borderRadius: theme.radiusMedium, height: 52, marginTop: 8 },
-  submitBtnDisabled: { opacity: 0.4 },
-  categoryScroll: { gap: 8, paddingBottom: 4 },
-  categoryChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 9,
-    borderRadius: theme.radiusFull,
-    backgroundColor: theme.surface,
-    borderWidth: 1.5, borderColor: theme.border,
-  },
-  categoryChipText: { ...typography.small, fontWeight: '600', color: theme.textSecondary },
-  submitBtnText: { ...typography.button },
-
-  // Success
-  successContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  successIcon: { marginBottom: 20 },
-  successTitle: { ...typography.title, marginBottom: 8 },
-  successSubtitle: { ...typography.body, color: theme.textSecondary, textAlign: 'center', marginBottom: 32 },
-  successActions: { width: '100%', gap: 12 },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: theme.primary, borderRadius: theme.radiusMedium, height: 52 },
-  primaryBtnText: { ...typography.button },
-  secondaryBtn: { alignItems: 'center', justifyContent: 'center', borderRadius: theme.radiusMedium, height: 48, borderWidth: 1, borderColor: theme.border },
-  secondaryBtnText: { ...typography.bodyBold, color: theme.textSecondary },
-});
+    successContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+    successIcon: { marginBottom: 20 },
+    successTitle: { ...typo.title, marginBottom: 8 },
+    successSubtitle: { ...typo.body, textAlign: 'center', marginBottom: 32 },
+    successActions: { width: '100%', gap: 12 },
+    primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, height: 52 },
+    primaryBtnText: { ...typo.button },
+    secondaryBtn: { alignItems: 'center', justifyContent: 'center', borderRadius: 12, height: 48, borderWidth: 1 },
+    secondaryBtnText: { ...typo.bodyBold },
+  });
+}

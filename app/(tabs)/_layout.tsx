@@ -2,10 +2,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Platform, View } from 'react-native';
-import { theme } from '../../constants/theme';
+import { useAppTheme } from '../../hooks/useTheme';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { colors: t } = useAppTheme();
 
   return (
     <Tabs
@@ -15,12 +16,12 @@ export default function TabLayout() {
           height: Platform.select({ ios: insets.bottom + 60, android: insets.bottom + 60, default: 70 }),
           paddingTop: 8,
           paddingBottom: Platform.select({ ios: insets.bottom + 8, android: insets.bottom + 8, default: 8 }),
-          backgroundColor: theme.background,
+          backgroundColor: t.background,
           borderTopWidth: 1,
-          borderTopColor: theme.border,
+          borderTopColor: t.border,
         },
-        tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.textMuted,
+        tabBarActiveTintColor: t.primary,
+        tabBarInactiveTintColor: t.textMuted,
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
@@ -46,15 +47,15 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <View style={{
               width: 52, height: 52, borderRadius: 26,
-              backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: t.primary, alignItems: 'center', justifyContent: 'center',
               marginTop: -20,
               ...Platform.select({
-                ios: { shadowColor: theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 },
+                ios: { shadowColor: t.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 },
                 android: { elevation: 8 },
                 default: {},
               }),
             }}>
-              <MaterialIcons name="camera-alt" size={28} color={theme.background} />
+              <MaterialIcons name="camera-alt" size={28} color={t.background} />
             </View>
           ),
         }}
