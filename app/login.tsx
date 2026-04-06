@@ -9,7 +9,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { useAuth, useAlert } from '@/template';
+import { useAuth, useAlert, getSupabaseClient } from '@/template';
 import { theme, typography } from '../constants/theme';
 
 type AuthMode = 'login' | 'signup';
@@ -28,6 +28,7 @@ export default function LoginScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otp, setOtp] = useState(['', '', '', '']);
   const [showPassword, setShowPassword] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
 
   const otpRefs = useRef<(TextInput | null)[]>([]);
 
@@ -53,8 +54,50 @@ export default function LoginScreen() {
     Haptics.selectionAsync();
     const { error } = await signInWithPassword(email.trim(), password);
     if (error) {
-      showAlert('Login Failed', error);
+      showAlert('Login Failed', 'Incorrect email or password. If you forgot your credentials, tap "Forgot Password?" below.');
     }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      showAlert('Enter Your Email', 'Please enter your email address first, then tap Forgot Password.');
+      return;
+    }
+    setSendingReset(true);
+    try {
+      const supabase = getSupabaseClient();
+
+      // Look up username from user_profiles
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('username')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
+
+      // Send password reset email
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: 'itsnameis://reset-password',
+      });
+
+      if (error) {
+        showAlert('Error', error.message);
+        setSendingReset(false);
+        return;
+      }
+
+      const usernameMsg = profile?.username
+        ? `Your username is: @${profile.username}\n\n`
+        : '';
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showAlert(
+        'Recovery Email Sent',
+        `${usernameMsg}A password reset link has been sent to ${email.trim()}. Check your inbox (and spam folder) to set a new password.`
+      );
+    } catch {
+      showAlert('Error', 'Something went wrong. Please try again.');
+    }
+    setSendingReset(false);
   };
 
   const handleSendOTP = async () => {
@@ -281,6 +324,20 @@ export default function LoginScreen() {
                 </Text>
               </Pressable>
 
+              {/* Forgot Password (login only) */}
+              {mode === 'login' ? (
+                <Pressable
+                  style={styles.forgotBtn}
+                  onPress={handleForgotPassword}
+                  disabled={sendingReset || operationLoading}
+                >
+                  <MaterialIcons name="help-outline" size={14} color={theme.accent} />
+                  <Text style={[styles.forgotText, sendingReset && { opacity: 0.5 }]}>
+                    {sendingReset ? 'Sending...' : 'Forgot Password?'}
+                  </Text>
+                </Pressable>
+              ) : null}
+
               {/* Switch mode */}
               <View style={styles.switchRow}>
                 <Text style={styles.switchText}>
@@ -399,6 +456,21 @@ const styles = StyleSheet.create({
   resendBtn: { flexDirection: 'row', justifyContent: 'center', marginTop: 16 },
   resendText: { ...typography.caption },
   resendLink: { ...typography.captionBold, color: theme.primary },
+
+  // Forgot password
+  forgotBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 14,
+    paddingVertical: 6,
+  },
+  forgotText: {
+    ...typography.captionBold,
+    color: theme.accent,
+    fontSize: 13,
+  },
 
   // Footer
   footerRow: {
