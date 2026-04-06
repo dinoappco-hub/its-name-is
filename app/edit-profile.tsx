@@ -51,7 +51,6 @@ export default function EditProfileScreen() {
     setSaving(false);
     if (error) { showAlert('Error', error); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    showAlert('Saved', 'Your profile has been updated.');
     router.back();
   };
 
