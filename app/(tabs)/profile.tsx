@@ -10,6 +10,7 @@ import { useAuth, useAlert } from '@/template';
 import { theme, typography } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import AdBanner from '../../components/AdBanner';
+import { useAccessibility } from '../../hooks/useAccessibility';
 
 
 export default function ProfileScreen() {
@@ -18,6 +19,7 @@ export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const { showAlert } = useAlert();
   const { currentUser, getUserObjects, isPremium, objects, loading } = useApp();
+  const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor } = useAccessibility();
   const userObjects = useMemo(() => getUserObjects(currentUser.id), [currentUser.id, getUserObjects]);
 
   const totalVotesGiven = useMemo(() => {
@@ -62,20 +64,20 @@ export default function ProfileScreen() {
         <View style={styles.headerRow}>
           <Text style={styles.pageTitle}>Profile</Text>
           <View style={styles.headerActions}>
-            <Pressable style={styles.headerBtn} onPress={handleLogout}>
+            <Pressable style={styles.headerBtn} onPress={() => { triggerHaptic('selection'); handleLogout(); }}>
               <MaterialIcons name="logout" size={20} color={theme.error} />
             </Pressable>
-            <Pressable style={styles.headerBtn} onPress={() => router.push('/settings')}>
+            <Pressable style={styles.headerBtn} onPress={() => { triggerHaptic('selection'); router.push('/settings'); }}>
               <MaterialIcons name="settings" size={22} color={theme.textSecondary} />
             </Pressable>
           </View>
         </View>
 
-        <Animated.View entering={FadeInDown.duration(400)} style={styles.profileCard}>
+        <Animated.View entering={shouldAnimate ? FadeInDown.duration(400) : undefined} style={styles.profileCard}>
           <Image source={{ uri: avatarUri }} style={styles.avatar} contentFit="cover" />
           <View style={styles.profileInfo}>
             <View style={styles.nameRow}>
-              <Text style={styles.displayName}>{displayName}</Text>
+              <Text style={[styles.displayName, { fontSize: scaledSize(18), fontWeight: fw('700') }]}>{displayName}</Text>
               {isPremium ? (
                 <View style={styles.premiumBadge}>
                   <MaterialIcons name="star" size={12} color={theme.background} />
@@ -112,10 +114,10 @@ export default function ProfileScreen() {
 
         <View style={styles.statsGrid}>
           {stats.map((stat, i) => (
-            <Animated.View key={stat.label} entering={FadeInDown.delay(i * 80).duration(400)} style={styles.statCard}>
+            <Animated.View key={stat.label} entering={shouldAnimate ? FadeInDown.delay(i * 80).duration(400) : undefined} style={styles.statCard}>
               <MaterialIcons name={stat.icon} size={22} color={theme.primary} />
-              <Text style={styles.statValue}>{stat.value.toLocaleString()}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
+              <Text style={[styles.statValue, { fontSize: scaledSize(22), fontWeight: fw('700') }]}>{stat.value.toLocaleString()}</Text>
+              <Text style={[styles.statLabel, { fontSize: scaledSize(11), color: subtleTextColor }]}>{stat.label}</Text>
             </Animated.View>
           ))}
         </View>
@@ -146,10 +148,10 @@ export default function ProfileScreen() {
             {userObjects.map((obj, i) => {
               const topName = [...obj.suggestedNames].sort((a, b) => b.votes - a.votes)[0];
               return (
-                <Animated.View key={obj.id} entering={FadeInDown.delay(i * 60).duration(400)}>
+                <Animated.View key={obj.id} entering={shouldAnimate ? FadeInDown.delay(i * 60).duration(400) : undefined}>
                   <Pressable
                     style={styles.submissionCard}
-                    onPress={() => { Haptics.selectionAsync(); router.push(`/object/${obj.id}`); }}
+                    onPress={() => { triggerHaptic('selection'); router.push(`/object/${obj.id}`); }}
                   >
                     <Image source={{ uri: obj.imageUri }} style={styles.submissionImage} contentFit="cover" transition={200} />
                     <View style={styles.submissionOverlay}>

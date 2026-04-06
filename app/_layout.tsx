@@ -4,14 +4,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AlertProvider, AuthProvider } from '@/template';
 import { NotificationProvider } from '../contexts/NotificationContext';
 import { AppProvider } from '../contexts/AppContext';
+import { AccessibilityProvider } from '../contexts/AccessibilityContext';
 
 export default function RootLayout() {
   return (
     <AlertProvider>
       <SafeAreaProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <AppProvider>
+        <AccessibilityProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <AppProvider>
               <StatusBar style="light" />
               <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
                 <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -32,9 +34,10 @@ export default function RootLayout() {
                 <Stack.Screen name="user/[id]" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="leaderboard" options={{ animation: 'slide_from_right' }} />
               </Stack>
-            </AppProvider>
-          </NotificationProvider>
-        </AuthProvider>
+              </AppProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </AccessibilityProvider>
       </SafeAreaProvider>
     </AlertProvider>
   );

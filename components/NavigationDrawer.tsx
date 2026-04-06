@@ -19,6 +19,7 @@ import { theme, typography } from '../constants/theme';
 import { config } from '../constants/config';
 import { useApp } from '../contexts/AppContext';
 import { useNotifications } from '../hooks/useNotifications';
+import { useAccessibility } from '../hooks/useAccessibility';
 
 const SCREEN_W = Dimensions.get('window').width;
 const DRAWER_W = Math.min(SCREEN_W * 0.82, 340);
@@ -47,6 +48,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
   const router = useRouter();
   const { currentUser, isPremium, subscriptionEnd } = useApp();
   const { unreadCount } = useNotifications();
+  const { activeCount: a11yActiveCount, triggerHaptic, scaledSize, fontWeight: fw, shouldAnimate, settings: a11ySettings } = useAccessibility();
 
   const translateX = useSharedValue(-DRAWER_W);
   const backdropOpacity = useSharedValue(0);
@@ -120,7 +122,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
           badge: isPremium ? 'PRO' : undefined,
         },
         { icon: 'tune', label: 'Notification Settings', route: '/notification-settings' },
-        { icon: 'accessibility-new', label: 'Accessibility', route: '/accessibility' },
+        { icon: 'accessibility-new', label: 'Accessibility', route: '/accessibility', badge: a11yActiveCount > 0 ? `${a11yActiveCount}` : undefined },
         { icon: 'settings', label: 'Settings', route: '/settings' },
       ],
     },
@@ -204,7 +206,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
                   style={({ pressed }) => [styles.navItem, pressed && styles.navItemPressed]}
                   onPress={() => {
                     if (item.onPress) {
-                      Haptics.selectionAsync();
+                      triggerHaptic('selection');
                       item.onPress();
                     } else if (item.route) {
                       handleNavigate(item.route);

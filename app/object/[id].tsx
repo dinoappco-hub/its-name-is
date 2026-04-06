@@ -14,6 +14,7 @@ import AdBanner from '../../components/AdBanner';
 
 import { REPORT_REASONS, submitReport, hasUserReported } from '../../services/reportService';
 import { Comment, fetchComments, addComment, deleteComment } from '../../services/commentService';
+import { useAccessibility } from '../../hooks/useAccessibility';
 
 export default function ObjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,6 +27,7 @@ export default function ObjectDetailScreen() {
   }, [router]);
   const { user: authUser } = useAuth();
   const { objects, vote, addNameSuggestion, currentUser, trackView } = useApp();
+  const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, a11yProps } = useAccessibility();
   const [newName, setNewName] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
@@ -190,7 +192,7 @@ export default function ObjectDetailScreen() {
   const topName = sortedNames[0];
 
   const handleVote = (nameId: string, direction: 'up' | 'down') => {
-    Haptics.selectionAsync();
+    triggerHaptic('selection');
     vote(object.id, nameId, direction);
   };
 
@@ -284,7 +286,7 @@ export default function ObjectDetailScreen() {
     return (
       <Animated.View
         key={item.id}
-        entering={FadeInDown.delay(index * 60).duration(350)}
+        entering={shouldAnimate ? FadeInDown.delay(index * 60).duration(350) : undefined}
       >
         <View style={[styles.nameRow, isTop && styles.nameRowTop]}>
           <View style={styles.nameRank}>
@@ -358,7 +360,7 @@ export default function ObjectDetailScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         >
-          <Animated.View entering={FadeIn.duration(400)}>
+          <Animated.View entering={shouldAnimate ? FadeIn.duration(400) : undefined}>
             <View style={styles.heroWrap}>
               <Image source={{ uri: object.imageUri }} style={styles.heroImage} contentFit="cover" transition={200} />
               <View style={styles.heroOverlay}>
@@ -382,7 +384,7 @@ export default function ObjectDetailScreen() {
               </View>
               <View style={styles.heroBottom}>
                 {topName ? (
-                  <Text style={styles.heroName}>{topName.name}</Text>
+                  <Text style={[styles.heroName, { fontSize: scaledSize(28), fontWeight: fw('700') }]}>{topName.name}</Text>
                 ) : null}
                 <View style={styles.heroStats}>
                   <View style={styles.heroStat}>
@@ -404,7 +406,7 @@ export default function ObjectDetailScreen() {
 
           <View style={styles.contentPad}>
             <Pressable onPress={() => navigateToUser(object.submittedBy.id)}>
-              <Animated.View entering={FadeInUp.delay(200)} style={styles.submitterCard}>
+              <Animated.View entering={shouldAnimate ? FadeInUp.delay(200) : undefined} style={styles.submitterCard}>
                 <Image source={{ uri: object.submittedBy.avatar }} style={styles.submitterAvatar} contentFit="cover" />
                 <View style={styles.submitterInfo}>
                   <View style={styles.submitterNameRow}>
@@ -422,13 +424,13 @@ export default function ObjectDetailScreen() {
             </Pressable>
 
             {object.description ? (
-              <Animated.View entering={FadeInUp.delay(250)}>
+              <Animated.View entering={shouldAnimate ? FadeInUp.delay(250) : undefined}>
                 <Text style={styles.description}>{object.description}</Text>
               </Animated.View>
             ) : null}
 
             {/* Google It Card */}
-            <Animated.View entering={FadeInUp.delay(300)}>
+            <Animated.View entering={shouldAnimate ? FadeInUp.delay(300) : undefined}>
               <Pressable
                 style={styles.googleCard}
                 onPress={() => {
@@ -466,7 +468,7 @@ export default function ObjectDetailScreen() {
                 <Pressable
                   style={styles.suggestBtn}
                   onPress={() => {
-                    Haptics.selectionAsync();
+                    triggerHaptic('selection');
                     setShowInput(!showInput);
                   }}
                 >
@@ -476,7 +478,7 @@ export default function ObjectDetailScreen() {
               </View>
 
               {showInput ? (
-                <Animated.View entering={FadeInDown.duration(300)} style={styles.suggestInput}>
+                <Animated.View entering={shouldAnimate ? FadeInDown.duration(300) : undefined} style={styles.suggestInput}>
                   <TextInput
                     style={styles.suggestTextInput}
                     placeholder="Your name idea..."
@@ -510,11 +512,11 @@ export default function ObjectDetailScreen() {
             </View>
 
             {/* Comments Section */}
-            <Animated.View entering={FadeInUp.delay(400)} style={styles.commentsSection}>
+            <Animated.View entering={shouldAnimate ? FadeInUp.delay(400) : undefined} style={styles.commentsSection}>
               <View style={styles.commentsSectionHeader}>
                 <View style={styles.commentsTitleRow}>
                   <MaterialIcons name="forum" size={20} color={theme.accent} />
-                  <Text style={styles.commentsSectionTitle}>Discussion</Text>
+                  <Text style={[styles.commentsSectionTitle, { fontSize: scaledSize(18), fontWeight: fw('700') }]}>Discussion</Text>
                   <View style={styles.commentCountBadge}>
                     <Text style={styles.commentCountText}>{totalCommentCount}</Text>
                   </View>

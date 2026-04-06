@@ -15,6 +15,7 @@ import AdBanner from '../../components/AdBanner';
 
 import { CommunityStats, fetchCommunityStats, fetchRecentActiveUsers } from '../../services/communityService';
 import NavigationDrawer from '../../components/NavigationDrawer';
+import { useAccessibility } from '../../hooks/useAccessibility';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 10;
@@ -27,6 +28,7 @@ export default function FeedScreen() {
   const router = useRouter();
   const { objects, searchObjects, loading, refreshing, refreshObjects } = useApp();
   const { unreadCount } = useNotifications();
+  const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, mutedTextColor, a11yProps } = useAccessibility();
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('trending');
   const [communityStats, setCommunityStats] = useState<CommunityStats | null>(null);
@@ -70,11 +72,11 @@ export default function FeedScreen() {
   const renderCard = ({ item, index }: { item: ObjectSubmission; index: number }) => {
     const topName = [...item.suggestedNames].sort((a, b) => b.votes - a.votes)[0];
     return (
-      <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(400)}>
+      <Animated.View entering={shouldAnimate ? FadeInDown.delay(Math.min(index * 50, 300)).duration(400) : undefined}>
         <Pressable
           style={styles.card}
           onPress={() => {
-            Haptics.selectionAsync();
+            triggerHaptic('selection');
             router.push(`/object/${item.id}`);
           }}
         >
@@ -89,7 +91,7 @@ export default function FeedScreen() {
           </View>
           <View style={styles.cardContent}>
             {topName ? (
-              <Text style={styles.cardName} numberOfLines={1}>{topName.name}</Text>
+              <Text style={[styles.cardName, { fontSize: scaledSize(14), fontWeight: fw('600') }]} numberOfLines={1}>{topName.name}</Text>
             ) : null}
             <View style={styles.cardMeta}>
               <View style={styles.cardMetaItem}>
@@ -292,13 +294,13 @@ export default function FeedScreen() {
         <Pressable
           style={styles.headerBtn}
           onPress={() => {
-            Haptics.selectionAsync();
+            triggerHaptic('selection');
             setDrawerVisible(true);
           }}
         >
           <MaterialIcons name="menu" size={22} color={theme.textSecondary} />
         </Pressable>
-        <Text style={styles.title}>its name is.</Text>
+        <Text style={[styles.title, { fontSize: scaledSize(24) }]}>its name is.</Text>
         <View style={styles.headerActions}>
           <Pressable
             style={styles.headerBtn}
