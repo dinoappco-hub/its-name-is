@@ -39,6 +39,26 @@ export default function SnapScreen() {
   const [capturing, setCapturing] = useState(false);
 
   const openCamera = async () => {
+    // On web, use ImagePicker camera (browser webcam) since CameraView is native-only
+    if (Platform.OS === 'web') {
+      try {
+        const camPerm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!camPerm.granted) {
+          showAlert('Permission Needed', 'Camera access is required to snap objects. Please enable it in your browser settings.');
+          return;
+        }
+        const result = await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true, aspect: [1, 1] });
+        if (!result.canceled && result.assets[0]) {
+          setImageUri(result.assets[0].uri);
+          setSubmitted(false);
+          Haptics.selectionAsync();
+        }
+      } catch {
+        showAlert('Camera Unavailable', 'Camera is not available in this browser. Please use the gallery upload or try on a real device.');
+      }
+      return;
+    }
+
     if (!permission?.granted) {
       const result = await requestPermission();
       if (!result.granted) {
