@@ -79,6 +79,13 @@ export default function SettingsScreen() {
           onPress: () => router.push('/notification-settings'),
           showChevron: true,
         },
+        {
+          icon: 'accessibility-new',
+          label: 'Accessibility',
+          subtitle: 'Text size, contrast, motion settings',
+          onPress: () => router.push('/accessibility'),
+          showChevron: true,
+        },
       ],
     },
     {

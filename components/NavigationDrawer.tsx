@@ -120,6 +120,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
           badge: isPremium ? 'PRO' : undefined,
         },
         { icon: 'tune', label: 'Notification Settings', route: '/notification-settings' },
+        { icon: 'accessibility-new', label: 'Accessibility', route: '/accessibility' },
         { icon: 'settings', label: 'Settings', route: '/settings' },
       ],
     },

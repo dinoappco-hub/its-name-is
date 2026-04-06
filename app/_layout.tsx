@@ -23,6 +23,7 @@ export default function RootLayout() {
                 <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="notification-settings" options={{ animation: 'slide_from_right' }} />
+                <Stack.Screen name="accessibility" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="our-story" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="edit-profile" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="community-guidelines" options={{ animation: 'slide_from_right' }} />
