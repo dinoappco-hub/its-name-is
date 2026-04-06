@@ -9,7 +9,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { useAlert } from '@/template';
-import { config, CATEGORIES } from '../../constants/config';
+import { CATEGORIES } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '../../hooks/useTheme';
@@ -20,7 +20,7 @@ export default function SnapScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors: t, typo } = useAppTheme();
-  const { addSubmission, submissionsToday } = useApp();
+  const { addSubmission } = useApp();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -30,8 +30,7 @@ export default function SnapScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { showAlert } = useAlert();
-  const canSubmit = submissionsToday < config.submissionsPerDay;
-  const remaining = config.submissionsPerDay - submissionsToday;
+
 
   // Camera state
   const [showCamera, setShowCamera] = useState(false);
@@ -161,11 +160,6 @@ export default function SnapScreen() {
     if (!imageUri || !name.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       showAlert('Missing info', 'Please add a photo and a name.');
-      return;
-    }
-    if (!canSubmit) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      showAlert('Limit Reached', 'You have reached your daily submission limit. Try again tomorrow!');
       return;
     }
 
@@ -318,9 +312,7 @@ export default function SnapScreen() {
             <Pressable style={styles.cameraTopBtn} onPress={() => { Haptics.selectionAsync(); setShowCamera(false); }}>
               <MaterialIcons name="close" size={24} color="#fff" />
             </Pressable>
-            <View style={styles.cameraLimitBadge}>
-              <Text style={styles.cameraLimitText}>{remaining > 0 ? `${remaining} left today` : 'Limit reached'}</Text>
-            </View>
+<View style={{ width: 44 }} />
             <Pressable style={styles.cameraTopBtn} onPress={toggleFacing}>
               <MaterialIcons name="flip-camera-ios" size={24} color="#fff" />
             </Pressable>
@@ -376,11 +368,7 @@ export default function SnapScreen() {
         >
           <View style={styles.header}>
             <Text style={[styles.pageTitle, { color: t.textPrimary }]}>Snap It</Text>
-            <View style={[styles.limitBadge, { backgroundColor: t.surface }]}>
-              <Text style={[styles.limitText, { color: t.textSecondary }]}>
-                {remaining > 0 ? `${remaining} left today` : 'Limit reached'}
-              </Text>
-            </View>
+
           </View>
 
           {!imageUri ? (
@@ -475,7 +463,7 @@ export default function SnapScreen() {
               </View>
 
               <Pressable
-                style={[styles.submitBtn, { backgroundColor: t.primary }, (!name.trim() || !canSubmit || submitting) && styles.submitBtnDisabled]}
+                style={[styles.submitBtn, { backgroundColor: t.primary }, (!name.trim() || submitting) && styles.submitBtnDisabled]}
                 onPress={handleSubmit}
                 disabled={submitting}
               >
@@ -485,7 +473,7 @@ export default function SnapScreen() {
                   <MaterialIcons name="send" size={20} color={t.background} />
                 )}
                 <Text style={[styles.submitBtnText, { color: t.background }]}>
-                  {submitting ? 'Uploading...' : canSubmit ? 'Submit to Community' : 'Limit Reached'}
+                  {submitting ? 'Uploading...' : 'Submit to Community'}
                 </Text>
               </Pressable>
             </Animated.View>
@@ -501,8 +489,6 @@ function createStyles(t: any, typo: any) {
     container: { flex: 1 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
     pageTitle: { ...typo.subtitle },
-    limitBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9999 },
-    limitText: { ...typo.small },
 
     cameraCard: { borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 1.5, marginTop: 16 },
     cameraCardIcon: { width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(255,215,0,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
@@ -540,8 +526,7 @@ function createStyles(t: any, typo: any) {
     cameraView: { flex: 1 },
     cameraTopBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
     cameraTopBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
-    cameraLimitBadge: { backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 9999, paddingHorizontal: 14, paddingVertical: 6 },
-    cameraLimitText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+
     cameraGuide: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     cameraFrame: { position: 'relative' },
     cameraCorner: { position: 'absolute', width: 28, height: 28, borderColor: 'rgba(255,215,0,0.8)' },
