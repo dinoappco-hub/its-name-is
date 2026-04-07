@@ -52,6 +52,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const colors = isDark ? darkColors : lightColors;
   const typo = useMemo(() => createTypography(colors), [colors]);
 
+  if (!loaded) return null;
+
   return (
     <ThemeContext.Provider value={{ mode, isDark, colors, typo, setMode, toggleMode }}>
       {children}
