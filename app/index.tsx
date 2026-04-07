@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthRouter } from '@/template';
+import { AuthRouter, getSupabaseClient } from '@/template';
 import { useAppTheme } from '../hooks/useTheme';
 
 function AuthenticatedEntry() {
@@ -17,12 +17,22 @@ export default function EntryScreen() {
   const [onboarded, setOnboarded] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem('snapname_onboarded').then(val => {
-      setOnboarded(val === 'true');
+    const init = async () => {
+      try {
+        const val = await AsyncStorage.getItem('snapname_onboarded');
+        setOnboarded(val === 'true');
+
+        // Clear any stale/invalid sessions to prevent refresh token errors
+        const supabase = getSupabaseClient();
+        const { error } = await supabase.auth.getSession();
+        if (error) {
+          console.log('Clearing invalid session:', error.message);
+          await supabase.auth.signOut({ scope: 'local' });
+        }
+      } catch {}
       setChecking(false);
-    }).catch(() => {
-      setChecking(false);
-    });
+    };
+    init();
   }, []);
 
   if (checking) {
