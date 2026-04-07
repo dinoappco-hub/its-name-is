@@ -179,11 +179,11 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   dotActive: { width: 24 },
   slide: { flex: 1 },
-  imageContainer: { flex: 0.45 },
+  imageContainer: { flex: 0.55 },
   slideImage: { width: '100%', height: '100%' },
 
   slideContent: {
-    flex: 0.55, paddingHorizontal: 32, paddingTop: 24, alignItems: 'center',
+    flex: 0.45, paddingHorizontal: 32, paddingTop: 24, alignItems: 'center',
   },
   iconCircle: {
     width: 56, height: 56, borderRadius: 28,
