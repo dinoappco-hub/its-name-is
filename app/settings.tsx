@@ -72,6 +72,14 @@ export default function SettingsScreen() {
           showChevron: false,
           badge: isDark ? 'DARK' : 'LIGHT',
         },
+        {
+          icon: 'palette',
+          label: 'Customize Colors',
+          subtitle: 'Choose your accent and primary colors',
+          onPress: () => router.push('/customize-theme'),
+          color: t.primary,
+          showChevron: true,
+        },
       ],
     },
     {

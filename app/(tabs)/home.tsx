@@ -27,7 +27,7 @@ type SortMode = 'trending' | 'new' | 'top';
 export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { colors: t, typo } = useAppTheme();
+  const { colors: t, typo, isDark, toggleMode } = useAppTheme();
   const { objects, searchObjects, loading, refreshing, refreshObjects, currentUser } = useApp();
   const { unreadCount } = useNotifications();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, mutedTextColor, a11yProps } = useAccessibility();
@@ -260,6 +260,9 @@ export default function FeedScreen() {
           </Pressable>
           <Text style={[styles.title, { color: t.primary, fontSize: scaledSize(24) }]}>its name is.</Text>
           <View style={styles.headerActions}>
+            <Pressable style={[styles.headerBtn, { backgroundColor: isDark ? 'rgba(124,92,252,0.12)' : 'rgba(245,158,11,0.12)' }]} onPress={() => { triggerHaptic('selection'); toggleMode(); }}>
+              <MaterialIcons name={isDark ? 'dark-mode' : 'light-mode'} size={20} color={isDark ? '#7C5CFC' : '#F59E0B'} />
+            </Pressable>
             <Pressable style={[styles.headerBtn, { backgroundColor: t.surface }]} onPress={() => router.push('/leaderboard')}>
               <MaterialIcons name="emoji-events" size={20} color={t.primary} />
             </Pressable>
@@ -285,6 +288,9 @@ export default function FeedScreen() {
         </Pressable>
         <Text style={[styles.title, { color: t.primary, fontSize: scaledSize(24) }]}>its name is.</Text>
         <View style={styles.headerActions}>
+          <Pressable style={[styles.headerBtn, { backgroundColor: isDark ? 'rgba(124,92,252,0.12)' : 'rgba(245,158,11,0.12)' }]} onPress={() => { triggerHaptic('selection'); toggleMode(); }}>
+            <MaterialIcons name={isDark ? 'dark-mode' : 'light-mode'} size={20} color={isDark ? '#7C5CFC' : '#F59E0B'} />
+          </Pressable>
           <Pressable style={[styles.headerBtn, { backgroundColor: t.surface }]} onPress={() => router.push('/leaderboard')}>
             <MaterialIcons name="emoji-events" size={20} color={t.primary} />
           </Pressable>

@@ -34,6 +34,7 @@ export default function RootLayout() {
                   <Stack.Screen name="terms" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
                   <Stack.Screen name="privacy" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
                   <Stack.Screen name="user/[id]" options={{ animation: 'fade_from_bottom', animationDuration: 250 }} />
+                  <Stack.Screen name="customize-theme" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
                   <Stack.Screen name="leaderboard" options={{ animation: 'fade_from_bottom', animationDuration: 250 }} />
                 </Stack>
                 </AppProvider>

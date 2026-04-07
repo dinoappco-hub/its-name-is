@@ -9,6 +9,8 @@ const fallback: ThemeContextType = {
   typo: createTypography(darkColors),
   setMode: () => {},
   toggleMode: () => {},
+  colorPreset: 'golden',
+  setColorPreset: () => {},
 };
 
 export function useAppTheme(): ThemeContextType {

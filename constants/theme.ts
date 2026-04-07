@@ -124,6 +124,104 @@ export const lightColors: ThemeColors = {
 // Static default (dark) — for backward compatibility
 export const theme = darkColors;
 
+// ──────────────────────────── Color Presets ────────────────────────────
+
+export interface ColorPreset {
+  key: string;
+  name: string;
+  emoji: string;
+  dark: {
+    primary: string;
+    primaryLight: string;
+    primaryDark: string;
+    accent: string;
+    accentLight: string;
+    accentDark: string;
+  };
+  light: {
+    primary: string;
+    primaryLight: string;
+    primaryDark: string;
+    accent: string;
+    accentLight: string;
+    accentDark: string;
+  };
+}
+
+export const COLOR_PRESETS: ColorPreset[] = [
+  {
+    key: 'golden',
+    name: 'Golden Hour',
+    emoji: '✨',
+    dark: { primary: '#FFD700', primaryLight: '#FFE44D', primaryDark: '#CCB000', accent: '#7C5CFC', accentLight: '#9B82FD', accentDark: '#5A3AD9' },
+    light: { primary: '#D4A800', primaryLight: '#FFD700', primaryDark: '#B08F00', accent: '#6B4CE6', accentLight: '#8B6FFF', accentDark: '#4A30B0' },
+  },
+  {
+    key: 'ocean',
+    name: 'Ocean Breeze',
+    emoji: '🌊',
+    dark: { primary: '#38BDF8', primaryLight: '#7DD3FC', primaryDark: '#0EA5E9', accent: '#06B6D4', accentLight: '#22D3EE', accentDark: '#0891B2' },
+    light: { primary: '#0284C7', primaryLight: '#38BDF8', primaryDark: '#0369A1', accent: '#0891B2', accentLight: '#06B6D4', accentDark: '#0E7490' },
+  },
+  {
+    key: 'rose',
+    name: 'Rose Garden',
+    emoji: '🌹',
+    dark: { primary: '#FB7185', primaryLight: '#FDA4AF', primaryDark: '#E11D48', accent: '#F472B6', accentLight: '#F9A8D4', accentDark: '#DB2777' },
+    light: { primary: '#E11D48', primaryLight: '#FB7185', primaryDark: '#BE123C', accent: '#DB2777', accentLight: '#F472B6', accentDark: '#BE185D' },
+  },
+  {
+    key: 'forest',
+    name: 'Forest Canopy',
+    emoji: '🌿',
+    dark: { primary: '#34D399', primaryLight: '#6EE7B7', primaryDark: '#10B981', accent: '#A3E635', accentLight: '#BEF264', accentDark: '#84CC16' },
+    light: { primary: '#059669', primaryLight: '#34D399', primaryDark: '#047857', accent: '#65A30D', accentLight: '#84CC16', accentDark: '#4D7C0F' },
+  },
+  {
+    key: 'sunset',
+    name: 'Sunset Blaze',
+    emoji: '🌅',
+    dark: { primary: '#FB923C', primaryLight: '#FDBA74', primaryDark: '#F97316', accent: '#F87171', accentLight: '#FCA5A5', accentDark: '#EF4444' },
+    light: { primary: '#EA580C', primaryLight: '#FB923C', primaryDark: '#C2410C', accent: '#DC2626', accentLight: '#F87171', accentDark: '#B91C1C' },
+  },
+  {
+    key: 'arctic',
+    name: 'Arctic Frost',
+    emoji: '❄️',
+    dark: { primary: '#67E8F9', primaryLight: '#A5F3FC', primaryDark: '#22D3EE', accent: '#818CF8', accentLight: '#A5B4FC', accentDark: '#6366F1' },
+    light: { primary: '#0891B2', primaryLight: '#22D3EE', primaryDark: '#0E7490', accent: '#4F46E5', accentLight: '#6366F1', accentDark: '#4338CA' },
+  },
+  {
+    key: 'berry',
+    name: 'Berry Burst',
+    emoji: '🫐',
+    dark: { primary: '#E879F9', primaryLight: '#F0ABFC', primaryDark: '#D946EF', accent: '#C084FC', accentLight: '#D8B4FE', accentDark: '#A855F7' },
+    light: { primary: '#C026D3', primaryLight: '#E879F9', primaryDark: '#A21CAF', accent: '#9333EA', accentLight: '#A855F7', accentDark: '#7E22CE' },
+  },
+  {
+    key: 'sage',
+    name: 'Sage Mist',
+    emoji: '🍃',
+    dark: { primary: '#86EFAC', primaryLight: '#BBF7D0', primaryDark: '#4ADE80', accent: '#FDE68A', accentLight: '#FEF3C7', accentDark: '#FBBF24' },
+    light: { primary: '#16A34A', primaryLight: '#4ADE80', primaryDark: '#15803D', accent: '#D97706', accentLight: '#F59E0B', accentDark: '#B45309' },
+  },
+];
+
+export function buildThemeColors(mode: 'dark' | 'light', presetKey: string): ThemeColors {
+  const preset = COLOR_PRESETS.find(p => p.key === presetKey) || COLOR_PRESETS[0];
+  const base = mode === 'dark' ? darkColors : lightColors;
+  const presetColors = mode === 'dark' ? preset.dark : preset.light;
+  return {
+    ...base,
+    primary: presetColors.primary,
+    primaryLight: presetColors.primaryLight,
+    primaryDark: presetColors.primaryDark,
+    accent: presetColors.accent,
+    accentLight: presetColors.accentLight,
+    accentDark: presetColors.accentDark,
+  };
+}
+
 // ──────────────────────────── Typography Factory ────────────────────────────
 
 export function createTypography(t: ThemeColors) {
