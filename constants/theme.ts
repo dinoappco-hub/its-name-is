@@ -207,9 +207,43 @@ export const COLOR_PRESETS: ColorPreset[] = [
   },
 ];
 
-export function buildThemeColors(mode: 'dark' | 'light', presetKey: string): ThemeColors {
-  const preset = COLOR_PRESETS.find(p => p.key === presetKey) || COLOR_PRESETS[0];
+export interface CustomColors {
+  primary: string;
+  accent: string;
+}
+
+function lightenColor(hex: string, amount: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, ((num >> 16) & 0xFF) + Math.round(255 * amount));
+  const g = Math.min(255, ((num >> 8) & 0xFF) + Math.round(255 * amount));
+  const b = Math.min(255, (num & 0xFF) + Math.round(255 * amount));
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0').toUpperCase()}`;
+}
+
+function darkenColor(hex: string, amount: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.max(0, ((num >> 16) & 0xFF) - Math.round(255 * amount));
+  const g = Math.max(0, ((num >> 8) & 0xFF) - Math.round(255 * amount));
+  const b = Math.max(0, (num & 0xFF) - Math.round(255 * amount));
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0').toUpperCase()}`;
+}
+
+export function buildThemeColors(mode: 'dark' | 'light', presetKey: string, custom?: CustomColors | null): ThemeColors {
   const base = mode === 'dark' ? darkColors : lightColors;
+
+  if (custom && custom.primary && custom.accent) {
+    return {
+      ...base,
+      primary: custom.primary,
+      primaryLight: lightenColor(custom.primary, 0.15),
+      primaryDark: darkenColor(custom.primary, 0.15),
+      accent: custom.accent,
+      accentLight: lightenColor(custom.accent, 0.15),
+      accentDark: darkenColor(custom.accent, 0.15),
+    };
+  }
+
+  const preset = COLOR_PRESETS.find(p => p.key === presetKey) || COLOR_PRESETS[0];
   const presetColors = mode === 'dark' ? preset.dark : preset.light;
   return {
     ...base,
@@ -220,6 +254,41 @@ export function buildThemeColors(mode: 'dark' | 'light', presetKey: string): The
     accentLight: presetColors.accentLight,
     accentDark: presetColors.accentDark,
   };
+}
+
+export function isValidHex(hex: string): boolean {
+  return /^#[0-9A-Fa-f]{6}$/.test(hex);
+}
+
+export function hslToHex(h: number, s: number, l: number): string {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+}
+
+export function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const num = parseInt(hex.replace('#', ''), 16);
+  let r = ((num >> 16) & 0xFF) / 255;
+  let g = ((num >> 8) & 0xFF) / 255;
+  let b = (num & 0xFF) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) * 60; break;
+      case g: h = ((b - r) / d + 2) * 60; break;
+      case b: h = ((r - g) / d + 4) * 60; break;
+    }
+  }
+  return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
 // ──────────────────────────── Typography Factory ────────────────────────────

@@ -3,10 +3,16 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthRouter } from '@/template';
-import { theme } from '../constants/theme';
+import { useAppTheme } from '../hooks/useTheme';
 
 function AuthenticatedEntry() {
-  const router = useRouter();
+  const { colors: t } = useAppTheme();
+
+  return <Redirect href="/(tabs)" />;
+}
+
+export default function EntryScreen() {
+  const { colors: t } = useAppTheme();
   const [checking, setChecking] = useState(true);
   const [onboarded, setOnboarded] = useState(false);
 
@@ -21,34 +27,32 @@ function AuthenticatedEntry() {
 
   if (checking) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color={theme.primary} />
+      <View style={[styles.container, { backgroundColor: t.background }]}>
+        <ActivityIndicator size="large" color={t.primary} />
       </View>
     );
   }
 
+  // Show onboarding first before requiring auth
   if (!onboarded) {
     return <Redirect href="/onboarding" />;
   }
 
-  return <Redirect href="/(tabs)" />;
-}
-
-export default function EntryScreen() {
   return (
     <AuthRouter
       loginRoute="/login"
-      loadingComponent={LoadingScreen}
+      loadingComponent={LoadingComponent}
     >
       <AuthenticatedEntry />
     </AuthRouter>
   );
 }
 
-function LoadingScreen() {
+function LoadingComponent() {
+  const { colors: t } = useAppTheme();
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color={theme.primary} />
+    <View style={[styles.container, { backgroundColor: t.background }]}>
+      <ActivityIndicator size="large" color={t.primary} />
     </View>
   );
 }
@@ -56,7 +60,6 @@ function LoadingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.background,
     alignItems: 'center',
     justifyContent: 'center',
   },

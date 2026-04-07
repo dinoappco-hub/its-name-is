@@ -11,6 +11,8 @@ const fallback: ThemeContextType = {
   toggleMode: () => {},
   colorPreset: 'golden',
   setColorPreset: () => {},
+  customColors: null,
+  setCustomColors: () => {},
 };
 
 export function useAppTheme(): ThemeContextType {

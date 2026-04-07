@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
-import { theme, typography } from '../constants/theme';
+import { useAppTheme } from '../hooks/useTheme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -37,7 +37,7 @@ const slides: OnboardingSlide[] = [
     id: '3',
     image: require('../assets/images/onboarding-3.png'),
     title: 'Rise to the Top',
-    subtitle: 'Earn votes, climb the leaderboard, and go Premium for unlimited submissions and exclusive features.',
+    subtitle: 'Earn votes, climb the leaderboard, and become a top contributor in the community.',
     icon: 'emoji-events',
   },
 ];
@@ -45,11 +45,13 @@ const slides: OnboardingSlide[] = [
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors: t } = useAppTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
   const completeOnboarding = async () => {
     await AsyncStorage.setItem('snapname_onboarded', 'true');
+    // After onboarding, go back to index which will now show AuthRouter → login
     router.replace('/');
   };
 
@@ -69,11 +71,11 @@ export default function OnboardingScreen() {
         <View style={styles.imageOverlay} />
       </View>
       <View style={styles.slideContent}>
-        <View style={styles.iconCircle}>
-          <MaterialIcons name={item.icon} size={28} color={theme.primary} />
+        <View style={[styles.iconCircle, { backgroundColor: `${t.primary}20` }]}>
+          <MaterialIcons name={item.icon} size={28} color={t.primary} />
         </View>
-        <Text style={styles.slideTitle}>{item.title}</Text>
-        <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
+        <Text style={[styles.slideTitle, { color: t.textPrimary }]}>{item.title}</Text>
+        <Text style={[styles.slideSubtitle, { color: t.textSecondary }]}>{item.subtitle}</Text>
       </View>
     </View>
   );
@@ -81,17 +83,17 @@ export default function OnboardingScreen() {
   const isLast = currentIndex === slides.length - 1;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: t.background }]}>
       <SafeAreaView edges={['top']} style={styles.topBar}>
         {currentIndex > 0 ? (
           <Pressable
-            style={styles.skipBtn}
+            style={[styles.skipBtn, { backgroundColor: `${t.textSecondary}15` }]}
             onPress={() => {
               flatListRef.current?.scrollToIndex({ index: currentIndex - 1, animated: true });
               setCurrentIndex(currentIndex - 1);
             }}
           >
-            <MaterialIcons name="arrow-back" size={20} color={theme.textSecondary} />
+            <MaterialIcons name="arrow-back" size={20} color={t.textSecondary} />
           </Pressable>
         ) : (
           <View style={{ width: 44 }} />
@@ -100,13 +102,13 @@ export default function OnboardingScreen() {
           {slides.map((_, i) => (
             <View
               key={i}
-              style={[styles.dot, i === currentIndex && styles.dotActive]}
+              style={[styles.dot, { backgroundColor: t.surfaceElevated }, i === currentIndex && [styles.dotActive, { backgroundColor: t.primary }]]}
             />
           ))}
         </View>
         {!isLast ? (
-          <Pressable style={styles.skipBtn} onPress={completeOnboarding}>
-            <Text style={styles.skipText}>Skip</Text>
+          <Pressable style={[styles.skipBtn, { backgroundColor: `${t.textSecondary}15` }]} onPress={completeOnboarding}>
+            <Text style={[styles.skipText, { color: t.textSecondary }]}>Skip</Text>
           </Pressable>
         ) : (
           <View style={{ width: 44 }} />
@@ -131,30 +133,33 @@ export default function OnboardingScreen() {
 
       <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
         <Pressable
-          style={[styles.nextBtn, isLast && styles.nextBtnFinal]}
+          style={[styles.nextBtn, { backgroundColor: t.primary }, isLast && styles.nextBtnFinal]}
           onPress={handleNext}
         >
           {isLast ? (
-            <Text style={styles.nextBtnText}>Get Started</Text>
+            <>
+              <Text style={[styles.nextBtnText, { color: t.background }]}>Get Started</Text>
+              <MaterialIcons name="arrow-forward" size={20} color={t.background} />
+            </>
           ) : (
             <>
-              <Text style={styles.nextBtnText}>Next</Text>
-              <MaterialIcons name="arrow-forward" size={20} color={theme.background} />
+              <Text style={[styles.nextBtnText, { color: t.background }]}>Next</Text>
+              <MaterialIcons name="arrow-forward" size={20} color={t.background} />
             </>
           )}
         </Pressable>
-        {isLast && (
-          <Text style={styles.termsText}>
+        {isLast ? (
+          <Text style={[styles.termsText, { color: t.textMuted }]}>
             By continuing, you agree to our Terms of Service and Privacy Policy
           </Text>
-        )}
+        ) : null}
       </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
+  container: { flex: 1 },
   topBar: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
@@ -168,18 +173,16 @@ const styles = StyleSheet.create({
   skipBtn: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: theme.radiusFull,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 9999,
     minWidth: 44,
     alignItems: 'center',
   },
-  skipText: { ...typography.captionBold, color: theme.textSecondary },
+  skipText: { fontSize: 13, fontWeight: '600' },
   dots: { flexDirection: 'row', gap: 8 },
   dot: {
     width: 8, height: 8, borderRadius: 4,
-    backgroundColor: theme.surfaceElevated,
   },
-  dotActive: { width: 24, backgroundColor: theme.primary },
+  dotActive: { width: 24 },
   slide: { flex: 1 },
   imageContainer: { flex: 0.55 },
   slideImage: { width: '100%', height: '100%' },
@@ -195,16 +198,15 @@ const styles = StyleSheet.create({
   },
   iconCircle: {
     width: 56, height: 56, borderRadius: 28,
-    backgroundColor: 'rgba(255,215,0,0.12)',
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 20,
   },
   slideTitle: {
-    fontSize: 28, fontWeight: '700', color: theme.textPrimary,
+    fontSize: 28, fontWeight: '700',
     textAlign: 'center', marginBottom: 12,
   },
   slideSubtitle: {
-    fontSize: 16, fontWeight: '400', color: theme.textSecondary,
+    fontSize: 16, fontWeight: '400',
     textAlign: 'center', lineHeight: 24,
   },
   bottomBar: {
@@ -216,19 +218,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center', justifyContent: 'center',
     gap: 8,
-    backgroundColor: theme.primary,
-    borderRadius: theme.radiusMedium,
+    borderRadius: 12,
     height: 56,
   },
-  nextBtnFinal: {
-    backgroundColor: theme.primary,
-  },
+  nextBtnFinal: {},
   nextBtnText: {
-    fontSize: 17, fontWeight: '700', color: theme.background,
+    fontSize: 17, fontWeight: '700',
   },
   termsText: {
-    ...typography.small,
-    color: theme.textMuted,
+    fontSize: 11, fontWeight: '500',
     textAlign: 'center',
     marginTop: 12,
     lineHeight: 16,
