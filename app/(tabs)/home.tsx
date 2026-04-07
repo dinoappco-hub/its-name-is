@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, ScrollView as HScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { CATEGORIES, CategoryKey } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
+import { useAuth } from '@/template';
 import { useNotifications } from '../../hooks/useNotifications';
 import { ObjectSubmission, User } from '../../services/types';
 import { CommunityStats, fetchCommunityStats, fetchRecentActiveUsers } from '../../services/communityService';
@@ -36,8 +37,21 @@ export default function FeedScreen() {
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('all');
+  const { user: authUser } = useAuth();
+  const [showWelcome, setShowWelcome] = useState(false);
+  const hasShownWelcome = useRef(false);
 
   useEffect(() => { loadCommunityData(); }, []);
+
+  // Show welcome banner once after initial load
+  useEffect(() => {
+    if (!loading && !hasShownWelcome.current && objects.length >= 0) {
+      hasShownWelcome.current = true;
+      setShowWelcome(true);
+      const timer = setTimeout(() => setShowWelcome(false), 2800);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   const loadCommunityData = async () => {
     const [stats, users] = await Promise.all([fetchCommunityStats(), fetchRecentActiveUsers(10)]);
@@ -216,6 +230,27 @@ export default function FeedScreen() {
     );
   };
 
+  if (showWelcome) {
+    const displayName = currentUser.displayName || currentUser.username || authUser?.email?.split('@')[0] || 'Friend';
+    return (
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
+        <View style={styles.welcomeContainer}>
+          <Animated.View entering={FadeInDown.duration(500)} style={styles.welcomeContent}>
+            <View style={[styles.welcomeIconWrap, { backgroundColor: `${t.primary}15` }]}>
+              <MaterialIcons name="waving-hand" size={48} color={t.primary} />
+            </View>
+            <Text style={[styles.welcomeTitle, { color: t.textPrimary }]}>Welcome back,</Text>
+            <Text style={[styles.welcomeName, { color: t.primary }]}>{displayName}!</Text>
+            <Text style={[styles.welcomeSubtitle, { color: t.textSecondary }]}>Let us see what the community has been naming</Text>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.welcomeDinos}>
+            <DinoLoader message="" size="small" />
+          </Animated.View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (loading) {
     return (
       <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
@@ -337,6 +372,13 @@ const styles = StyleSheet.create({
   cardUser: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   cardAvatar: { width: 18, height: 18, borderRadius: 9 },
   cardUsername: { fontSize: 11, fontWeight: '500', flex: 1 },
+  welcomeContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  welcomeContent: { alignItems: 'center', marginBottom: 8 },
+  welcomeIconWrap: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  welcomeTitle: { fontSize: 22, fontWeight: '500', marginBottom: 4 },
+  welcomeName: { fontSize: 28, fontWeight: '700', marginBottom: 12 },
+  welcomeSubtitle: { fontSize: 14, fontWeight: '400', textAlign: 'center', lineHeight: 20 },
+  welcomeDinos: { marginTop: 8 },
   centeredLoader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 32, gap: 12 },
   emptyTitle: { fontSize: 15, fontWeight: '600', marginTop: 4 },
