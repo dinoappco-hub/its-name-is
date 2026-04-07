@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Linking } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -139,10 +139,10 @@ export default function TermsScreen() {
 
         <Section number="11" title="Contact Us">
           <P>If you have questions about these Terms of Service, please contact us at:</P>
-          <View style={styles.contactCard}>
-            <MaterialIcons name="mail" size={18} color={theme.primary} />
-            <Text style={styles.contactText}>support@itsnameis.app</Text>
-          </View>
+          <Pressable style={styles.contactCard} onPress={() => Linking.openURL('https://discord.gg/2cda4rje')}>
+            <MaterialIcons name="forum" size={18} color={theme.primary} />
+            <Text style={styles.contactText}>discord.gg/2cda4rje</Text>
+          </Pressable>
         </Section>
 
         <View style={styles.footer}>

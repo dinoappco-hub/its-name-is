@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Linking } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -123,7 +123,7 @@ export default function PrivacyScreen() {
           <Bullet>Delete your account and associated data</Bullet>
           <Bullet>Opt out of non-essential notifications</Bullet>
           <Bullet>Request a copy of your data</Bullet>
-          <P>To exercise any of these rights, contact us at support@itsnameis.app.</P>
+          <P>To exercise any of these rights, contact us on our Discord server.</P>
         </Section>
 
         <Section number="6" title="Camera and Photo Access">
@@ -158,10 +158,10 @@ export default function PrivacyScreen() {
 
         <Section number="11" title="Contact Us">
           <P>If you have questions or concerns about this Privacy Policy, please contact us:</P>
-          <View style={styles.contactCard}>
-            <MaterialIcons name="mail" size={18} color={theme.accent} />
-            <Text style={styles.contactText}>support@itsnameis.app</Text>
-          </View>
+          <Pressable style={styles.contactCard} onPress={() => Linking.openURL('https://discord.gg/2cda4rje')}>
+            <MaterialIcons name="forum" size={18} color={theme.accent} />
+            <Text style={styles.contactText}>discord.gg/2cda4rje</Text>
+          </Pressable>
         </Section>
 
         <View style={styles.footer}>

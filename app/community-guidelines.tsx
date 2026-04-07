@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Linking } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -310,10 +310,10 @@ export default function CommunityGuidelinesScreen() {
         {/* Section 9: Contact */}
         <Section number="9" title="Questions or Concerns" icon="help-outline">
           <P>If you have questions about these guidelines or need to report an issue, contact us:</P>
-          <View style={styles.contactCard}>
-            <MaterialIcons name="mail" size={18} color={theme.primary} />
-            <Text style={styles.contactText}>support@itsnameis.app</Text>
-          </View>
+          <Pressable style={styles.contactCard} onPress={() => Linking.openURL('https://discord.gg/2cda4rje')}>
+            <MaterialIcons name="forum" size={18} color={theme.primary} />
+            <Text style={styles.contactText}>discord.gg/2cda4rje</Text>
+          </Pressable>
         </Section>
 
         {/* Closing */}

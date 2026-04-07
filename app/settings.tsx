@@ -53,7 +53,7 @@ export default function SettingsScreen() {
   };
 
   const handleContact = () => {
-    Linking.openURL('mailto:support@itsnameis.app?subject=its%20name%20is.%20Support');
+    Linking.openURL('https://discord.gg/2cda4rje');
   };
 
   const sections: { title: string; items: SettingsItem[] }[] = [
@@ -144,9 +144,9 @@ export default function SettingsScreen() {
           showChevron: true,
         },
         {
-          icon: 'mail',
+          icon: 'forum',
           label: 'Contact Support',
-          subtitle: 'support@itsnameis.app',
+          subtitle: 'Join our Discord',
           onPress: handleContact,
           showChevron: true,
         },

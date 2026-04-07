@@ -186,7 +186,7 @@ export default function ReportProblemScreen() {
         </Pressable>
 
         <Text style={styles.disclaimer}>
-          Reports are reviewed within 24–48 hours. For urgent issues, email us at support@itsnameis.app
+          Reports are reviewed within 24–48 hours. For urgent issues, reach out on our Discord: discord.gg/2cda4rje
         </Text>
       </ScrollView>
     </SafeAreaView>
