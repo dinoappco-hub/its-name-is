@@ -35,7 +35,7 @@ export default function ProfileScreen() {
     { icon: 'visibility' as const, value: userObjects.reduce((s, o) => s + o.viewCount, 0), label: 'Total Views' },
   ];
 
-  const displayName = user?.username || user?.email?.split('@')[0] || currentUser.displayName;
+  const displayName = currentUser.displayName || currentUser.username || user?.email?.split('@')[0] || 'User';
   const displayEmail = user?.email || '';
   const avatarUri = currentUser.avatar;
 
