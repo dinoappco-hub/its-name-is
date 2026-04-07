@@ -28,7 +28,7 @@ export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors: t, typo } = useAppTheme();
-  const { objects, searchObjects, loading, refreshing, refreshObjects } = useApp();
+  const { objects, searchObjects, loading, refreshing, refreshObjects, currentUser } = useApp();
   const { unreadCount } = useNotifications();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, mutedTextColor, a11yProps } = useAccessibility();
   const [search, setSearch] = useState('');
