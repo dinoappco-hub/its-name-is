@@ -203,9 +203,6 @@ export default function FeedScreen() {
   );
 
   const renderEmpty = () => {
-    if (loading) return (
-      <View style={styles.emptyWrap}><DinoLoader message="Loading community" size="large" /></View>
-    );
     return (
       <View style={styles.emptyWrap}>
         <MaterialIcons name="photo-camera" size={48} color={t.textMuted} />
@@ -218,6 +215,32 @@ export default function FeedScreen() {
       </View>
     );
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
+        <View style={styles.titleRow}>
+          <Pressable style={[styles.headerBtn, { backgroundColor: t.surface }]} onPress={() => { triggerHaptic('selection'); setDrawerVisible(true); }}>
+            <MaterialIcons name="menu" size={22} color={t.textSecondary} />
+          </Pressable>
+          <Text style={[styles.title, { color: t.primary, fontSize: scaledSize(24) }]}>its name is.</Text>
+          <View style={styles.headerActions}>
+            <Pressable style={[styles.headerBtn, { backgroundColor: t.surface }]} onPress={() => router.push('/leaderboard')}>
+              <MaterialIcons name="emoji-events" size={20} color={t.primary} />
+            </Pressable>
+            <Pressable style={[styles.headerBtn, { backgroundColor: t.surface }]} onPress={() => router.push('/notifications')}>
+              <MaterialIcons name="notifications" size={20} color={t.textSecondary} />
+              {unreadCount > 0 ? <View style={styles.notifBadge}><Text style={styles.notifBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text></View> : null}
+            </Pressable>
+          </View>
+        </View>
+        <View style={styles.centeredLoader}>
+          <DinoLoader message="Loading community" size="large" />
+        </View>
+        <NavigationDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
@@ -314,6 +337,7 @@ const styles = StyleSheet.create({
   cardUser: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   cardAvatar: { width: 18, height: 18, borderRadius: 9 },
   cardUsername: { fontSize: 11, fontWeight: '500', flex: 1 },
+  centeredLoader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 32, gap: 12 },
   emptyTitle: { fontSize: 15, fontWeight: '600', marginTop: 4 },
   emptyText: { fontSize: 13, fontWeight: '400', textAlign: 'center', lineHeight: 20 },
