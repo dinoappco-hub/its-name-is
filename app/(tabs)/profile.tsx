@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth, useAlert } from '@/template';
 import { useApp } from '../../contexts/AppContext';
+import { useAppTheme as useThemeToggle } from '../../hooks/useTheme';
 import DinoLoader from '../../components/DinoLoader';
 import { useAccessibility } from '../../hooks/useAccessibility';
 import { useAppTheme } from '../../hooks/useTheme';
@@ -17,7 +18,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { showAlert } = useAlert();
-  const { colors: t, typo } = useAppTheme();
+  const { colors: t, typo, isDark, toggleMode } = useAppTheme();
   const { currentUser, getUserObjects, objects, loading, refreshing, refreshObjects } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor } = useAccessibility();
   const userObjects = useMemo(() => getUserObjects(currentUser.id), [currentUser.id, getUserObjects]);
@@ -52,6 +53,9 @@ export default function ProfileScreen() {
         <View style={styles.headerRow}>
           <Text style={[styles.pageTitle, { color: t.textPrimary }]}>Profile</Text>
           <View style={styles.headerActions}>
+            <Pressable style={[styles.headerBtn, { backgroundColor: isDark ? 'rgba(124,92,252,0.12)' : 'rgba(245,158,11,0.12)' }]} onPress={() => { triggerHaptic('selection'); toggleMode(); }}>
+              <MaterialIcons name={isDark ? 'dark-mode' : 'light-mode'} size={20} color={isDark ? '#7C5CFC' : '#F59E0B'} />
+            </Pressable>
             <Pressable style={[styles.headerBtn, { backgroundColor: t.surface }]} onPress={() => { triggerHaptic('selection'); handleLogout(); }}>
               <MaterialIcons name="logout" size={20} color={t.error} />
             </Pressable>
