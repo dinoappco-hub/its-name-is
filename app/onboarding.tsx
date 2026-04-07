@@ -65,6 +65,7 @@ export default function OnboardingScreen() {
 
   const renderSlide = ({ item }: { item: OnboardingSlide }) => (
     <View style={[styles.slide, { width: SCREEN_W }]}>
+      <View style={styles.topSpacer} />
       <View style={styles.imageContainer}>
         <Image source={item.image} style={styles.slideImage} contentFit="cover" transition={300} />
 
@@ -179,11 +180,12 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   dotActive: { width: 24 },
   slide: { flex: 1 },
-  imageContainer: { flex: 0.55 },
+  topSpacer: { flex: 0.12 },
+  imageContainer: { flex: 0.45 },
   slideImage: { width: '100%', height: '100%' },
 
   slideContent: {
-    flex: 0.45, paddingHorizontal: 32, paddingTop: 24, alignItems: 'center',
+    flex: 0.43, paddingHorizontal: 32, paddingTop: 24, alignItems: 'center',
   },
   iconCircle: {
     width: 56, height: 56, borderRadius: 28,
