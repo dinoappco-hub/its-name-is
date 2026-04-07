@@ -6,7 +6,7 @@ import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from 'react-native-reanimated';
 import { CATEGORIES, CategoryKey } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '@/template';
@@ -40,6 +40,21 @@ export default function FeedScreen() {
   const { user: authUser } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
   const hasShownWelcome = useRef(false);
+  const welcomeProgress = useSharedValue(0);
+
+  const welcomeAnimStyle = useAnimatedStyle(() => ({
+    opacity: welcomeProgress.value,
+    transform: [{ scale: 0.9 + 0.1 * welcomeProgress.value }],
+    maxHeight: welcomeProgress.value * 300,
+    marginBottom: welcomeProgress.value * 14,
+    overflow: 'hidden' as const,
+  }));
+
+  const dismissWelcome = useCallback(() => {
+    welcomeProgress.value = withTiming(0, { duration: 600, easing: Easing.inOut(Easing.cubic) }, (finished) => {
+      if (finished) runOnJS(setShowWelcome)(false);
+    });
+  }, []);
 
   useEffect(() => { loadCommunityData(); }, []);
 
@@ -48,7 +63,8 @@ export default function FeedScreen() {
     if (!loading && !hasShownWelcome.current && objects.length >= 0) {
       hasShownWelcome.current = true;
       setShowWelcome(true);
-      const timer = setTimeout(() => setShowWelcome(false), 2800);
+      welcomeProgress.value = withTiming(1, { duration: 500 });
+      const timer = setTimeout(() => dismissWelcome(), 3000);
       return () => clearTimeout(timer);
     }
   }, [loading]);
@@ -117,7 +133,7 @@ export default function FeedScreen() {
   const renderHeader = () => (
     <View style={styles.headerContent}>
       {showWelcome ? (
-        <Animated.View entering={FadeInDown.duration(500)}>
+        <Animated.View style={welcomeAnimStyle}>
           <View style={[styles.welcomeBanner, { backgroundColor: t.surface, borderColor: t.border }]}>
             <View style={styles.welcomeBannerRow}>
               <View style={[styles.welcomeIconWrap, { backgroundColor: `${t.primary}15` }]}>
@@ -127,7 +143,7 @@ export default function FeedScreen() {
                 <Text style={[styles.welcomeTitle, { color: t.textPrimary }]}>Welcome back,</Text>
                 <Text style={[styles.welcomeName, { color: t.primary }]}>{welcomeDisplayName}!</Text>
               </View>
-              <Pressable onPress={() => setShowWelcome(false)} hitSlop={8}>
+              <Pressable onPress={dismissWelcome} hitSlop={8}>
                 <MaterialIcons name="close" size={18} color={t.textMuted} />
               </Pressable>
             </View>

@@ -67,7 +67,7 @@ export default function OnboardingScreen() {
     <View style={[styles.slide, { width: SCREEN_W }]}>
       <View style={styles.imageContainer}>
         <Image source={item.image} style={styles.slideImage} contentFit="cover" transition={300} />
-        <View style={[styles.imageGradient, { backgroundColor: t.background }]} />
+
       </View>
       <View style={styles.slideContent}>
         <Animated.View entering={FadeInDown.duration(400)}>
@@ -181,9 +181,7 @@ const styles = StyleSheet.create({
   slide: { flex: 1 },
   imageContainer: { flex: 0.45 },
   slideImage: { width: '100%', height: '100%' },
-  imageGradient: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, height: 60, opacity: 0.9,
-  },
+
   slideContent: {
     flex: 0.55, paddingHorizontal: 32, paddingTop: 24, alignItems: 'center',
   },
