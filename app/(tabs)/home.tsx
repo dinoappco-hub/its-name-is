@@ -116,6 +116,28 @@ export default function FeedScreen() {
 
   const renderHeader = () => (
     <View style={styles.headerContent}>
+      {showWelcome ? (
+        <Animated.View entering={FadeInDown.duration(500)}>
+          <View style={[styles.welcomeBanner, { backgroundColor: t.surface, borderColor: t.border }]}>
+            <View style={styles.welcomeBannerRow}>
+              <View style={[styles.welcomeIconWrap, { backgroundColor: `${t.primary}15` }]}>
+                <MaterialIcons name="waving-hand" size={28} color={t.primary} />
+              </View>
+              <View style={styles.welcomeBannerText}>
+                <Text style={[styles.welcomeTitle, { color: t.textPrimary }]}>Welcome back,</Text>
+                <Text style={[styles.welcomeName, { color: t.primary }]}>{welcomeDisplayName}!</Text>
+              </View>
+              <Pressable onPress={() => setShowWelcome(false)} hitSlop={8}>
+                <MaterialIcons name="close" size={18} color={t.textMuted} />
+              </Pressable>
+            </View>
+            <Text style={[styles.welcomeSubtitle, { color: t.textSecondary }]}>Let us see what the community has been naming</Text>
+            <View style={styles.welcomeDinos}>
+              <DinoLoader message="" size="small" />
+            </View>
+          </View>
+        </Animated.View>
+      ) : null}
       <View style={styles.searchRow}>
         <View style={[styles.searchBar, { backgroundColor: t.surface }]}>
           <MaterialIcons name="search" size={20} color={t.textMuted} />
@@ -230,24 +252,7 @@ export default function FeedScreen() {
     );
   };
 
-  if (showWelcome) {
-    const displayName = currentUser.displayName || currentUser.username || authUser?.email?.split('@')[0] || 'Friend';
-    return (
-      <View style={[styles.welcomeFullScreen, { backgroundColor: t.background }]}>
-        <Animated.View entering={FadeInDown.duration(500)} style={styles.welcomeContent}>
-          <View style={[styles.welcomeIconWrap, { backgroundColor: `${t.primary}15` }]}>
-            <MaterialIcons name="waving-hand" size={48} color={t.primary} />
-          </View>
-          <Text style={[styles.welcomeTitle, { color: t.textPrimary }]}>Welcome back,</Text>
-          <Text style={[styles.welcomeName, { color: t.primary }]}>{displayName}!</Text>
-          <Text style={[styles.welcomeSubtitle, { color: t.textSecondary }]}>Let us see what the community has been naming</Text>
-        </Animated.View>
-        <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.welcomeDinos}>
-          <DinoLoader message="" size="small" />
-        </Animated.View>
-      </View>
-    );
-  }
+  const welcomeDisplayName = currentUser.displayName || currentUser.username || authUser?.email?.split('@')[0] || 'Friend';
 
   if (loading) {
     return (
@@ -376,13 +381,14 @@ const styles = StyleSheet.create({
   cardUser: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   cardAvatar: { width: 18, height: 18, borderRadius: 9 },
   cardUsername: { fontSize: 11, fontWeight: '500', flex: 1 },
-  welcomeFullScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  welcomeContent: { alignItems: 'center', marginBottom: 8 },
-  welcomeIconWrap: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  welcomeTitle: { fontSize: 22, fontWeight: '500', marginBottom: 4 },
-  welcomeName: { fontSize: 28, fontWeight: '700', marginBottom: 12 },
-  welcomeSubtitle: { fontSize: 14, fontWeight: '400', textAlign: 'center', lineHeight: 20 },
-  welcomeDinos: { marginTop: 8 },
+  welcomeBanner: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 14, alignItems: 'center' },
+  welcomeBannerRow: { flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 8 },
+  welcomeBannerText: { flex: 1, marginLeft: 12 },
+  welcomeIconWrap: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  welcomeTitle: { fontSize: 14, fontWeight: '500' },
+  welcomeName: { fontSize: 20, fontWeight: '700' },
+  welcomeSubtitle: { fontSize: 13, fontWeight: '400', textAlign: 'center', lineHeight: 18, marginBottom: 4 },
+  welcomeDinos: { marginTop: 4 },
   centeredLoader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 32, gap: 12 },
   emptyTitle: { fontSize: 15, fontWeight: '600', marginTop: 4 },
