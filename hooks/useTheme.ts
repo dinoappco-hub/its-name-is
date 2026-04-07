@@ -9,7 +9,7 @@ const fallback: ThemeContextType = {
   typo: createTypography(darkColors),
   setMode: () => {},
   toggleMode: () => {},
-  colorPreset: 'golden',
+  colorPreset: 'ocean',
   setColorPreset: () => {},
   customColors: null,
   setCustomColors: () => {},

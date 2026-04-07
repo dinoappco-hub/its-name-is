@@ -28,7 +28,7 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>('dark');
-  const [colorPreset, setColorPresetState] = useState<string>('golden');
+  const [colorPreset, setColorPresetState] = useState<string>('ocean');
   const [customColors, setCustomColorsState] = useState<CustomColors | null>(null);
   const [fontPreset, setFontPresetState] = useState<string>('system');
   const [loaded, setLoaded] = useState(false);

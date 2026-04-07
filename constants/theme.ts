@@ -52,12 +52,12 @@ const sharedValues = {
 };
 
 export const darkColors: ThemeColors = {
-  primary: '#FFD700',
-  primaryLight: '#FFE44D',
-  primaryDark: '#CCB000',
-  accent: '#7C5CFC',
-  accentLight: '#9B82FD',
-  accentDark: '#5A3AD9',
+  primary: '#38BDF8',
+  primaryLight: '#7DD3FC',
+  primaryDark: '#0EA5E9',
+  accent: '#06B6D4',
+  accentLight: '#22D3EE',
+  accentDark: '#0891B2',
   background: '#0A0A0F',
   backgroundSecondary: '#111118',
   surface: '#16161F',
@@ -87,12 +87,12 @@ export const darkColors: ThemeColors = {
 };
 
 export const lightColors: ThemeColors = {
-  primary: '#D4A800',
-  primaryLight: '#FFD700',
-  primaryDark: '#B08F00',
-  accent: '#6B4CE6',
-  accentLight: '#8B6FFF',
-  accentDark: '#4A30B0',
+  primary: '#0284C7',
+  primaryLight: '#38BDF8',
+  primaryDark: '#0369A1',
+  accent: '#0891B2',
+  accentLight: '#06B6D4',
+  accentDark: '#0E7490',
   background: '#F5F5F8',
   backgroundSecondary: '#EEEEF2',
   surface: '#FFFFFF',
