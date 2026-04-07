@@ -212,6 +212,73 @@ export interface CustomColors {
   accent: string;
 }
 
+// ──────────────────────────── Font Presets ────────────────────────────
+
+export interface FontPreset {
+  key: string;
+  name: string;
+  emoji: string;
+  description: string;
+  fontFamily: {
+    regular: string | undefined;
+    bold: string | undefined;
+  };
+}
+
+export const FONT_PRESETS: FontPreset[] = [
+  {
+    key: 'system',
+    name: 'System Default',
+    emoji: '📱',
+    description: 'Clean and native feel',
+    fontFamily: { regular: undefined, bold: undefined },
+  },
+  {
+    key: 'rounded',
+    name: 'Rounded',
+    emoji: '🫧',
+    description: 'Soft and friendly',
+    fontFamily: {
+      regular: Platform.select({ ios: 'Avenir-Medium', android: 'sans-serif-medium', default: undefined }),
+      bold: Platform.select({ ios: 'Avenir-Heavy', android: 'sans-serif-black', default: undefined }),
+    },
+  },
+  {
+    key: 'serif',
+    name: 'Serif',
+    emoji: '📰',
+    description: 'Classic and elegant',
+    fontFamily: {
+      regular: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+      bold: Platform.select({ ios: 'Georgia-Bold', android: 'serif', default: 'serif' }),
+    },
+  },
+  {
+    key: 'monospace',
+    name: 'Monospace',
+    emoji: '💻',
+    description: 'Technical and precise',
+    fontFamily: {
+      regular: Platform.select({ ios: 'Courier New', android: 'monospace', default: 'monospace' }),
+      bold: Platform.select({ ios: 'Courier-Bold', android: 'monospace', default: 'monospace' }),
+    },
+  },
+  {
+    key: 'classic',
+    name: 'Classic',
+    emoji: '🖋️',
+    description: 'Timeless and refined',
+    fontFamily: {
+      regular: Platform.select({ ios: 'Palatino-Roman', android: 'serif', default: 'serif' }),
+      bold: Platform.select({ ios: 'Palatino-Bold', android: 'serif', default: 'serif' }),
+    },
+  },
+];
+
+export function getFontPreset(key: string): FontPreset {
+  return FONT_PRESETS.find(f => f.key === key) || FONT_PRESETS[0];
+}
+
 function lightenColor(hex: string, amount: number): string {
   const num = parseInt(hex.replace('#', ''), 16);
   const r = Math.min(255, ((num >> 16) & 0xFF) + Math.round(255 * amount));
@@ -293,21 +360,26 @@ export function hexToHsl(hex: string): { h: number; s: number; l: number } {
 
 // ──────────────────────────── Typography Factory ────────────────────────────
 
-export function createTypography(t: ThemeColors) {
+export function createTypography(t: ThemeColors, fontKey?: string) {
+  const fp = getFontPreset(fontKey || 'system');
+  const ff = fp.fontFamily.regular;
+  const ffBold = fp.fontFamily.bold;
   return {
-    heroValue: { fontSize: 48, fontWeight: '700' as const, color: t.textPrimary },
-    heroLabel: { fontSize: 11, fontWeight: '600' as const, color: t.textSecondary, textTransform: 'uppercase' as const, letterSpacing: 1 },
-    title: { fontSize: 28, fontWeight: '700' as const, color: t.textPrimary },
-    subtitle: { fontSize: 20, fontWeight: '700' as const, color: t.textPrimary },
-    cardTitle: { fontSize: 16, fontWeight: '600' as const, color: t.textPrimary },
-    cardValue: { fontSize: 24, fontWeight: '700' as const, color: t.textPrimary },
-    body: { fontSize: 15, fontWeight: '400' as const, color: t.textPrimary },
-    bodyBold: { fontSize: 15, fontWeight: '600' as const, color: t.textPrimary },
-    caption: { fontSize: 13, fontWeight: '400' as const, color: t.textSecondary },
-    captionBold: { fontSize: 13, fontWeight: '600' as const, color: t.textSecondary },
-    small: { fontSize: 11, fontWeight: '500' as const, color: t.textMuted },
-    button: { fontSize: 16, fontWeight: '700' as const, color: t.background },
-    badge: { fontSize: 11, fontWeight: '700' as const, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+    heroValue: { fontSize: 48, fontWeight: '700' as const, color: t.textPrimary, ...(ffBold ? { fontFamily: ffBold } : {}) },
+    heroLabel: { fontSize: 11, fontWeight: '600' as const, color: t.textSecondary, textTransform: 'uppercase' as const, letterSpacing: 1, ...(ffBold ? { fontFamily: ffBold } : {}) },
+    title: { fontSize: 28, fontWeight: '700' as const, color: t.textPrimary, ...(ffBold ? { fontFamily: ffBold } : {}) },
+    subtitle: { fontSize: 20, fontWeight: '700' as const, color: t.textPrimary, ...(ffBold ? { fontFamily: ffBold } : {}) },
+    cardTitle: { fontSize: 16, fontWeight: '600' as const, color: t.textPrimary, ...(ffBold ? { fontFamily: ffBold } : {}) },
+    cardValue: { fontSize: 24, fontWeight: '700' as const, color: t.textPrimary, ...(ffBold ? { fontFamily: ffBold } : {}) },
+    body: { fontSize: 15, fontWeight: '400' as const, color: t.textPrimary, ...(ff ? { fontFamily: ff } : {}) },
+    bodyBold: { fontSize: 15, fontWeight: '600' as const, color: t.textPrimary, ...(ffBold ? { fontFamily: ffBold } : {}) },
+    caption: { fontSize: 13, fontWeight: '400' as const, color: t.textSecondary, ...(ff ? { fontFamily: ff } : {}) },
+    captionBold: { fontSize: 13, fontWeight: '600' as const, color: t.textSecondary, ...(ffBold ? { fontFamily: ffBold } : {}) },
+    small: { fontSize: 11, fontWeight: '500' as const, color: t.textMuted, ...(ff ? { fontFamily: ff } : {}) },
+    button: { fontSize: 16, fontWeight: '700' as const, color: t.background, ...(ffBold ? { fontFamily: ffBold } : {}) },
+    badge: { fontSize: 11, fontWeight: '700' as const, textTransform: 'uppercase' as const, letterSpacing: 0.5, ...(ffBold ? { fontFamily: ffBold } : {}) },
+    fontFamily: ff,
+    fontFamilyBold: ffBold,
   } as const;
 }
 

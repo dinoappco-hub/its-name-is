@@ -13,6 +13,8 @@ const fallback: ThemeContextType = {
   setColorPreset: () => {},
   customColors: null,
   setCustomColors: () => {},
+  fontPreset: 'system',
+  setFontPreset: () => {},
 };
 
 export function useAppTheme(): ThemeContextType {

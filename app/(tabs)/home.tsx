@@ -233,21 +233,19 @@ export default function FeedScreen() {
   if (showWelcome) {
     const displayName = currentUser.displayName || currentUser.username || authUser?.email?.split('@')[0] || 'Friend';
     return (
-      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
-        <View style={styles.welcomeContainer}>
-          <Animated.View entering={FadeInDown.duration(500)} style={styles.welcomeContent}>
-            <View style={[styles.welcomeIconWrap, { backgroundColor: `${t.primary}15` }]}>
-              <MaterialIcons name="waving-hand" size={48} color={t.primary} />
-            </View>
-            <Text style={[styles.welcomeTitle, { color: t.textPrimary }]}>Welcome back,</Text>
-            <Text style={[styles.welcomeName, { color: t.primary }]}>{displayName}!</Text>
-            <Text style={[styles.welcomeSubtitle, { color: t.textSecondary }]}>Let us see what the community has been naming</Text>
-          </Animated.View>
-          <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.welcomeDinos}>
-            <DinoLoader message="" size="small" />
-          </Animated.View>
-        </View>
-      </SafeAreaView>
+      <View style={[styles.welcomeFullScreen, { backgroundColor: t.background }]}>
+        <Animated.View entering={FadeInDown.duration(500)} style={styles.welcomeContent}>
+          <View style={[styles.welcomeIconWrap, { backgroundColor: `${t.primary}15` }]}>
+            <MaterialIcons name="waving-hand" size={48} color={t.primary} />
+          </View>
+          <Text style={[styles.welcomeTitle, { color: t.textPrimary }]}>Welcome back,</Text>
+          <Text style={[styles.welcomeName, { color: t.primary }]}>{displayName}!</Text>
+          <Text style={[styles.welcomeSubtitle, { color: t.textSecondary }]}>Let us see what the community has been naming</Text>
+        </Animated.View>
+        <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.welcomeDinos}>
+          <DinoLoader message="" size="small" />
+        </Animated.View>
+      </View>
     );
   }
 
@@ -378,7 +376,7 @@ const styles = StyleSheet.create({
   cardUser: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   cardAvatar: { width: 18, height: 18, borderRadius: 9 },
   cardUsername: { fontSize: 11, fontWeight: '500', flex: 1 },
-  welcomeContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  welcomeFullScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
   welcomeContent: { alignItems: 'center', marginBottom: 8 },
   welcomeIconWrap: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   welcomeTitle: { fontSize: 22, fontWeight: '500', marginBottom: 4 },

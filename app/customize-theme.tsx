@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAppTheme } from '../hooks/useTheme';
-import { COLOR_PRESETS, buildThemeColors, isValidHex, hslToHex, hexToHsl } from '../constants/theme';
+import { COLOR_PRESETS, FONT_PRESETS, buildThemeColors, isValidHex, hslToHex, hexToHsl } from '../constants/theme';
 import { useAccessibility } from '../hooks/useAccessibility';
 import { Image } from 'expo-image';
 
@@ -19,10 +19,15 @@ type TabMode = 'presets' | 'custom';
 export default function CustomizeThemeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { colors: t, isDark, mode, colorPreset, setColorPreset, customColors, setCustomColors } = useAppTheme();
+  const { colors: t, isDark, mode, colorPreset, setColorPreset, customColors, setCustomColors, fontPreset, setFontPreset } = useAppTheme();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate } = useAccessibility();
 
   const [tab, setTab] = useState<TabMode>(colorPreset === 'custom' ? 'custom' : 'presets');
+
+  const handleSelectFont = (key: string) => {
+    triggerHaptic('selection');
+    setFontPreset(key);
+  };
 
   // Custom color state
   const [primaryHex, setPrimaryHex] = useState(customColors?.primary || '#FF6B6B');
@@ -389,6 +394,49 @@ export default function CustomizeThemeScreen() {
               : 'Enter a hex code directly or use the sliders to find your perfect color. Tap Apply to save.'}
           </Text>
         </View>
+
+        {/* Font Family Picker */}
+        <Text style={[styles.sectionLabel, { color: t.textMuted, marginTop: 4 }]}>TYPOGRAPHY STYLE</Text>
+        <View style={styles.fontGrid}>
+          {FONT_PRESETS.map((fp, idx) => {
+            const isSelected = fontPreset === fp.key;
+            const previewFF = fp.fontFamily.bold || fp.fontFamily.regular;
+            return (
+              <Animated.View
+                key={fp.key}
+                entering={shouldAnimate ? FadeInDown.delay(idx * 60).duration(350) : undefined}
+              >
+                <Pressable
+                  style={[
+                    styles.fontCard,
+                    { backgroundColor: t.surface, borderColor: t.border },
+                    isSelected && { borderColor: t.primary, borderWidth: 2.5 },
+                  ]}
+                  onPress={() => handleSelectFont(fp.key)}
+                >
+                  <View style={styles.fontCardTop}>
+                    <Text style={styles.fontEmoji}>{fp.emoji}</Text>
+                    {isSelected ? (
+                      <View style={[styles.fontSelectedBadge, { backgroundColor: t.primary }]}>
+                        <MaterialIcons name="check" size={12} color={isDark ? '#000' : '#fff'} />
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={[styles.fontPreviewText, { color: t.textPrimary }, previewFF ? { fontFamily: previewFF } : {}]}>Aa Bb Cc</Text>
+                  <Text style={[styles.fontName, { color: t.textPrimary }]}>{fp.name}</Text>
+                  <Text style={[styles.fontDesc, { color: t.textMuted }]}>{fp.description}</Text>
+                </Pressable>
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        <View style={[styles.tipCard, { backgroundColor: t.surface, borderColor: t.border }]}>
+          <MaterialIcons name="text-fields" size={20} color={t.primary} />
+          <Text style={[styles.tipText, { color: t.textSecondary }]}>
+            Font style applies to all text across the app. Preview updates instantly.
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -542,4 +590,25 @@ const styles = StyleSheet.create({
     borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 20,
   },
   tipText: { flex: 1, fontSize: 13, fontWeight: '400', lineHeight: 19 },
+
+  // Font Picker
+  fontGrid: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP, marginBottom: 16,
+  },
+  fontCard: {
+    width: PRESET_CARD_W, borderRadius: 14, borderWidth: 1, padding: 14,
+    alignItems: 'center', gap: 4, position: 'relative',
+  },
+  fontCardTop: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    width: '100%', marginBottom: 4,
+  },
+  fontEmoji: { fontSize: 20 },
+  fontSelectedBadge: {
+    width: 22, height: 22, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  fontPreviewText: { fontSize: 22, fontWeight: '600', marginBottom: 4, letterSpacing: 0.5 },
+  fontName: { fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  fontDesc: { fontSize: 10, fontWeight: '400', textAlign: 'center' },
 });
