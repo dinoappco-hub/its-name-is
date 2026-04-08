@@ -3,88 +3,79 @@ import { View, Text, Pressable, StyleSheet, ScrollView, Linking } from 'react-na
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { theme, typography } from '../constants/theme';
+import { useAppTheme } from '../hooks/useTheme';
 import { config } from '../constants/config';
 
 const EFFECTIVE_DATE = 'April 3, 2026';
 
-interface SectionProps {
-  number: string;
-  title: string;
-  children: React.ReactNode;
-}
+export default function PrivacyScreen() {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { colors: t } = useAppTheme();
 
-function Section({ number, title, children }: SectionProps) {
-  return (
+  const Section = ({ number, title, children }: { number: string; title: string; children: React.ReactNode }) => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <View style={styles.sectionNumber}>
-          <Text style={styles.sectionNumberText}>{number}</Text>
+        <View style={[styles.sectionNumber, { backgroundColor: `${t.accent}15` }]}>
+          <Text style={[styles.sectionNumberText, { color: t.accent }]}>{number}</Text>
         </View>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={[styles.sectionTitle, { color: t.textPrimary }]}>{title}</Text>
       </View>
       <View style={styles.sectionBody}>{children}</View>
     </View>
   );
-}
 
-function P({ children }: { children: React.ReactNode }) {
-  return <Text style={styles.paragraph}>{children}</Text>;
-}
+  const P = ({ children }: { children: React.ReactNode }) => (
+    <Text style={[styles.paragraph, { color: t.textSecondary }]}>{children}</Text>
+  );
 
-function Bullet({ children }: { children: React.ReactNode }) {
-  return (
+  const Bullet = ({ children }: { children: React.ReactNode }) => (
     <View style={styles.bulletRow}>
-      <View style={styles.bulletDot} />
-      <Text style={styles.bulletText}>{children}</Text>
+      <View style={[styles.bulletDot, { backgroundColor: t.accent }]} />
+      <Text style={[styles.bulletText, { color: t.textSecondary }]}>{children}</Text>
     </View>
   );
-}
 
-export default function PrivacyScreen() {
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const SubHeading = ({ children }: { children: React.ReactNode }) => (
+    <Text style={[styles.subHeading, { color: t.textPrimary }]}>{children}</Text>
+  );
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
       <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={22} color={theme.textPrimary} />
+        <Pressable style={[styles.backBtn, { backgroundColor: t.surface }]} onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back" size={22} color={t.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Privacy Policy</Text>
+        <Text style={[styles.headerTitle, { color: t.textPrimary }]}>Privacy Policy</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 40 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero */}
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
-          <View style={styles.heroIconWrap}>
-            <MaterialIcons name="privacy-tip" size={32} color={theme.accent} />
+          <View style={[styles.heroIconWrap, { backgroundColor: `${t.accent}12`, borderColor: `${t.accent}25` }]}>
+            <MaterialIcons name="privacy-tip" size={32} color={t.accent} />
           </View>
-          <Text style={styles.heroTitle}>Privacy Policy</Text>
-          <Text style={styles.heroDate}>Effective: {EFFECTIVE_DATE}</Text>
+          <Text style={[styles.heroTitle, { color: t.textPrimary }]}>Privacy Policy</Text>
+          <Text style={[styles.heroDate, { color: t.textSecondary }]}>Effective: {EFFECTIVE_DATE}</Text>
         </View>
 
-        <View style={styles.introCard}>
-          <Text style={styles.introText}>
-            Your privacy matters to us. This Privacy Policy explains how <Text style={styles.highlight}>{config.appName}</Text> collects, uses, and protects your personal information when you use our application.
+        <View style={[styles.introCard, { backgroundColor: t.surface, borderColor: t.border }]}>
+          <Text style={[styles.introText, { color: t.textSecondary }]}>
+            Your privacy matters to us. This Privacy Policy explains how <Text style={[styles.highlight, { color: t.primary }]}>{config.appName}</Text> collects, uses, and protects your personal information when you use our application.
           </Text>
         </View>
 
         <Section number="1" title="Information We Collect">
           <P>We collect the following types of information:</P>
-          <Text style={styles.subHeading}>Account Information</Text>
+          <SubHeading>Account Information</SubHeading>
           <Bullet>Email address (used for authentication and account recovery)</Bullet>
           <Bullet>Username and display name (chosen by you)</Bullet>
           <Bullet>Profile avatar (optional)</Bullet>
-          <Text style={styles.subHeading}>Content You Submit</Text>
+          <SubHeading>Content You Submit</SubHeading>
           <Bullet>Photos of objects you upload</Bullet>
           <Bullet>Object names and descriptions you create</Bullet>
           <Bullet>Name suggestions and votes you provide</Bullet>
-          <Text style={styles.subHeading}>Automatically Collected Data</Text>
+          <SubHeading>Automatically Collected Data</SubHeading>
           <Bullet>Device type and operating system</Bullet>
           <Bullet>App usage patterns and feature interactions</Bullet>
           <Bullet>Crash reports and performance data</Bullet>
@@ -95,7 +86,6 @@ export default function PrivacyScreen() {
           <Bullet>Provide and operate the {config.appName} application</Bullet>
           <Bullet>Authenticate your identity and manage your account</Bullet>
           <Bullet>Display your submissions and activity to the community</Bullet>
-
           <Bullet>Send notifications about votes, name suggestions, and app updates</Bullet>
           <Bullet>Improve app performance and fix bugs</Bullet>
           <Bullet>Enforce our Terms of Service and Community Guidelines</Bullet>
@@ -103,11 +93,11 @@ export default function PrivacyScreen() {
 
         <Section number="3" title="Information Sharing">
           <P>We do not sell your personal information. We may share information in the following circumstances:</P>
-          <Text style={styles.subHeading}>Community Visibility</Text>
+          <SubHeading>Community Visibility</SubHeading>
           <P>Your username, avatar, submissions, name suggestions, and votes are visible to other {config.appName} users as part of the community experience.</P>
-          <Text style={styles.subHeading}>Service Providers</Text>
+          <SubHeading>Service Providers</SubHeading>
           <Bullet>Cloud hosting providers — for storing your data securely</Bullet>
-          <Text style={styles.subHeading}>Legal Requirements</Text>
+          <SubHeading>Legal Requirements</SubHeading>
           <P>We may disclose information if required by law, legal process, or to protect the rights and safety of our users.</P>
         </Section>
 
@@ -158,15 +148,15 @@ export default function PrivacyScreen() {
 
         <Section number="11" title="Contact Us">
           <P>If you have questions or concerns about this Privacy Policy, please contact us:</P>
-          <Pressable style={styles.contactCard} onPress={() => Linking.openURL('https://discord.gg/2cda4rje')}>
-            <MaterialIcons name="forum" size={18} color={theme.accent} />
-            <Text style={styles.contactText}>discord.gg/2cda4rje</Text>
+          <Pressable style={[styles.contactCard, { backgroundColor: t.surface, borderColor: t.border }]} onPress={() => Linking.openURL('https://discord.gg/2cda4rje')}>
+            <MaterialIcons name="forum" size={18} color={t.accent} />
+            <Text style={[styles.contactText, { color: t.accent }]}>discord.gg/2cda4rje</Text>
           </Pressable>
         </Section>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Last updated: {EFFECTIVE_DATE}</Text>
-          <Text style={styles.footerText}>{config.appName} · All rights reserved</Text>
+          <Text style={[styles.footerText, { color: t.textMuted }]}>Last updated: {EFFECTIVE_DATE}</Text>
+          <Text style={[styles.footerText, { color: t.textMuted }]}>{config.appName} · All rights reserved</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -174,76 +164,30 @@ export default function PrivacyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10,
-  },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: theme.surface,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  headerTitle: { ...typography.bodyBold, fontSize: 17 },
-
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '600' },
   hero: { alignItems: 'center', paddingTop: 16, paddingBottom: 24 },
-  heroIconWrap: {
-    width: 64, height: 64, borderRadius: 32,
-    backgroundColor: 'rgba(124,92,252,0.1)',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 1, borderColor: 'rgba(124,92,252,0.2)',
-  },
-  heroTitle: { ...typography.title, fontSize: 24, marginBottom: 6 },
-  heroDate: { ...typography.caption },
-
-  introCard: {
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusLarge,
-    padding: 20,
-    marginBottom: 28,
-    borderWidth: 1, borderColor: theme.border,
-  },
-  introText: { ...typography.body, color: theme.textSecondary, lineHeight: 24 },
-  highlight: { color: theme.primary, fontWeight: '600' },
-
+  heroIconWrap: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1 },
+  heroTitle: { fontSize: 24, fontWeight: '700', marginBottom: 6 },
+  heroDate: { fontSize: 12 },
+  introCard: { borderRadius: 16, padding: 20, marginBottom: 28, borderWidth: 1 },
+  introText: { fontSize: 15, lineHeight: 24 },
+  highlight: { fontWeight: '600' },
   section: { marginBottom: 24 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  sectionNumber: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: 'rgba(124,92,252,0.12)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  sectionNumberText: { fontSize: 13, fontWeight: '700', color: theme.accent },
-  sectionTitle: { ...typography.bodyBold, fontSize: 16, flex: 1 },
+  sectionNumber: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  sectionNumberText: { fontSize: 13, fontWeight: '700' },
+  sectionTitle: { fontSize: 16, fontWeight: '600', flex: 1 },
   sectionBody: { paddingLeft: 40 },
-
-  subHeading: {
-    ...typography.captionBold, color: theme.textPrimary,
-    marginTop: 8, marginBottom: 8,
-  },
-
-  paragraph: {
-    ...typography.body, color: theme.textSecondary,
-    lineHeight: 24, marginBottom: 12,
-  },
+  subHeading: { fontSize: 13, fontWeight: '700', marginTop: 8, marginBottom: 8 },
+  paragraph: { fontSize: 15, lineHeight: 24, marginBottom: 12 },
   bulletRow: { flexDirection: 'row', gap: 10, marginBottom: 8, paddingRight: 8 },
-  bulletDot: {
-    width: 5, height: 5, borderRadius: 3,
-    backgroundColor: theme.accent,
-    marginTop: 9,
-  },
-  bulletText: { ...typography.body, color: theme.textSecondary, lineHeight: 24, flex: 1 },
-
-  contactCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: theme.surface,
-    borderRadius: theme.radiusMedium,
-    padding: 14,
-    borderWidth: 1, borderColor: theme.border,
-  },
-  contactText: { ...typography.bodyBold, color: theme.accent },
-
+  bulletDot: { width: 5, height: 5, borderRadius: 3, marginTop: 9 },
+  bulletText: { fontSize: 15, lineHeight: 24, flex: 1 },
+  contactCard: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, padding: 14, borderWidth: 1 },
+  contactText: { fontSize: 15, fontWeight: '600' },
   footer: { alignItems: 'center', paddingVertical: 32, gap: 4 },
-  footerText: { ...typography.small, color: theme.textMuted },
+  footerText: { fontSize: 11 },
 });
