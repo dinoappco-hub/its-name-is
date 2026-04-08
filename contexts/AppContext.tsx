@@ -18,6 +18,7 @@ import {
   uploadAvatarImage,
   updateUserProfile,
 } from '../services/objectService';
+import { logAdminAction } from '../services/adminService';
 import { useNotifications } from '../hooks/useNotifications';
 
 interface AppContextType {
@@ -48,6 +49,9 @@ const defaultUser: User = {
   totalSubmissions: 0,
   totalVotesReceived: 0,
   joinedAt: new Date().toISOString(),
+  isBanned: false,
+  banReason: null,
+  bannedAt: null,
 };
 
 const AppContext = createContext<AppContextType>({} as AppContextType);
@@ -272,6 +276,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await refreshObjects();
       return { error };
     }
+    logAdminAction({ adminId: authUser.id, actionType: 'delete_submission', targetType: 'submission', targetId: objectId, details: 'Admin deleted submission' });
     return { error: null };
   }, [authUser?.id, currentUser.isAdmin, refreshObjects]);
 
@@ -285,6 +290,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await refreshObjects();
       return { error };
     }
+    logAdminAction({ adminId: authUser.id, actionType: isFeatured ? 'feature_submission' : 'unfeature_submission', targetType: 'submission', targetId: objectId, details: `${isFeatured ? 'Featured' : 'Unfeatured'} submission` });
     return { error: null };
   }, [authUser?.id, currentUser.isAdmin, refreshObjects]);
 

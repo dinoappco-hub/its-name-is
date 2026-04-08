@@ -21,7 +21,7 @@ export default function SnapScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors: t, typo } = useAppTheme();
-  const { addSubmission } = useApp();
+  const { addSubmission, currentUser } = useApp();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -247,6 +247,13 @@ export default function SnapScreen() {
     if (!imageUri || !name.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       showAlert('Missing info', 'Please add a photo and a name.');
+      return;
+    }
+
+    // Check if user is banned
+    if (currentUser.isBanned) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      showAlert('Account Suspended', 'Your account has been suspended. You cannot submit new objects.' + (currentUser.banReason ? ` Reason: ${currentUser.banReason}` : ''));
       return;
     }
 

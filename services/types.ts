@@ -8,6 +8,9 @@ export interface UserProfile {
   avatar_url: string | null;
   is_premium: boolean;
   is_admin: boolean;
+  is_banned: boolean;
+  ban_reason: string | null;
+  banned_at: string | null;
   created_at: string;
 }
 
@@ -21,6 +24,10 @@ export interface User {
   totalVotesReceived: number;
   joinedAt: string;
   isAdmin?: boolean;
+  isPremium?: boolean;
+  isBanned?: boolean;
+  banReason?: string | null;
+  bannedAt?: string | null;
 }
 
 export interface DbObjectSubmission {
@@ -86,5 +93,9 @@ export function toUser(profile: UserProfile, stats?: { submissions: number; vote
     totalVotesReceived: stats?.votesReceived ?? 0,
     joinedAt: profile.created_at,
     isAdmin: profile.is_admin || false,
+    isPremium: profile.is_premium || false,
+    isBanned: profile.is_banned || false,
+    banReason: profile.ban_reason || null,
+    bannedAt: profile.banned_at || null,
   };
 }

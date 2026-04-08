@@ -147,16 +147,27 @@ export default function PublicUserProfileScreen() {
   const renderHeader = () => (
     <View style={styles.profileContent}>
       <Animated.View entering={FadeIn.duration(400)} style={[styles.profileCard, { backgroundColor: t.surface, borderColor: t.border }]}>
-        <Image source={{ uri: profileUser.avatar }} style={[styles.avatar, { borderColor: t.primary }]} contentFit="cover" transition={200} />
+        <Image source={{ uri: profileUser.avatar }} style={[styles.avatar, { borderColor: profileUser.isBanned ? '#EF4444' : t.primary }]} contentFit="cover" transition={200} />
         <Text style={[styles.displayName, { color: t.textPrimary }]}>@{profileUser.username}</Text>
         <View style={styles.usernameRow}>
-          {profileUser.isPremium ? (
+          {profileUser.isBanned ? (
+            <View style={[styles.premiumBadge, { backgroundColor: '#EF4444' }]}>
+              <MaterialIcons name="block" size={10} color="#fff" />
+              <Text style={[styles.premiumText, { color: '#fff' }]}>SUSPENDED</Text>
+            </View>
+          ) : profileUser.isPremium ? (
             <View style={[styles.premiumBadge, { backgroundColor: t.primary }]}>
               <MaterialIcons name="star" size={10} color={t.background} />
               <Text style={[styles.premiumText, { color: t.background }]}>PRO</Text>
             </View>
           ) : null}
         </View>
+        {profileUser.isBanned && profileUser.banReason ? (
+          <View style={[styles.bannedBanner, { backgroundColor: '#EF444412', borderColor: '#EF444430' }]}>
+            <MaterialIcons name="info" size={14} color="#EF4444" />
+            <Text style={[styles.bannedBannerText, { color: '#EF4444' }]}>This account has been suspended: {profileUser.banReason}</Text>
+          </View>
+        ) : null}
         <Text style={[styles.joinedText, { color: t.textMuted }]}>
           Member since {new Date(profileUser.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         </Text>
@@ -265,4 +276,6 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 10 },
   emptyTitle: { fontSize: 15, fontWeight: '600' },
   emptySubtitle: { fontSize: 13, textAlign: 'center', paddingHorizontal: 20 },
+  bannedBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1, marginHorizontal: 16 },
+  bannedBannerText: { fontSize: 12, fontWeight: '500', flex: 1, lineHeight: 17 },
 });

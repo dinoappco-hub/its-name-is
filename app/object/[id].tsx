@@ -218,6 +218,10 @@ export default function ObjectDetailScreen() {
 
   const handlePostComment = useCallback(async () => {
     if (!commentText.trim() || !authUser?.id || !id) return;
+    if (currentUser.isBanned) {
+      showAlert('Account Suspended', 'Your account has been suspended. You cannot post comments.' + (currentUser.banReason ? ` Reason: ${currentUser.banReason}` : ''));
+      return;
+    }
     if (commentText.trim().length < 2) {
       showAlert('Too short', 'Comments must be at least 2 characters.');
       return;
@@ -299,6 +303,10 @@ export default function ObjectDetailScreen() {
 
   const handleSuggestName = async () => {
     if (!newName.trim()) return;
+    if (currentUser.isBanned) {
+      showAlert('Account Suspended', 'Your account has been suspended. You cannot suggest names.');
+      return;
+    }
     if (newName.trim().length < 2) {
       showAlert('Too short', 'Names must be at least 2 characters.');
       return;
