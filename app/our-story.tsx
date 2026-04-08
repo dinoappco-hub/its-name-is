@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,6 +8,17 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useAppTheme } from '../hooks/useTheme';
 import { config } from '../constants/config';
 
+const { width: SCREEN_W } = Dimensions.get('window');
+
+const KIDS = [
+  { name: 'Steggy', description: 'Brown Stegosaurus', color: '#8B6914', emoji: '🦕', bgColor: '#8B691415' },
+  { name: 'Dino', description: 'Pink Stegosaurus', color: '#E91E8C', emoji: '🦖', bgColor: '#E91E8C15' },
+  { name: 'Branchy', description: 'Brown Brachiosaurus', color: '#A0522D', emoji: '🦕', bgColor: '#A0522D15' },
+  { name: 'Cappy', description: 'Capybara', color: '#CD853F', emoji: '🐾', bgColor: '#CD853F15' },
+  { name: 'Wallrey', description: 'Purple Walrus', color: '#7B2D8E', emoji: '🦭', bgColor: '#7B2D8E15' },
+  { name: 'Barney', description: 'Purple Stegosaurus', color: '#9B59B6', emoji: '🦕', bgColor: '#9B59B615' },
+];
+
 export default function OurStoryScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -15,17 +26,27 @@ export default function OurStoryScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
-      <View style={[styles.header]}>
-        <Pressable style={[styles.backBtn, { backgroundColor: 'rgba(10,10,15,0.6)' }]} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={22} color="#fff" />
+      <View style={styles.header}>
+        <Pressable style={[styles.backBtn, { backgroundColor: t.surface }]} onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back" size={22} color={t.textPrimary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: t.textPrimary }]}>Our Story</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={FadeInDown.duration(500)}>
-          <Image source={require('../assets/images/founder-kids.jpg')} style={styles.heroImage} contentFit="cover" transition={300} />
+        {/* Hero image — contained to fit fully on screen */}
+        <Animated.View entering={FadeInDown.duration(500)} style={[styles.heroWrap, { backgroundColor: t.surface }]}>
+          <Image
+            source={require('../assets/images/founder-kids.jpg')}
+            style={styles.heroImage}
+            contentFit="contain"
+            transition={300}
+          />
+          <View style={[styles.heroCaption, { backgroundColor: `${t.primary}10` }]}>
+            <MaterialIcons name="pets" size={14} color={t.primary} />
+            <Text style={[styles.heroCaptionText, { color: t.primary }]}>Maria and the Kids</Text>
+          </View>
         </Animated.View>
 
         <View style={styles.content}>
@@ -51,20 +72,28 @@ export default function OurStoryScreen() {
             </Text>
           </Animated.View>
 
+          {/* Meet the Kids — labeled grid */}
           <Animated.View entering={FadeInUp.delay(600).duration(400)} style={[styles.kidsSection, { backgroundColor: t.surface, borderColor: t.border }]}>
-            <Text style={[styles.kidsSectionTitle, { color: t.textPrimary }]}>Meet the Kids</Text>
+            <View style={styles.kidsSectionHeader}>
+              <MaterialIcons name="pets" size={20} color={t.primary} />
+              <Text style={[styles.kidsSectionTitle, { color: t.textPrimary }]}>Meet the Kids</Text>
+            </View>
+            <Text style={[styles.kidsIntro, { color: t.textSecondary }]}>
+              The stuffed animals that inspired it all
+            </Text>
             <View style={styles.kidsGrid}>
-              {[
-                { name: 'Steggy', emoji: '🦕' },
-                { name: 'Cappy', emoji: '🧸' },
-                { name: 'Wallery', emoji: '🦭' },
-                { name: 'Dino', emoji: '🦖' },
-                { name: 'Branchy', emoji: '🌿' },
-              ].map((kid) => (
-                <View key={kid.name} style={[styles.kidChip, { backgroundColor: `${t.primary}10`, borderColor: `${t.primary}20` }]}>
-                  <Text style={styles.kidEmoji}>{kid.emoji}</Text>
-                  <Text style={[styles.kidName, { color: t.primary }]}>{kid.name}</Text>
-                </View>
+              {KIDS.map((kid, index) => (
+                <Animated.View
+                  key={kid.name}
+                  entering={FadeInUp.delay(650 + index * 60).duration(350)}
+                  style={[styles.kidCard, { backgroundColor: kid.bgColor, borderColor: `${kid.color}25` }]}
+                >
+                  <View style={[styles.kidEmojiWrap, { backgroundColor: `${kid.color}20` }]}>
+                    <Text style={styles.kidEmoji}>{kid.emoji}</Text>
+                  </View>
+                  <Text style={[styles.kidName, { color: kid.color }]}>{kid.name}</Text>
+                  <Text style={[styles.kidDesc, { color: t.textSecondary }]}>{kid.description}</Text>
+                </Animated.View>
               ))}
             </View>
           </Animated.View>
@@ -108,7 +137,7 @@ export default function OurStoryScreen() {
             </View>
             <View style={[styles.statDivider, { backgroundColor: t.border }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: t.primary }]}>5</Text>
+              <Text style={[styles.statNumber, { color: t.primary }]}>6</Text>
               <Text style={[styles.statLabel, { color: t.textMuted }]}>Kids (stuffed)</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: t.border }]} />
@@ -135,11 +164,34 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 10,
-    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+    zIndex: 10,
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginTop: 44 },
-  headerTitle: { fontSize: 17, fontWeight: '600', marginTop: 44 },
-  heroImage: { width: '100%', height: 340 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '600' },
+
+  // Hero image — fully contained
+  heroWrap: {
+    width: '100%',
+    aspectRatio: 4 / 3,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  heroImage: { width: '100%', height: '100%' },
+  heroCaption: {
+    position: 'absolute',
+    bottom: 12,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 9999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  heroCaptionText: { fontSize: 12, fontWeight: '700' },
+
   content: { paddingHorizontal: 20, paddingTop: 24 },
   founderBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', borderRadius: 9999, paddingHorizontal: 14, paddingVertical: 6, marginBottom: 16, borderWidth: 1 },
   founderBadgeText: { fontSize: 12, fontWeight: '700' },
@@ -150,12 +202,32 @@ const styles = StyleSheet.create({
   quoteBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 },
   quoteText: { fontSize: 17, fontWeight: '500', lineHeight: 26, fontStyle: 'italic' },
   quoteAuthor: { fontSize: 13, fontWeight: '700', marginTop: 10 },
+
+  // Kids section
   kidsSection: { borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1 },
-  kidsSectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 14 },
-  kidsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  kidChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 9999, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1 },
-  kidEmoji: { fontSize: 16 },
-  kidName: { fontSize: 13, fontWeight: '700' },
+  kidsSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  kidsSectionTitle: { fontSize: 18, fontWeight: '700' },
+  kidsIntro: { fontSize: 13, marginBottom: 16, lineHeight: 18 },
+  kidsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  kidCard: {
+    width: (SCREEN_W - 40 - 40 - 10) / 2,
+    borderRadius: 14,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  kidEmojiWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  kidEmoji: { fontSize: 22 },
+  kidName: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
+  kidDesc: { fontSize: 11, fontWeight: '500', textAlign: 'center' },
+
   divider: { height: 1, marginVertical: 28 },
   founderSection: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1 },
   founderAvatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
