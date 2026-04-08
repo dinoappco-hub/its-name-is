@@ -148,9 +148,8 @@ export default function PublicUserProfileScreen() {
     <View style={styles.profileContent}>
       <Animated.View entering={FadeIn.duration(400)} style={[styles.profileCard, { backgroundColor: t.surface, borderColor: t.border }]}>
         <Image source={{ uri: profileUser.avatar }} style={[styles.avatar, { borderColor: t.primary }]} contentFit="cover" transition={200} />
-        <Text style={[styles.displayName, { color: t.textPrimary }]}>{profileUser.displayName}</Text>
+        <Text style={[styles.displayName, { color: t.textPrimary }]}>@{profileUser.username}</Text>
         <View style={styles.usernameRow}>
-          <Text style={[styles.username, { color: t.textSecondary }]}>@{profileUser.username}</Text>
           {profileUser.isPremium ? (
             <View style={[styles.premiumBadge, { backgroundColor: t.primary }]}>
               <MaterialIcons name="star" size={10} color={t.background} />

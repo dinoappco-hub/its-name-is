@@ -453,10 +453,9 @@ export default function ObjectDetailScreen() {
                 <Image source={{ uri: object.submittedBy.avatar }} style={styles.submitterAvatar} contentFit="cover" />
                 <View style={styles.submitterInfo}>
                   <View style={styles.submitterNameRow}>
-                    <Text style={[styles.submitterName, { color: t.textPrimary }]}>{object.submittedBy.displayName}</Text>
+                    <Text style={[styles.submitterName, { color: t.textPrimary }]}>@{object.submittedBy.username}</Text>
                     <MaterialIcons name="chevron-right" size={16} color={t.textMuted} />
                   </View>
-                  <Text style={[styles.submitterMeta, { color: t.textSecondary }]}>@{object.submittedBy.username}</Text>
                   <Text style={[styles.submitterMeta, { color: t.textMuted }]}>
                     {timeAgo(object.submittedAt)} · {object.submittedBy.totalSubmissions} submissions
                   </Text>

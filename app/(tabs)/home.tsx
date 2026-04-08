@@ -275,7 +275,7 @@ export default function FeedScreen() {
     );
   };
 
-  const welcomeDisplayName = currentUser.displayName || currentUser.username || authUser?.email?.split('@')[0] || 'Friend';
+  const welcomeDisplayName = currentUser.username || authUser?.email?.split('@')[0] || 'Friend';
 
   if (loading) {
     return (

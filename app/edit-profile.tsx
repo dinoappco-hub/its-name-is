@@ -19,14 +19,12 @@ export default function EditProfileScreen() {
   const { colors: t, typo } = useAppTheme();
   const { currentUser, updateProfile } = useApp();
 
-  const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
   const [avatarUri, setAvatarUri] = useState('');
   const [newAvatarLocal, setNewAvatarLocal] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setDisplayName(currentUser.displayName || '');
     setUsername(currentUser.username || '');
     setAvatarUri(currentUser.avatar || '');
   }, [currentUser]);
@@ -42,19 +40,18 @@ export default function EditProfileScreen() {
   };
 
   const handleSave = async () => {
-    if (!displayName.trim()) { showAlert('Required', 'Display name cannot be empty.'); return; }
     if (!username.trim()) { showAlert('Required', 'Username cannot be empty.'); return; }
     if (username.trim().length < 3) { showAlert('Too Short', 'Username must be at least 3 characters.'); return; }
     if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) { showAlert('Invalid Username', 'Username can only contain letters, numbers, and underscores.'); return; }
     setSaving(true);
-    const { error } = await updateProfile({ displayName: displayName.trim(), username: username.trim(), avatarLocalUri: newAvatarLocal || undefined });
+    const { error } = await updateProfile({ displayName: username.trim(), username: username.trim(), avatarLocalUri: newAvatarLocal || undefined });
     setSaving(false);
     if (error) { showAlert('Error', error); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.back();
   };
 
-  const hasChanges = displayName.trim() !== currentUser.displayName || username.trim() !== currentUser.username || newAvatarLocal !== null;
+  const hasChanges = username.trim() !== currentUser.username || newAvatarLocal !== null;
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
@@ -81,18 +78,6 @@ export default function EditProfileScreen() {
 
           <Animated.View entering={FadeInDown.delay(100).duration(400)}>
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: t.textSecondary }]}>Display Name</Text>
-              <View style={[styles.inputWrap, { backgroundColor: t.surface, borderColor: t.border }]}>
-                <MaterialIcons name="person" size={18} color={t.textMuted} />
-                <TextInput style={[styles.input, { color: t.textPrimary }]} value={displayName} onChangeText={setDisplayName} placeholder="Your display name" placeholderTextColor={t.textMuted} maxLength={30} autoCapitalize="words" />
-                <Text style={[styles.charCount, { color: t.textMuted }]}>{displayName.length}/30</Text>
-              </View>
-              <Text style={[styles.fieldHint, { color: t.textMuted }]}>This is how your name appears on submissions and comments.</Text>
-            </View>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(180).duration(400)}>
-            <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { color: t.textSecondary }]}>Username</Text>
               <View style={[styles.inputWrap, { backgroundColor: t.surface, borderColor: t.border }]}>
                 <Text style={[styles.atSign, { color: t.textMuted }]}>@</Text>
@@ -103,7 +88,7 @@ export default function EditProfileScreen() {
             </View>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(260).duration(400)}>
+          <Animated.View entering={FadeInDown.delay(180).duration(400)}>
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { color: t.textSecondary }]}>Email</Text>
               <View style={[styles.inputWrap, styles.inputDisabled, { backgroundColor: t.surface, borderColor: t.border }]}>
@@ -115,13 +100,12 @@ export default function EditProfileScreen() {
             </View>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(340).duration(400)}>
+          <Animated.View entering={FadeInDown.delay(260).duration(400)}>
             <Text style={[styles.previewLabel, { color: t.textMuted }]}>Preview</Text>
             <View style={[styles.previewCard, { backgroundColor: t.surface, borderColor: t.border }]}>
               <Image source={{ uri: displayAvatar }} style={styles.previewAvatar} contentFit="cover" transition={200} />
               <View style={styles.previewInfo}>
-                <Text style={[styles.previewName, { color: t.textPrimary }]}>{displayName.trim() || 'Display Name'}</Text>
-                <Text style={[styles.previewUsername, { color: t.textSecondary }]}>@{username.trim() || 'username'}</Text>
+                <Text style={[styles.previewName, { color: t.textPrimary }]}>@{username.trim() || 'username'}</Text>
               </View>
             </View>
           </Animated.View>
@@ -159,5 +143,4 @@ const styles = StyleSheet.create({
   previewAvatar: { width: 48, height: 48, borderRadius: 24 },
   previewInfo: { flex: 1, marginLeft: 12 },
   previewName: { fontSize: 16, fontWeight: '600' },
-  previewUsername: { fontSize: 13, fontWeight: '400', marginTop: 2 },
 });
