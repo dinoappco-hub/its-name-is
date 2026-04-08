@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth, useAlert } from '@/template';
 import { config } from '../constants/config';
 import { useAppTheme } from '../hooks/useTheme';
+import { useApp } from '../contexts/AppContext';
 
 interface SettingsItem {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -25,6 +26,7 @@ export default function SettingsScreen() {
   const { showAlert } = useAlert();
   const { logout } = useAuth();
   const { colors: t, typo, mode, isDark, toggleMode } = useAppTheme();
+  const { currentUser } = useApp();
 
   const handleResetOnboarding = async () => {
     await AsyncStorage.removeItem('snapname_onboarded');
@@ -172,6 +174,15 @@ export default function SettingsScreen() {
     {
       title: 'Advanced',
       items: [
+        ...(currentUser.isAdmin ? [{
+          icon: 'shield' as keyof typeof MaterialIcons.glyphMap,
+          label: 'Admin Panel',
+          subtitle: 'Manage reports and moderate content',
+          onPress: () => router.push('/admin'),
+          color: t.error,
+          showChevron: true,
+          badge: 'MOD',
+        }] : []),
         {
           icon: 'replay',
           label: 'Show Onboarding Again',

@@ -37,6 +37,7 @@ export default function RootLayout() {
                   <Stack.Screen name="customize-theme" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
                   <Stack.Screen name="leaderboard" options={{ animation: 'fade_from_bottom', animationDuration: 250 }} />
                   <Stack.Screen name="reset-password" options={{ headerShown: false, animation: 'fade', animationDuration: 300 }} />
+                  <Stack.Screen name="admin" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
                 </Stack>
                 </AppProvider>
               </NotificationProvider>

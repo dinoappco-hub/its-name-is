@@ -382,6 +382,36 @@ export async function deleteSubmission(objectId: string, userId: string): Promis
   }
 }
 
+// Admin: delete any submission (no user_id check, RLS enforced)
+export async function adminDeleteSubmission(objectId: string): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from('object_submissions')
+      .delete()
+      .eq('id', objectId);
+
+    if (error) return { error: error.message };
+    return { error: null };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to delete submission' };
+  }
+}
+
+// Admin: toggle featured status
+export async function adminToggleFeatured(objectId: string, isFeatured: boolean): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from('object_submissions')
+      .update({ is_featured: isFeatured })
+      .eq('id', objectId);
+
+    if (error) return { error: error.message };
+    return { error: null };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to update featured status' };
+  }
+}
+
 // ──────────────────────────── Fetch User Profile ────────────────────────────
 
 export async function fetchUserProfile(userId: string): Promise<{ data: UserProfile | null; error: string | null }> {

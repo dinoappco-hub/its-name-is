@@ -7,6 +7,7 @@ export interface UserProfile {
   display_name: string | null;
   avatar_url: string | null;
   is_premium: boolean;
+  is_admin: boolean;
   created_at: string;
 }
 
@@ -19,6 +20,7 @@ export interface User {
   totalSubmissions: number;
   totalVotesReceived: number;
   joinedAt: string;
+  isAdmin?: boolean;
 }
 
 export interface DbObjectSubmission {
@@ -83,5 +85,6 @@ export function toUser(profile: UserProfile, stats?: { submissions: number; vote
     totalSubmissions: stats?.submissions ?? 0,
     totalVotesReceived: stats?.votesReceived ?? 0,
     joinedAt: profile.created_at,
+    isAdmin: profile.is_admin || false,
   };
 }

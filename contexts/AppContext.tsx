@@ -8,6 +8,8 @@ import {
   castVote,
   uploadObjectImage,
   deleteSubmission as deleteSubmissionService,
+  adminDeleteSubmission as adminDeleteSubmissionService,
+  adminToggleFeatured as adminToggleFeaturedService,
   updateSubmissionDescription as updateDescriptionService,
   incrementViewCount,
   getUserStats,
@@ -34,6 +36,8 @@ interface AppContextType {
   updateProfile: (params: { displayName: string; username: string; avatarLocalUri?: string }) => Promise<{ error: string | null }>;
   deleteSubmission: (objectId: string) => Promise<{ error: string | null }>;
   updateDescription: (objectId: string, description: string) => Promise<{ error: string | null }>;
+  adminDeleteSubmission: (objectId: string) => Promise<{ error: string | null }>;
+  adminToggleFeatured: (objectId: string, isFeatured: boolean) => Promise<{ error: string | null }>;
 }
 
 const defaultUser: User = {
@@ -258,6 +262,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   }, [authUser?.id, refreshObjects]);
 
+  const adminDeleteSubmission = useCallback(async (objectId: string): Promise<{ error: string | null }> => {
+    if (!authUser?.id || !currentUser.isAdmin) return { error: 'Not authorized' };
+
+    setObjects(prev => prev.filter(o => o.id !== objectId));
+
+    const { error } = await adminDeleteSubmissionService(objectId);
+    if (error) {
+      await refreshObjects();
+      return { error };
+    }
+    return { error: null };
+  }, [authUser?.id, currentUser.isAdmin, refreshObjects]);
+
+  const adminToggleFeatured = useCallback(async (objectId: string, isFeatured: boolean): Promise<{ error: string | null }> => {
+    if (!authUser?.id || !currentUser.isAdmin) return { error: 'Not authorized' };
+
+    setObjects(prev => prev.map(o => o.id === objectId ? { ...o, isFeatured } : o));
+
+    const { error } = await adminToggleFeaturedService(objectId, isFeatured);
+    if (error) {
+      await refreshObjects();
+      return { error };
+    }
+    return { error: null };
+  }, [authUser?.id, currentUser.isAdmin, refreshObjects]);
+
   const updateProfile = useCallback(async (params: { displayName: string; username: string; avatarLocalUri?: string }): Promise<{ error: string | null }> => {
     if (!authUser?.id) return { error: 'Not authenticated' };
 
@@ -316,6 +346,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addSubmission, addNameSuggestion, vote,
       searchObjects, getUserObjects, refreshObjects,
       trackView, updateProfile, deleteSubmission, updateDescription,
+      adminDeleteSubmission, adminToggleFeatured,
     }}>
       {children}
     </AppContext.Provider>

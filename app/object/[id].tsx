@@ -31,7 +31,7 @@ export default function ObjectDetailScreen() {
   }, [router]);
   const { user: authUser } = useAuth();
   const { colors: t, typo } = useAppTheme();
-  const { objects, vote, addNameSuggestion, currentUser, trackView, deleteSubmission, updateDescription } = useApp();
+  const { objects, vote, addNameSuggestion, currentUser, trackView, deleteSubmission, updateDescription, adminDeleteSubmission, adminToggleFeatured } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, a11yProps } = useAccessibility();
   const [newName, setNewName] = useState('');
   const [showInput, setShowInput] = useState(false);
@@ -119,6 +119,7 @@ export default function ObjectDetailScreen() {
   }, [authUser?.id, id]);
 
   const isOwnPost = object?.submittedBy.id === authUser?.id;
+  const isAdmin = currentUser.isAdmin === true;
 
   const handleStartEditDescription = useCallback(() => {
     if (!object) return;
@@ -153,7 +154,8 @@ export default function ObjectDetailScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          const { error } = await deleteSubmission(id!);
+          const deleteFunc = isOwnPost ? deleteSubmission : adminDeleteSubmission;
+          const { error } = await deleteFunc(id!);
           if (error) {
             showAlert('Error', error);
           } else {
@@ -162,7 +164,17 @@ export default function ObjectDetailScreen() {
         },
       },
     ]);
-  }, [id, deleteSubmission, triggerHaptic, showAlert, router]);
+  }, [id, isOwnPost, deleteSubmission, adminDeleteSubmission, triggerHaptic, showAlert, router]);
+
+  const handleToggleFeatured = useCallback(async () => {
+    if (!object || !isAdmin) return;
+    triggerHaptic('selection');
+    const newFeatured = !object.isFeatured;
+    const { error } = await adminToggleFeatured(object.id, newFeatured);
+    if (error) {
+      showAlert('Error', error);
+    }
+  }, [object, isAdmin, adminToggleFeatured, triggerHaptic, showAlert]);
 
   const openReportModal = useCallback((nameId?: string) => {
     if (alreadyReported) {
@@ -354,6 +366,15 @@ export default function ObjectDetailScreen() {
                   <MaterialIcons name="delete-outline" size={14} color={t.error} />
                   <Text style={[styles.commentActionText, { color: t.error }]}>Delete</Text>
                 </Pressable>
+              ) : isAdmin ? (
+                <Pressable
+                  style={styles.commentAction}
+                  onPress={() => handleDeleteComment(comment.id)}
+                  hitSlop={8}
+                >
+                  <MaterialIcons name="delete-outline" size={14} color={t.error} />
+                  <Text style={[styles.commentActionText, { color: t.error }]}>Remove</Text>
+                </Pressable>
               ) : null}
             </View>
           </View>
@@ -451,7 +472,14 @@ export default function ObjectDetailScreen() {
                   <MaterialIcons name="arrow-back" size={22} color="#fff" />
                 </Pressable>
                 <View style={styles.heroRightActions}>
-                  {object.isFeatured ? (
+                  {isAdmin ? (
+                    <Pressable
+                      style={[styles.heroShareBtn, object.isFeatured && { backgroundColor: 'rgba(255,215,0,0.6)' }]}
+                      onPress={handleToggleFeatured}
+                    >
+                      <MaterialIcons name={object.isFeatured ? 'star' : 'star-outline'} size={20} color={object.isFeatured ? '#000' : '#fff'} />
+                    </Pressable>
+                  ) : object.isFeatured ? (
                     <View style={styles.heroFeaturedBadge}>
                       <MaterialIcons name="star" size={12} color={t.background} />
                       <Text style={[styles.heroFeaturedText, { color: t.background }]}>FEATURED</Text>
@@ -468,7 +496,7 @@ export default function ObjectDetailScreen() {
                       <MaterialIcons name="share" size={20} color="#fff" />
                     )}
                   </Pressable>
-                  {object.submittedBy.id === authUser?.id ? (
+                  {(isOwnPost || isAdmin) ? (
                     <Pressable
                       style={styles.heroDeleteBtn}
                       onPress={handleDeletePost}
