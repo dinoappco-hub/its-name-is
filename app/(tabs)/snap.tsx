@@ -40,6 +40,9 @@ export default function SnapScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [capturing, setCapturing] = useState(false);
+  const [flashOn, setFlashOn] = useState(false);
+  const [zoom, setZoom] = useState(0);
+  const [sliderWidth, setSliderWidth] = useState(200);
 
   // Crop/Edit state
   const [rawImageUri, setRawImageUri] = useState<string | null>(null);
@@ -158,6 +161,17 @@ export default function SnapScreen() {
   const toggleFacing = () => {
     Haptics.selectionAsync();
     setFacing(prev => (prev === 'back' ? 'front' : 'back'));
+  };
+
+  const toggleFlash = () => {
+    Haptics.selectionAsync();
+    setFlashOn(prev => !prev);
+  };
+
+  const handleZoomSlider = (evt: any) => {
+    const locationX = evt.nativeEvent.locationX;
+    const newZoom = Math.max(0, Math.min(1, locationX / sliderWidth));
+    setZoom(newZoom);
   };
 
   const pickFromGallery = async () => {
@@ -426,12 +440,14 @@ export default function SnapScreen() {
   if (showCamera) {
     return (
       <View style={styles.cameraContainer}>
-        <CameraView ref={cameraRef} style={styles.cameraView} facing={facing}>
+        <CameraView ref={cameraRef} style={styles.cameraView} facing={facing} enableTorch={flashOn} zoom={zoom}>
           <SafeAreaView edges={['top']} style={styles.cameraTopBar}>
             <Pressable style={styles.cameraTopBtn} onPress={() => { Haptics.selectionAsync(); setShowCamera(false); router.navigate('/(tabs)/home'); }}>
               <MaterialIcons name="close" size={24} color="#fff" />
             </Pressable>
-<View style={{ width: 44 }} />
+<Pressable style={[styles.cameraTopBtn, flashOn && { backgroundColor: 'rgba(255,215,0,0.3)' }]} onPress={toggleFlash}>
+              <MaterialIcons name={flashOn ? 'flash-on' : 'flash-off'} size={24} color={flashOn ? '#FFD700' : '#fff'} />
+            </Pressable>
             <Pressable style={styles.cameraTopBtn} onPress={toggleFacing}>
               <MaterialIcons name="flip-camera-ios" size={24} color="#fff" />
             </Pressable>
@@ -445,6 +461,36 @@ export default function SnapScreen() {
               <View style={[styles.cameraCorner, styles.cameraCornerBR]} />
             </View>
             <Text style={styles.cameraHint}>Center your object</Text>
+          </View>
+
+          {/* Zoom Slider */}
+          <View style={styles.zoomContainer}>
+            <View style={styles.zoomPresets}>
+              {[0, 0.25, 0.5, 1].map((val) => {
+                const label = val === 0 ? '1x' : val === 0.25 ? '2x' : val === 0.5 ? '5x' : '10x';
+                const isActive = Math.abs(zoom - val) < 0.05;
+                return (
+                  <Pressable
+                    key={val}
+                    style={[styles.zoomPresetBtn, isActive && styles.zoomPresetBtnActive]}
+                    onPress={() => { Haptics.selectionAsync(); setZoom(val); }}
+                  >
+                    <Text style={[styles.zoomPresetText, isActive && styles.zoomPresetTextActive]}>{label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View
+              style={styles.zoomTrack}
+              onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
+              onStartShouldSetResponder={() => true}
+              onMoveShouldSetResponder={() => true}
+              onResponderGrant={handleZoomSlider}
+              onResponderMove={handleZoomSlider}
+            >
+              <View style={[styles.zoomFill, { width: `${zoom * 100}%` }]} />
+              <View style={[styles.zoomThumb, { left: `${Math.max(0, Math.min(94, zoom * 100))}%` }]} />
+            </View>
           </View>
 
           <SafeAreaView edges={['bottom']} style={styles.cameraBottomBar}>
@@ -654,6 +700,15 @@ function createStyles(t: any, typo: any) {
     cameraCornerBL: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 8 },
     cameraCornerBR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 8 },
     cameraHint: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginTop: 16, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+    zoomContainer: { paddingHorizontal: 32, paddingVertical: 12 },
+    zoomPresets: { flexDirection: 'row' as const, justifyContent: 'center' as const, gap: 8, marginBottom: 10 },
+    zoomPresetBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center' as const, justifyContent: 'center' as const },
+    zoomPresetBtnActive: { backgroundColor: 'rgba(255,215,0,0.3)', borderWidth: 1.5, borderColor: 'rgba(255,215,0,0.6)' },
+    zoomPresetText: { fontSize: 12, fontWeight: '700' as const, color: 'rgba(255,255,255,0.7)' },
+    zoomPresetTextActive: { color: '#FFD700' },
+    zoomTrack: { height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, position: 'relative' as const, justifyContent: 'center' as const },
+    zoomFill: { height: 4, backgroundColor: 'rgba(255,215,0,0.6)', borderRadius: 2, position: 'absolute' as const, left: 0, top: 0 },
+    zoomThumb: { width: 18, height: 18, borderRadius: 9, backgroundColor: '#FFD700', position: 'absolute' as const, top: -7, marginLeft: -9, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 3, elevation: 4 },
     cameraBottomBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 32, paddingTop: 16, paddingBottom: 20, backgroundColor: 'rgba(0,0,0,0.3)' },
     cameraGalleryBtn: { alignItems: 'center', gap: 4, width: 60 },
     cameraGalleryText: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.8)' },
