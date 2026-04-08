@@ -1,5 +1,5 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
+import React, { useMemo, useCallback, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Dimensions, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -26,6 +26,13 @@ export default function ProfileScreen() {
   const { colors: t, typo, isDark, toggleMode } = useAppTheme();
   const { currentUser, getUserObjects, objects, loading, refreshing, refreshObjects } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor } = useAccessibility();
+  const [dinoRefreshing, setDinoRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setDinoRefreshing(true);
+    await refreshObjects();
+    setTimeout(() => setDinoRefreshing(false), 1200);
+  }, [refreshObjects]);
   const userObjects = useMemo(() => {
     if (!currentUser.id) return [];
     return getUserObjects(currentUser.id);
@@ -84,6 +91,11 @@ export default function ProfileScreen() {
 
   const renderHeader = () => (
     <>
+      {dinoRefreshing ? (
+        <View style={styles.dinoRefreshWrap}>
+          <DinoLoader message="Refreshing" size="small" />
+        </View>
+      ) : null}
       <View style={styles.headerRow}>
         <Text style={[styles.pageTitle, { color: t.textPrimary }]}>Profile</Text>
         <View style={styles.headerActions}>
@@ -158,7 +170,16 @@ export default function ProfileScreen() {
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshObjects} tintColor={t.primary} colors={[t.primary]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing || dinoRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="transparent"
+            colors={['transparent']}
+            style={Platform.OS === 'android' ? { backgroundColor: 'transparent' } : undefined}
+            progressBackgroundColor="transparent"
+          />
+        }
       />
     </SafeAreaView>
   );
@@ -199,4 +220,5 @@ const styles = StyleSheet.create({
   submissionMeta: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 },
   submissionMetaText: { fontSize: 11, fontWeight: '600', color: '#fff' },
   featuredBadge: { position: 'absolute', top: 8, left: 8, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  dinoRefreshWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 8, marginTop: -16 },
 });

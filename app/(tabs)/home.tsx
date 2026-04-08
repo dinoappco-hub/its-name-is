@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, ScrollView as HScrollView, FlatList } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, ScrollView as HScrollView, FlatList, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Image } from 'expo-image';
@@ -87,7 +87,14 @@ export default function FeedScreen() {
 
   const featuredObjects = useMemo(() => objects.filter(o => o.isFeatured).slice(0, 3), [objects]);
 
-  const handleRefresh = useCallback(() => { refreshObjects(); loadCommunityData(); }, [refreshObjects]);
+  const [dinoRefreshing, setDinoRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setDinoRefreshing(true);
+    await Promise.all([refreshObjects(), loadCommunityData()]);
+    // Keep dino visible for a satisfying animation duration
+    setTimeout(() => setDinoRefreshing(false), 1200);
+  }, [refreshObjects]);
 
   const navigateToUser = useCallback((userId: string) => { Haptics.selectionAsync(); router.push(`/user/${userId}`); }, [router]);
 
@@ -323,9 +330,27 @@ export default function FeedScreen() {
         data={filteredObjects}
         renderItem={renderCard}
         numColumns={2}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={() => (
+          <>
+            {dinoRefreshing ? (
+              <View style={styles.dinoRefreshWrap}>
+                <DinoLoader message="Refreshing" size="small" />
+              </View>
+            ) : null}
+            {renderHeader()}
+          </>
+        )}
         ListEmptyComponent={renderEmpty}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={t.primary} colors={[t.primary]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing || dinoRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="transparent"
+            colors={['transparent']}
+            style={Platform.OS === 'android' ? { backgroundColor: 'transparent' } : undefined}
+            progressBackgroundColor="transparent"
+          />
+        }
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id}
@@ -411,4 +436,5 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 13, fontWeight: '400', textAlign: 'center', lineHeight: 20 },
   emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12, marginTop: 8 },
   emptyBtnText: { fontSize: 14, fontWeight: '700' },
+  dinoRefreshWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 8, marginTop: -16 },
 });
