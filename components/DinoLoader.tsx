@@ -39,7 +39,11 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
       -1,
       true,
     );
-  }, []);
+    return () => {
+      rotation.value = 0;
+      bounce.value = 0;
+    };
+  }, [rotation, bounce]);
 
   const stegoStyle = useAnimatedStyle(() => {
     const angle = (rotation.value * Math.PI) / 180;

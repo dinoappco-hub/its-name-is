@@ -44,19 +44,23 @@ export default function FeedScreen() {
   const hasShownWelcome = useRef(false);
   const welcomeProgress = useSharedValue(0);
 
-  const welcomeAnimStyle = useAnimatedStyle(() => ({
-    opacity: welcomeProgress.value,
-    transform: [{ scale: 0.9 + 0.1 * welcomeProgress.value }],
-    maxHeight: welcomeProgress.value * 300,
-    marginBottom: welcomeProgress.value * 14,
-    overflow: 'hidden' as const,
-  }));
+  const welcomeAnimStyle = useAnimatedStyle(() => {
+    const p = welcomeProgress.value;
+    return {
+      opacity: p,
+      transform: [{ scale: 0.9 + 0.1 * p }],
+      height: p === 0 ? 0 : undefined,
+      marginBottom: p * 14,
+    };
+  });
 
   const dismissWelcome = useCallback(() => {
     welcomeProgress.value = withTiming(0, { duration: 600, easing: Easing.inOut(Easing.cubic) }, (finished) => {
-      if (finished) runOnJS(setShowWelcome)(false);
+      if (finished) {
+        runOnJS(setShowWelcome)(false);
+      }
     });
-  }, []);
+  }, [welcomeProgress]);
 
   useEffect(() => { loadCommunityData(); }, []);
 
@@ -144,7 +148,7 @@ export default function FeedScreen() {
   const renderHeader = () => (
     <View style={styles.headerContent}>
       {showWelcome ? (
-        <Animated.View style={welcomeAnimStyle}>
+        <Animated.View style={[welcomeAnimStyle, { overflow: 'hidden' }]}>
           <View style={[styles.welcomeBanner, { backgroundColor: t.surface, borderColor: t.border }]}>
             <View style={styles.welcomeBannerRow}>
               <View style={[styles.welcomeIconWrap, { backgroundColor: `${t.primary}15` }]}>
