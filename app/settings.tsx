@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Linking, Platform } from 'react-native';
+import Animated, { FadeIn, FadeOut, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -29,6 +30,7 @@ export default function SettingsScreen() {
   const { colors: t, typo, mode, isDark, toggleMode } = useAppTheme();
   const { currentUser } = useApp();
   const { mutedUserIds } = useMute();
+  const [signingOut, setSigningOut] = useState(false);
 
   const handleResetOnboarding = async () => {
     await AsyncStorage.removeItem('snapname_onboarded');
@@ -218,11 +220,15 @@ export default function SettingsScreen() {
                 text: 'Sign Out',
                 style: 'destructive',
                 onPress: async () => {
+                  setSigningOut(true);
                   const { error } = await logout();
                   if (error) {
+                    setSigningOut(false);
                     showAlert('Error', error);
                   } else {
-                    router.replace('/');
+                    setTimeout(() => {
+                      router.replace('/');
+                    }, 1800);
                   }
                 },
               },
@@ -234,6 +240,24 @@ export default function SettingsScreen() {
       ],
     },
   ];
+
+  if (signingOut) {
+    return (
+      <View style={[styles.container, { backgroundColor: t.background }]}>
+        <Animated.View entering={FadeIn.duration(400)} style={styles.signOutOverlay}>
+          <Animated.View entering={FadeInUp.delay(200).duration(500)}>
+            <MaterialIcons name="waving-hand" size={56} color={t.primary} />
+          </Animated.View>
+          <Animated.Text entering={FadeInUp.delay(400).duration(500)} style={[styles.signOutTitle, { color: t.textPrimary }]}>
+            See you soon!
+          </Animated.Text>
+          <Animated.Text entering={FadeInUp.delay(600).duration(500)} style={[styles.signOutSubtitle, { color: t.textSecondary }]}>
+            Thanks for being part of the community
+          </Animated.Text>
+        </Animated.View>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
@@ -323,4 +347,7 @@ const styles = StyleSheet.create({
   footerText: { fontSize: 15, fontWeight: '600', marginBottom: 4 },
   footerVersion: { fontSize: 11, fontWeight: '500', marginBottom: 4 },
   footerCopy: { fontSize: 11, fontWeight: '500' },
+  signOutOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 32 },
+  signOutTitle: { fontSize: 28, fontWeight: '700' },
+  signOutSubtitle: { fontSize: 15, fontWeight: '400', textAlign: 'center' },
 });

@@ -322,7 +322,7 @@ export default function SnapScreen() {
         <SafeAreaView edges={['top']} style={styles.cropTopBar}>
           <Pressable
             style={styles.cropTopBtn}
-            onPress={() => { Haptics.selectionAsync(); setRawImageUri(null); }}
+            onPress={() => { Haptics.selectionAsync(); setRawImageUri(null); router.navigate('/(tabs)/home'); }}
           >
             <MaterialIcons name="close" size={24} color="#fff" />
           </Pressable>
@@ -428,7 +428,7 @@ export default function SnapScreen() {
       <View style={styles.cameraContainer}>
         <CameraView ref={cameraRef} style={styles.cameraView} facing={facing}>
           <SafeAreaView edges={['top']} style={styles.cameraTopBar}>
-            <Pressable style={styles.cameraTopBtn} onPress={() => { Haptics.selectionAsync(); setShowCamera(false); }}>
+            <Pressable style={styles.cameraTopBtn} onPress={() => { Haptics.selectionAsync(); setShowCamera(false); router.navigate('/(tabs)/home'); }}>
               <MaterialIcons name="close" size={24} color="#fff" />
             </Pressable>
 <View style={{ width: 44 }} />
