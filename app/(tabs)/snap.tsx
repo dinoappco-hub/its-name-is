@@ -1,5 +1,5 @@
-import React, { useState, useRef, useMemo } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Dimensions, Image as RNImage, LayoutChangeEvent } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,6 +13,7 @@ import { CATEGORIES } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '../../hooks/useTheme';
+import CropOverlay from '../../components/CropOverlay';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -41,8 +42,47 @@ export default function SnapScreen() {
 
   // Crop/Edit state
   const [rawImageUri, setRawImageUri] = useState<string | null>(null);
-  const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
   const [processing, setProcessing] = useState(false);
+  const [cropMode, setCropMode] = useState(false);
+  const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
+  const [containerLayout, setContainerLayout] = useState<{ width: number; height: number } | null>(null);
+
+  // Get natural image dimensions when rawImageUri changes
+  useEffect(() => {
+    if (rawImageUri) {
+      RNImage.getSize(
+        rawImageUri,
+        (w, h) => setImageNaturalSize({ width: w, height: h }),
+        () => setImageNaturalSize({ width: 1080, height: 1080 })
+      );
+    } else {
+      setImageNaturalSize(null);
+    }
+  }, [rawImageUri]);
+
+  // Calculate where the image is actually displayed (contentFit="contain")
+  const imageRect = useMemo(() => {
+    if (!imageNaturalSize || !containerLayout) return null;
+    const cw = containerLayout.width;
+    const ch = containerLayout.height;
+    const iw = imageNaturalSize.width;
+    const ih = imageNaturalSize.height;
+    const containerAspect = cw / ch;
+    const imageAspect = iw / ih;
+    let dw: number, dh: number, dx: number, dy: number;
+    if (imageAspect > containerAspect) {
+      dw = cw;
+      dh = cw / imageAspect;
+      dx = 0;
+      dy = (ch - dh) / 2;
+    } else {
+      dh = ch;
+      dw = ch * imageAspect;
+      dx = (cw - dw) / 2;
+      dy = 0;
+    }
+    return { x: dx, y: dy, width: Math.max(1, dw), height: Math.max(1, dh) };
+  }, [imageNaturalSize, containerLayout]);
 
   const openCamera = async () => {
     if (Platform.OS === 'web') {
@@ -140,51 +180,24 @@ export default function SnapScreen() {
     openCamera();
   };
 
-  const handleCropCrop = async () => {
-    if (!rawImageUri) return;
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.85,
-      });
-      // This approach won't work — we need to use the existing image.
-      // Instead, use manipulateAsync with a crop action from a separate picker is not ideal.
-      // The best cross-platform approach is to re-open the image with allowsEditing.
-    } catch {}
-  };
-
-  const handleCropSquare = async () => {
-    if (!rawImageUri) return;
+  const handleCropRegion = async (region: { x: number; y: number; w: number; h: number }) => {
+    if (!rawImageUri || !imageNaturalSize || !imageRect) return;
     setProcessing(true);
+    setCropMode(false);
     try {
-      // First get image dimensions
-      const { width: imgW, height: imgH } = await new Promise<{ width: number; height: number }>((resolve) => {
-        Image.prefetch(rawImageUri).then(() => {
-          // Use manipulator to get info by doing a no-op
-          resolve({ width: 1080, height: 1080 });
-        }).catch(() => resolve({ width: 1080, height: 1080 }));
-      });
+      const scaleX = imageNaturalSize.width / imageRect.width;
+      const scaleY = imageNaturalSize.height / imageRect.height;
+      const originX = Math.max(0, Math.round(region.x * scaleX));
+      const originY = Math.max(0, Math.round(region.y * scaleY));
+      const width = Math.min(imageNaturalSize.width - originX, Math.round(region.w * scaleX));
+      const height = Math.min(imageNaturalSize.height - originY, Math.round(region.h * scaleY));
 
-      // Crop to center square
       const result = await ImageManipulator.manipulateAsync(
         rawImageUri,
-        [{ resize: { width: 1080 } }],
+        [{ crop: { originX, originY, width: Math.max(1, width), height: Math.max(1, height) } }],
         { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
       );
-
-      // Now crop the resized image to square
-      const finalSize = Math.min(result.width, result.height);
-      const originX = Math.floor((result.width - finalSize) / 2);
-      const originY = Math.floor((result.height - finalSize) / 2);
-
-      const cropped = await ImageManipulator.manipulateAsync(
-        result.uri,
-        [{ crop: { originX, originY, width: finalSize, height: finalSize } }],
-        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
-      );
-      setRawImageUri(cropped.uri);
+      setRawImageUri(result.uri);
     } catch {
       showAlert('Error', 'Failed to crop image.');
     }
@@ -284,7 +297,13 @@ export default function SnapScreen() {
           <View style={{ width: 44 }} />
         </SafeAreaView>
 
-        <View style={styles.cropImageContainer}>
+        <View
+          style={styles.cropImageContainer}
+          onLayout={(e: LayoutChangeEvent) => {
+            const { width: lw, height: lh } = e.nativeEvent.layout;
+            setContainerLayout({ width: lw, height: lh });
+          }}
+        >
           <Image
             source={{ uri: rawImageUri }}
             style={styles.cropImage}
@@ -296,11 +315,20 @@ export default function SnapScreen() {
               <ActivityIndicator size="large" color={t.primary} />
             </View>
           ) : null}
+          {cropMode && imageRect ? (
+            <CropOverlay
+              imageRect={imageRect}
+              onConfirm={handleCropRegion}
+              onCancel={() => setCropMode(false)}
+              primaryColor={t.primary}
+            />
+          ) : null}
         </View>
 
         {/* Edit Tools */}
+        {!cropMode ? (
         <View style={styles.cropToolBar}>
-          <Pressable style={styles.cropToolBtn} onPress={handleCropSquare} disabled={processing}>
+          <Pressable style={styles.cropToolBtn} onPress={() => { if (!processing && imageRect) setCropMode(true); }} disabled={processing || !imageRect}>
             <MaterialIcons name="crop" size={24} color="#fff" />
             <Text style={styles.cropToolText}>Crop</Text>
           </Pressable>
@@ -337,7 +365,9 @@ export default function SnapScreen() {
             <Text style={styles.cropToolText}>Flip</Text>
           </Pressable>
         </View>
+        ) : null}
 
+        {!cropMode ? (
         <SafeAreaView edges={['bottom']} style={styles.cropBottomBar}>
           <Pressable
             style={[styles.cropConfirmBtn, processing && { opacity: 0.5 }]}
@@ -354,6 +384,7 @@ export default function SnapScreen() {
             )}
           </Pressable>
         </SafeAreaView>
+        ) : null}
       </View>
     );
   }
