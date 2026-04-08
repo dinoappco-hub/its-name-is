@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useMemo, useCallback } from 'react';
+import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,6 +12,11 @@ import { useAppTheme as useThemeToggle } from '../../hooks/useTheme';
 import DinoLoader from '../../components/DinoLoader';
 import { useAccessibility } from '../../hooks/useAccessibility';
 import { useAppTheme } from '../../hooks/useTheme';
+import { ObjectSubmission } from '../../services/types';
+
+const { width: SCREEN_W } = Dimensions.get('window');
+const GRID_GAP = 10;
+const CARD_W = (SCREEN_W - 32 - GRID_GAP) / 2;
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -21,7 +26,10 @@ export default function ProfileScreen() {
   const { colors: t, typo, isDark, toggleMode } = useAppTheme();
   const { currentUser, getUserObjects, objects, loading, refreshing, refreshObjects } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor } = useAccessibility();
-  const userObjects = useMemo(() => getUserObjects(currentUser.id), [currentUser.id, getUserObjects]);
+  const userObjects = useMemo(() => {
+    if (!currentUser.id) return [];
+    return getUserObjects(currentUser.id);
+  }, [currentUser.id, getUserObjects, objects]);
 
   const totalVotesGiven = useMemo(() => {
     let count = 0;
@@ -47,84 +55,111 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const renderSubmissionCard = useCallback(({ item, index }: { item: ObjectSubmission; index: number }) => {
+    const topName = [...item.suggestedNames].sort((a, b) => b.votes - a.votes)[0];
+    return (
+      <Pressable
+        style={[styles.submissionCard, { width: CARD_W, backgroundColor: t.surface }]}
+        onPress={() => { triggerHaptic('selection'); router.push(`/object/${item.id}`); }}
+      >
+        <Image source={{ uri: item.imageUri }} style={styles.submissionImage} contentFit="cover" transition={200} />
+        <View style={styles.submissionOverlay}>
+          <Text style={styles.submissionName} numberOfLines={1}>{topName?.name || 'Unnamed'}</Text>
+          <View style={styles.submissionMeta}>
+            <MaterialIcons name="arrow-upward" size={11} color="#fff" />
+            <Text style={styles.submissionMetaText}>{item.totalVotes}</Text>
+            <View style={{ width: 6 }} />
+            <MaterialIcons name="chat-bubble-outline" size={10} color="#fff" />
+            <Text style={styles.submissionMetaText}>{item.suggestedNames.length}</Text>
+          </View>
+        </View>
+        {item.isFeatured ? (
+          <View style={[styles.featuredBadge, { backgroundColor: t.primary }]}>
+            <MaterialIcons name="star" size={10} color={t.background} />
+          </View>
+        ) : null}
+      </Pressable>
+    );
+  }, [t, router, triggerHaptic]);
+
+  const renderHeader = () => (
+    <>
+      <View style={styles.headerRow}>
+        <Text style={[styles.pageTitle, { color: t.textPrimary }]}>Profile</Text>
+        <View style={styles.headerActions}>
+          <Pressable style={[styles.headerBtn, { backgroundColor: isDark ? 'rgba(124,92,252,0.12)' : 'rgba(245,158,11,0.12)' }]} onPress={() => { triggerHaptic('selection'); toggleMode(); }}>
+            <MaterialIcons name={isDark ? 'dark-mode' : 'light-mode'} size={20} color={isDark ? '#7C5CFC' : '#F59E0B'} />
+          </Pressable>
+          <Pressable style={[styles.headerBtn, { backgroundColor: t.surface }]} onPress={() => { triggerHaptic('selection'); handleLogout(); }}>
+            <MaterialIcons name="logout" size={20} color={t.error} />
+          </Pressable>
+          <Pressable style={[styles.headerBtn, { backgroundColor: t.surface }]} onPress={() => { triggerHaptic('selection'); router.push('/settings'); }}>
+            <MaterialIcons name="settings" size={22} color={t.textSecondary} />
+          </Pressable>
+        </View>
+      </View>
+
+      <Animated.View entering={shouldAnimate ? FadeInDown.duration(400) : undefined} style={[styles.profileCard, { backgroundColor: t.surface, borderColor: t.border }]}>
+        <Image source={{ uri: avatarUri }} style={styles.avatar} contentFit="cover" />
+        <View style={styles.profileInfo}>
+          <View style={styles.nameRow}>
+            <Text style={[styles.displayName, { color: t.textPrimary, fontSize: scaledSize(18), fontWeight: fw('700') }]}>{displayName}</Text>
+          </View>
+          {displayEmail ? <Text style={[styles.email, { color: t.textSecondary }]}>{displayEmail}</Text> : null}
+          <Text style={[styles.joined, { color: t.textMuted }]}>Joined {new Date(currentUser.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</Text>
+        </View>
+        <Pressable style={[styles.editProfileBtn, { backgroundColor: `${t.primary}15`, borderColor: `${t.primary}30` }]} onPress={() => { Haptics.selectionAsync(); router.push('/edit-profile'); }}>
+          <MaterialIcons name="edit" size={16} color={t.primary} />
+        </Pressable>
+      </Animated.View>
+
+      <View style={styles.statsGrid}>
+        {stats.map((stat, i) => (
+          <Animated.View key={stat.label} entering={shouldAnimate ? FadeInDown.delay(i * 80).duration(400) : undefined} style={[styles.statCard, { backgroundColor: t.surface, borderColor: t.border }]}>
+            <MaterialIcons name={stat.icon} size={22} color={t.primary} />
+            <Text style={[styles.statValue, { color: t.textPrimary, fontSize: scaledSize(22), fontWeight: fw('700') }]}>{stat.value.toLocaleString()}</Text>
+            <Text style={[styles.statLabel, { color: subtleTextColor, fontSize: scaledSize(11) }]}>{stat.label}</Text>
+          </Animated.View>
+        ))}
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: t.textPrimary }]}>Your Submissions</Text>
+        <Text style={[styles.sectionCount, { color: t.textMuted, backgroundColor: t.surface }]}>{userObjects.length}</Text>
+      </View>
+    </>
+  );
+
+  const renderEmpty = () => (
+    loading ? (
+      <View style={styles.loadingWrap}><DinoLoader message="Loading submissions" /></View>
+    ) : (
+      <View style={styles.emptyState}>
+        <Image source={require('../../assets/images/empty-state.png')} style={styles.emptyImage} contentFit="contain" />
+        <Text style={[styles.emptyTitle, { color: t.textPrimary }]}>No submissions yet</Text>
+        <Text style={[styles.emptySubtitle, { color: t.textSecondary }]}>Snap your first object and let the community name it!</Text>
+        <Pressable style={[styles.emptyBtn, { backgroundColor: t.primary }]} onPress={() => router.navigate('/(tabs)/snap')}>
+          <MaterialIcons name="camera-alt" size={18} color={t.background} />
+          <Text style={[styles.emptyBtnText, { color: t.background }]}>Snap Now</Text>
+        </Pressable>
+      </View>
+    )
+  );
+
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshObjects} tintColor={t.primary} colors={[t.primary]} />}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.pageTitle, { color: t.textPrimary }]}>Profile</Text>
-          <View style={styles.headerActions}>
-            <Pressable style={[styles.headerBtn, { backgroundColor: isDark ? 'rgba(124,92,252,0.12)' : 'rgba(245,158,11,0.12)' }]} onPress={() => { triggerHaptic('selection'); toggleMode(); }}>
-              <MaterialIcons name={isDark ? 'dark-mode' : 'light-mode'} size={20} color={isDark ? '#7C5CFC' : '#F59E0B'} />
-            </Pressable>
-            <Pressable style={[styles.headerBtn, { backgroundColor: t.surface }]} onPress={() => { triggerHaptic('selection'); handleLogout(); }}>
-              <MaterialIcons name="logout" size={20} color={t.error} />
-            </Pressable>
-            <Pressable style={[styles.headerBtn, { backgroundColor: t.surface }]} onPress={() => { triggerHaptic('selection'); router.push('/settings'); }}>
-              <MaterialIcons name="settings" size={22} color={t.textSecondary} />
-            </Pressable>
-          </View>
-        </View>
-
-        <Animated.View entering={shouldAnimate ? FadeInDown.duration(400) : undefined} style={[styles.profileCard, { backgroundColor: t.surface, borderColor: t.border }]}>
-          <Image source={{ uri: avatarUri }} style={styles.avatar} contentFit="cover" />
-          <View style={styles.profileInfo}>
-            <View style={styles.nameRow}>
-              <Text style={[styles.displayName, { color: t.textPrimary, fontSize: scaledSize(18), fontWeight: fw('700') }]}>{displayName}</Text>
-            </View>
-            {displayEmail ? <Text style={[styles.email, { color: t.textSecondary }]}>{displayEmail}</Text> : null}
-            <Text style={[styles.joined, { color: t.textMuted }]}>Joined {new Date(currentUser.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</Text>
-          </View>
-          <Pressable style={styles.editProfileBtn} onPress={() => { Haptics.selectionAsync(); router.push('/edit-profile'); }}>
-            <MaterialIcons name="edit" size={16} color={t.primary} />
-          </Pressable>
-        </Animated.View>
-
-        <View style={styles.statsGrid}>
-          {stats.map((stat, i) => (
-            <Animated.View key={stat.label} entering={shouldAnimate ? FadeInDown.delay(i * 80).duration(400) : undefined} style={[styles.statCard, { backgroundColor: t.surface, borderColor: t.border }]}>
-              <MaterialIcons name={stat.icon} size={22} color={t.primary} />
-              <Text style={[styles.statValue, { color: t.textPrimary, fontSize: scaledSize(22), fontWeight: fw('700') }]}>{stat.value.toLocaleString()}</Text>
-              <Text style={[styles.statLabel, { color: subtleTextColor, fontSize: scaledSize(11) }]}>{stat.label}</Text>
-            </Animated.View>
-          ))}
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: t.textPrimary }]}>Your Submissions</Text>
-          <Text style={[styles.sectionCount, { color: t.textMuted, backgroundColor: t.surface }]}>{userObjects.length}</Text>
-        </View>
-
-        {loading ? (
-          <View style={styles.loadingWrap}><DinoLoader message="Loading submissions" /></View>
-        ) : userObjects.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Image source={require('../../assets/images/empty-state.png')} style={styles.emptyImage} contentFit="contain" />
-            <Text style={[styles.emptyTitle, { color: t.textPrimary }]}>No submissions yet</Text>
-            <Text style={[styles.emptySubtitle, { color: t.textSecondary }]}>Snap your first object and let the community name it!</Text>
-            <Pressable style={[styles.emptyBtn, { backgroundColor: t.primary }]} onPress={() => router.navigate('/(tabs)/snap')}>
-              <MaterialIcons name="camera-alt" size={18} color={t.background} />
-              <Text style={[styles.emptyBtnText, { color: t.background }]}>Snap Now</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.submissionsGrid}>
-            {userObjects.map((obj, i) => {
-              const topName = [...obj.suggestedNames].sort((a, b) => b.votes - a.votes)[0];
-              return (
-                <Animated.View key={obj.id} entering={shouldAnimate ? FadeInDown.delay(i * 60).duration(400) : undefined}>
-                  <Pressable style={styles.submissionCard} onPress={() => { triggerHaptic('selection'); router.push(`/object/${obj.id}`); }}>
-                    <Image source={{ uri: obj.imageUri }} style={styles.submissionImage} contentFit="cover" transition={200} />
-                    <View style={styles.submissionOverlay}>
-                      <Text style={styles.submissionName} numberOfLines={1}>{topName?.name || 'Unnamed'}</Text>
-                      <View style={styles.submissionMeta}><MaterialIcons name="arrow-upward" size={11} color="#fff" /><Text style={styles.submissionMetaText}>{obj.totalVotes}</Text></View>
-                    </View>
-                  </Pressable>
-                </Animated.View>
-              );
-            })}
-          </View>
-        )}
-      </ScrollView>
+      <FlatList
+        data={userObjects}
+        renderItem={renderSubmissionCard}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={{ gap: GRID_GAP }}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmpty}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshObjects} tintColor={t.primary} colors={[t.primary]} />}
+      />
     </SafeAreaView>
   );
 }
@@ -157,11 +192,11 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 13, fontWeight: '400', textAlign: 'center', marginBottom: 20, paddingHorizontal: 20 },
   emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12 },
   emptyBtnText: { fontSize: 14, fontWeight: '700' },
-  submissionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  submissionCard: { width: '48%', flexGrow: 1, aspectRatio: 1, borderRadius: 12, overflow: 'hidden' },
+  submissionCard: { aspectRatio: 0.85, borderRadius: 12, overflow: 'hidden', marginBottom: GRID_GAP, position: 'relative' },
   submissionImage: { width: '100%', height: '100%' },
-  submissionOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 8, backgroundColor: 'rgba(0,0,0,0.5)' },
-  submissionName: { fontSize: 11, fontWeight: '600', color: '#fff' },
-  submissionMeta: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
-  submissionMetaText: { fontSize: 10, fontWeight: '600', color: '#fff' },
+  submissionOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 10, backgroundColor: 'rgba(0,0,0,0.55)', borderBottomLeftRadius: 12, borderBottomRightRadius: 12 },
+  submissionName: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  submissionMeta: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 },
+  submissionMetaText: { fontSize: 11, fontWeight: '600', color: '#fff' },
+  featuredBadge: { position: 'absolute', top: 8, left: 8, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });
