@@ -11,6 +11,8 @@ import { useAppTheme } from '../../hooks/useTheme';
 import { useApp } from '../../contexts/AppContext';
 import { User, ObjectSubmission } from '../../services/types';
 import { fetchPublicUserProfile } from '../../services/communityService';
+import { useMute } from '../../hooks/useMute';
+import { useAlert } from '@/template';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 10;
@@ -23,6 +25,8 @@ export default function PublicUserProfileScreen() {
   const { user: authUser } = useAuth();
   const { colors: t } = useAppTheme();
   const { objects } = useApp();
+  const { isUserMuted, muteUser, unmuteUser } = useMute();
+  const { showAlert } = useAlert();
 
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [namesGiven, setNamesGiven] = useState(0);
@@ -30,6 +34,23 @@ export default function PublicUserProfileScreen() {
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   const isOwnProfile = authUser?.id === id;
+  const isMuted = id ? isUserMuted(id) : false;
+
+  const handleToggleMute = () => {
+    if (!id || !profileUser) return;
+    Haptics.selectionAsync();
+    if (isMuted) {
+      showAlert('Unmute User', `Show posts from @${profileUser.username} again?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Unmute', onPress: () => unmuteUser(id) },
+      ]);
+    } else {
+      showAlert('Mute User', `Hide posts and comments from @${profileUser.username}? They will not be notified.`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Mute', style: 'destructive', onPress: () => muteUser(id) },
+      ]);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -217,7 +238,13 @@ export default function PublicUserProfileScreen() {
           <MaterialIcons name="arrow-back" size={22} color={t.textPrimary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: t.textPrimary }]} numberOfLines={1}>@{profileUser.username}</Text>
-        <View style={{ width: 40 }} />
+        {!isOwnProfile ? (
+          <Pressable style={[styles.backBtn, { backgroundColor: isMuted ? '#EF444415' : t.surface }]} onPress={handleToggleMute}>
+            <MaterialIcons name={isMuted ? 'volume-off' : 'volume-up'} size={20} color={isMuted ? '#EF4444' : t.textSecondary} />
+          </Pressable>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
       </View>
 
       <FlatList

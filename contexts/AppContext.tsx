@@ -20,6 +20,7 @@ import {
 } from '../services/objectService';
 import { logAdminAction } from '../services/adminService';
 import { useNotifications } from '../hooks/useNotifications';
+import { sendPushNotification } from '../services/pushService';
 
 interface AppContextType {
   currentUser: User;
@@ -58,7 +59,7 @@ const AppContext = createContext<AppContextType>({} as AppContextType);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { user: authUser } = useAuth();
-  const { addNotification } = useNotifications();
+  const { addNotification, sendRemotePush } = useNotifications();
 
   const [currentUser, setCurrentUser] = useState<User>(defaultUser);
   const [objects, setObjects] = useState<ObjectSubmission[]>([]);
@@ -160,6 +161,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           avatar: currentUser.avatar,
         },
       });
+      // Send real push notification
+      sendRemotePush({
+        targetUserId: targetObj.submittedBy.id,
+        title: 'New Name Suggested',
+        body: `@${currentUser.username} suggested "${name}" for your object`,
+        data: { objectId, type: 'name_suggestion' },
+      });
     }
 
     await refreshObjects();
@@ -204,6 +212,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               username: currentUser.username,
               avatar: currentUser.avatar,
             },
+          });
+          // Send real push notification
+          sendRemotePush({
+            targetUserId: targetName.submittedBy.id,
+            title: 'Your Name Got an Upvote',
+            body: `@${currentUser.username} upvoted "${targetName.name}"`,
+            data: { objectId, type: 'vote' },
           });
         }
       }

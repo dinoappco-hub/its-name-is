@@ -1,4 +1,4 @@
-export type NotificationType = 'vote' | 'name_suggestion' | 'featured' | 'milestone';
+export type NotificationType = 'vote' | 'name_suggestion' | 'featured' | 'milestone' | 'comment';
 
 export interface AppNotification {
   id: string;
@@ -10,7 +10,6 @@ export interface AppNotification {
   fromUser: {
     username: string;
     avatar: string;
-
   };
   read: boolean;
   createdAt: string;

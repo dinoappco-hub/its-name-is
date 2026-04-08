@@ -18,7 +18,10 @@ import { CATEGORIES } from '../../constants/config';
 import { theme as staticTheme } from '../../constants/theme';
 import { REPORT_REASONS, submitReport, hasUserReported } from '../../services/reportService';
 import { Comment, fetchComments, addComment, deleteComment } from '../../services/commentService';
+import { useNotifications } from '../../hooks/useNotifications';
 import { useAccessibility } from '../../hooks/useAccessibility';
+import { useMute } from '../../hooks/useMute';
+import { sendPushNotification } from '../../services/pushService';
 
 export default function ObjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,7 +35,10 @@ export default function ObjectDetailScreen() {
   const { user: authUser } = useAuth();
   const { colors: t, typo } = useAppTheme();
   const { objects, vote, addNameSuggestion, currentUser, trackView, deleteSubmission, updateDescription, adminDeleteSubmission, adminToggleFeatured } = useApp();
+  const { addNotification } = useNotifications();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, a11yProps } = useAccessibility();
+  const { isUserMuted, muteUser: muteUserAction, unmuteUser: unmuteUserAction } = useMute();
+  const { sendRemotePush } = useNotifications();
   const [newName, setNewName] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
@@ -238,9 +244,41 @@ export default function ObjectDetailScreen() {
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setCommentText('');
+
+    // Send push notification to the object owner for new comments
+    if (object && object.submittedBy.id !== authUser.id) {
+      addNotification({
+        type: 'comment',
+        title: 'New Comment',
+        body: `@${currentUser.username} commented on your object`,
+        objectId: id,
+        objectImageUri: object.imageUri,
+        fromUser: { username: currentUser.username, avatar: currentUser.avatar },
+      });
+      sendRemotePush({
+        targetUserId: object.submittedBy.id,
+        title: 'New Comment',
+        body: `@${currentUser.username} commented on your object`,
+        data: { objectId: id, type: 'comment' },
+      });
+    }
+
+    // Send push to the user being replied to
+    if (replyingTo) {
+      const replyTarget = comments.find(c => c.id === replyingTo.id);
+      if (replyTarget && replyTarget.userId !== authUser.id) {
+        sendRemotePush({
+          targetUserId: replyTarget.userId,
+          title: 'New Reply',
+          body: `@${currentUser.username} replied to your comment`,
+          data: { objectId: id, type: 'comment' },
+        });
+      }
+    }
+
     setReplyingTo(null);
     await loadComments();
-  }, [commentText, authUser?.id, id, replyingTo, showAlert]);
+  }, [commentText, authUser?.id, id, replyingTo, showAlert, object, currentUser, addNotification, sendRemotePush, comments]);
 
   const handleDeleteComment = useCallback((commentId: string) => {
     showAlert('Delete Comment?', 'This action cannot be undone.', [
@@ -512,12 +550,34 @@ export default function ObjectDetailScreen() {
                       <MaterialIcons name="delete" size={20} color="#EF4444" />
                     </Pressable>
                   ) : (
-                    <Pressable
-                      style={styles.heroReportBtn}
-                      onPress={() => openReportModal()}
-                    >
-                      <MaterialIcons name="flag" size={20} color={alreadyReported ? t.warning : '#fff'} />
-                    </Pressable>
+                    <>
+                      <Pressable
+                        style={[styles.heroReportBtn, isUserMuted(object.submittedBy.id) && { backgroundColor: 'rgba(239,68,68,0.5)' }]}
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          const muted = isUserMuted(object.submittedBy.id);
+                          if (muted) {
+                            showAlert('Unmute User', `Show posts from @${object.submittedBy.username} again?`, [
+                              { text: 'Cancel', style: 'cancel' },
+                              { text: 'Unmute', onPress: () => unmuteUserAction(object.submittedBy.id) },
+                            ]);
+                          } else {
+                            showAlert('Mute User', `Hide posts and comments from @${object.submittedBy.username}?`, [
+                              { text: 'Cancel', style: 'cancel' },
+                              { text: 'Mute', style: 'destructive', onPress: () => muteUserAction(object.submittedBy.id) },
+                            ]);
+                          }
+                        }}
+                      >
+                        <MaterialIcons name={isUserMuted(object.submittedBy.id) ? 'volume-off' : 'volume-up'} size={18} color="#fff" />
+                      </Pressable>
+                      <Pressable
+                        style={styles.heroReportBtn}
+                        onPress={() => openReportModal()}
+                      >
+                        <MaterialIcons name="flag" size={20} color={alreadyReported ? t.warning : '#fff'} />
+                      </Pressable>
+                    </>
                   )}
                 </View>
               </View>

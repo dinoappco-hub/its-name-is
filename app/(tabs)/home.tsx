@@ -17,6 +17,7 @@ import NavigationDrawer from '../../components/NavigationDrawer';
 import DinoLoader from '../../components/DinoLoader';
 import { useAccessibility } from '../../hooks/useAccessibility';
 import { useAppTheme } from '../../hooks/useTheme';
+import { useMute } from '../../hooks/useMute';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 10;
@@ -31,6 +32,7 @@ export default function FeedScreen() {
   const { objects, searchObjects, loading, refreshing, refreshObjects, currentUser } = useApp();
   const { unreadCount } = useNotifications();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, mutedTextColor, a11yProps } = useAccessibility();
+  const { mutedUserIds } = useMute();
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('trending');
   const [communityStats, setCommunityStats] = useState<CommunityStats | null>(null);
@@ -77,13 +79,15 @@ export default function FeedScreen() {
 
   const filteredObjects = useMemo(() => {
     let list = search ? searchObjects(search) : objects;
+    // Filter muted users
+    if (mutedUserIds.length > 0) list = list.filter(o => !mutedUserIds.includes(o.submittedBy.id));
     if (selectedCategory !== 'all') list = list.filter(o => o.category === selectedCategory);
     switch (sortMode) {
       case 'new': return [...list].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
       case 'top': return [...list].sort((a, b) => b.totalVotes - a.totalVotes);
       default: return [...list].sort((a, b) => (b.totalVotes * 0.7 + b.viewCount * 0.3) - (a.totalVotes * 0.7 + a.viewCount * 0.3));
     }
-  }, [objects, search, sortMode, searchObjects, selectedCategory]);
+  }, [objects, search, sortMode, searchObjects, selectedCategory, mutedUserIds]);
 
   const featuredObjects = useMemo(() => objects.filter(o => o.isFeatured).slice(0, 3), [objects]);
 

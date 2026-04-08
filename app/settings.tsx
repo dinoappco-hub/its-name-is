@@ -9,6 +9,7 @@ import { useAuth, useAlert } from '@/template';
 import { config } from '../constants/config';
 import { useAppTheme } from '../hooks/useTheme';
 import { useApp } from '../contexts/AppContext';
+import { useMute } from '../hooks/useMute';
 
 interface SettingsItem {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -27,6 +28,7 @@ export default function SettingsScreen() {
   const { logout } = useAuth();
   const { colors: t, typo, mode, isDark, toggleMode } = useAppTheme();
   const { currentUser } = useApp();
+  const { mutedUserIds } = useMute();
 
   const handleResetOnboarding = async () => {
     await AsyncStorage.removeItem('snapname_onboarded');
@@ -93,6 +95,14 @@ export default function SettingsScreen() {
           subtitle: 'Manage notification preferences',
           onPress: () => router.push('/notification-settings'),
           showChevron: true,
+        },
+        {
+          icon: 'volume-off',
+          label: 'Muted Users',
+          subtitle: `${mutedUserIds.length} muted user${mutedUserIds.length !== 1 ? 's' : ''}`,
+          onPress: () => router.push('/muted-users'),
+          showChevron: true,
+          badge: mutedUserIds.length > 0 ? String(mutedUserIds.length) : undefined,
         },
         {
           icon: 'accessibility-new',

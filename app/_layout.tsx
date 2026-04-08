@@ -6,6 +6,7 @@ import { NotificationProvider } from '../contexts/NotificationContext';
 import { AppProvider } from '../contexts/AppContext';
 import { AccessibilityProvider } from '../contexts/AccessibilityContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
+import { MuteProvider } from '../contexts/MuteContext';
 
 export default function RootLayout() {
   return (
@@ -15,6 +16,7 @@ export default function RootLayout() {
           <AccessibilityProvider>
             <AuthProvider>
               <NotificationProvider>
+                <MuteProvider>
                 <AppProvider>
                 <StatusBar style="auto" />
                 <Stack screenOptions={{ headerShown: false, animation: 'fade_from_bottom', animationDuration: 250 }}>
@@ -38,8 +40,10 @@ export default function RootLayout() {
                   <Stack.Screen name="leaderboard" options={{ animation: 'fade_from_bottom', animationDuration: 250 }} />
                   <Stack.Screen name="reset-password" options={{ headerShown: false, animation: 'fade', animationDuration: 300 }} />
                   <Stack.Screen name="admin" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
+                  <Stack.Screen name="muted-users" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
                 </Stack>
                 </AppProvider>
+                </MuteProvider>
               </NotificationProvider>
             </AuthProvider>
           </AccessibilityProvider>

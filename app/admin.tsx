@@ -53,6 +53,12 @@ export default function AdminScreen() {
   const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
   const [logLoading, setLogLoading] = useState(false);
 
+  // ──── Bulk Selection State ────
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set());
+  const [selectedQueueIds, setSelectedQueueIds] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
   useEffect(() => {
     if (!currentUser.isAdmin) {
       router.back();
@@ -65,6 +71,13 @@ export default function AdminScreen() {
     if (activeTab === 'queue' && queue.length === 0) loadQueue();
     if (activeTab === 'users' && users.length === 0) loadUsers();
     if (activeTab === 'log' && activityLog.length === 0) loadActivityLog();
+  }, [activeTab]);
+
+  // Reset bulk mode when switching tabs
+  useEffect(() => {
+    setBulkMode(false);
+    setSelectedReportIds(new Set());
+    setSelectedQueueIds(new Set());
   }, [activeTab]);
 
   const loadReports = async () => {
@@ -150,6 +163,120 @@ export default function AdminScreen() {
       },
     ]);
   }, [adminDeleteSubmission, handleUpdateStatus, authUser?.id, showAlert]);
+
+  // ──── Bulk Actions ────
+  const toggleReportSelection = useCallback((id: string) => {
+    Haptics.selectionAsync();
+    setSelectedReportIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleQueueSelection = useCallback((id: string) => {
+    Haptics.selectionAsync();
+    setSelectedQueueIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAllReports = useCallback(() => {
+    Haptics.selectionAsync();
+    const pending = filteredReports.filter(r => r.status === 'pending');
+    if (selectedReportIds.size === pending.length) {
+      setSelectedReportIds(new Set());
+    } else {
+      setSelectedReportIds(new Set(pending.map(r => r.id)));
+    }
+  }, [filteredReports, selectedReportIds]);
+
+  const selectAllQueue = useCallback(() => {
+    Haptics.selectionAsync();
+    if (selectedQueueIds.size === queue.length) {
+      setSelectedQueueIds(new Set());
+    } else {
+      setSelectedQueueIds(new Set(queue.map(q => q.id)));
+    }
+  }, [queue, selectedQueueIds]);
+
+  const handleBulkDismissReports = useCallback(async () => {
+    if (selectedReportIds.size === 0) return;
+    setBulkProcessing(true);
+    const ids = Array.from(selectedReportIds);
+    for (const id of ids) {
+      await updateReportStatus(id, 'dismissed');
+    }
+    setReports(prev => prev.map(r => selectedReportIds.has(r.id) ? { ...r, status: 'dismissed' } : r));
+    if (authUser?.id) {
+      logAdminAction({ adminId: authUser.id, actionType: 'bulk_dismiss_reports', targetType: 'report', targetId: ids.join(','), details: `Bulk dismissed ${ids.length} reports` });
+    }
+    setSelectedReportIds(new Set());
+    setBulkProcessing(false);
+    setBulkMode(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, [selectedReportIds, authUser?.id]);
+
+  const handleBulkReviewReports = useCallback(async () => {
+    if (selectedReportIds.size === 0) return;
+    setBulkProcessing(true);
+    const ids = Array.from(selectedReportIds);
+    for (const id of ids) {
+      await updateReportStatus(id, 'reviewed');
+    }
+    setReports(prev => prev.map(r => selectedReportIds.has(r.id) ? { ...r, status: 'reviewed' } : r));
+    if (authUser?.id) {
+      logAdminAction({ adminId: authUser.id, actionType: 'bulk_review_reports', targetType: 'report', targetId: ids.join(','), details: `Bulk reviewed ${ids.length} reports` });
+    }
+    setSelectedReportIds(new Set());
+    setBulkProcessing(false);
+    setBulkMode(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, [selectedReportIds, authUser?.id]);
+
+  const handleBulkApproveQueue = useCallback(async () => {
+    if (selectedQueueIds.size === 0) return;
+    setBulkProcessing(true);
+    const ids = Array.from(selectedQueueIds);
+    for (const id of ids) {
+      await unflagSubmission(id);
+    }
+    setQueue(prev => prev.filter(q => !selectedQueueIds.has(q.id)));
+    if (authUser?.id) {
+      logAdminAction({ adminId: authUser.id, actionType: 'bulk_approve_queue', targetType: 'submission', targetId: ids.join(','), details: `Bulk approved ${ids.length} flagged submissions` });
+    }
+    setSelectedQueueIds(new Set());
+    setBulkProcessing(false);
+    setBulkMode(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, [selectedQueueIds, authUser?.id]);
+
+  const handleBulkDeleteQueue = useCallback(async () => {
+    if (selectedQueueIds.size === 0) return;
+    showAlert('Bulk Delete', `Remove ${selectedQueueIds.size} flagged submissions?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete All', style: 'destructive',
+        onPress: async () => {
+          setBulkProcessing(true);
+          const ids = Array.from(selectedQueueIds);
+          for (const id of ids) {
+            await adminDeleteSubmission(id);
+          }
+          setQueue(prev => prev.filter(q => !selectedQueueIds.has(q.id)));
+          if (authUser?.id) {
+            logAdminAction({ adminId: authUser.id, actionType: 'bulk_delete_queue', targetType: 'submission', targetId: ids.join(','), details: `Bulk deleted ${ids.length} flagged submissions` });
+          }
+          setSelectedQueueIds(new Set());
+          setBulkProcessing(false);
+          setBulkMode(false);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        },
+      },
+    ]);
+  }, [selectedQueueIds, adminDeleteSubmission, authUser?.id, showAlert]);
 
   // ──── Ban helpers ────
   const openBanModal = useCallback((user: AdminUserEntry) => {
@@ -247,6 +374,7 @@ export default function AdminScreen() {
   };
 
   const getActionIcon = (action: string): keyof typeof MaterialIcons.glyphMap => {
+    if (action.includes('bulk')) return 'checklist';
     if (action.includes('ban')) return 'block';
     if (action.includes('unban')) return 'check-circle';
     if (action.includes('delete')) return 'delete';
@@ -262,6 +390,7 @@ export default function AdminScreen() {
     if (action.includes('delete')) return '#EF4444';
     if (action.includes('feature')) return '#F59E0B';
     if (action.includes('approve')) return '#10B981';
+    if (action.includes('bulk')) return '#3B82F6';
     return t.textSecondary;
   };
 
@@ -277,105 +406,143 @@ export default function AdminScreen() {
 
   const renderReport = ({ item }: { item: Report }) => {
     const statusColor = getStatusColor(item.status);
+    const isSelected = selectedReportIds.has(item.id);
     return (
-      <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.border }]}>
-        <View style={styles.cardHeader}>
-          <Pressable onPress={() => router.push(`/object/${item.objectId}`)} style={styles.cardImageWrap}>
-            {item.objectImageUrl ? (
-              <Image source={{ uri: item.objectImageUrl }} style={styles.cardImage} contentFit="cover" />
-            ) : (
-              <View style={[styles.cardImagePlaceholder, { backgroundColor: t.surfaceElevated }]}>
-                <MaterialIcons name="broken-image" size={20} color={t.textMuted} />
+      <Pressable
+        onPress={bulkMode && item.status === 'pending' ? () => toggleReportSelection(item.id) : undefined}
+        onLongPress={() => {
+          if (!bulkMode && item.status === 'pending') {
+            setBulkMode(true);
+            setSelectedReportIds(new Set([item.id]));
+          }
+        }}
+      >
+        <View style={[styles.card, { backgroundColor: t.surface, borderColor: isSelected ? t.primary : t.border }, isSelected && { borderWidth: 2 }]}>
+          <View style={styles.cardHeader}>
+            {bulkMode && item.status === 'pending' ? (
+              <Pressable style={[styles.checkbox, { borderColor: isSelected ? t.primary : t.border }, isSelected && { backgroundColor: t.primary }]} onPress={() => toggleReportSelection(item.id)}>
+                {isSelected ? <MaterialIcons name="check" size={14} color="#fff" /> : null}
+              </Pressable>
+            ) : null}
+            <Pressable onPress={() => router.push(`/object/${item.objectId}`)} style={styles.cardImageWrap}>
+              {item.objectImageUrl ? (
+                <Image source={{ uri: item.objectImageUrl }} style={styles.cardImage} contentFit="cover" />
+              ) : (
+                <View style={[styles.cardImagePlaceholder, { backgroundColor: t.surfaceElevated }]}>
+                  <MaterialIcons name="broken-image" size={20} color={t.textMuted} />
+                </View>
+              )}
+            </Pressable>
+            <View style={styles.cardInfo}>
+              <View style={styles.cardReasonRow}>
+                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                <Text style={[styles.cardReason, { color: t.textPrimary }]}>{getReasonLabel(item.reason)}</Text>
               </View>
-            )}
-          </Pressable>
-          <View style={styles.cardInfo}>
-            <View style={styles.cardReasonRow}>
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-              <Text style={[styles.cardReason, { color: t.textPrimary }]}>{getReasonLabel(item.reason)}</Text>
+              <View style={styles.reporterRow}>
+                <Image source={{ uri: item.reporterAvatar }} style={styles.reporterAvatar} contentFit="cover" />
+                <Text style={[styles.reporterName, { color: t.textSecondary }]}>@{item.reporterUsername}</Text>
+                <Text style={[styles.timeText, { color: t.textMuted }]}>{timeAgo(item.createdAt)}</Text>
+              </View>
+              {item.description ? <Text style={[styles.descText, { color: t.textSecondary }]} numberOfLines={2}>{item.description}</Text> : null}
             </View>
-            <View style={styles.reporterRow}>
-              <Image source={{ uri: item.reporterAvatar }} style={styles.reporterAvatar} contentFit="cover" />
-              <Text style={[styles.reporterName, { color: t.textSecondary }]}>@{item.reporterUsername}</Text>
-              <Text style={[styles.timeText, { color: t.textMuted }]}>{timeAgo(item.createdAt)}</Text>
-            </View>
-            {item.description ? <Text style={[styles.descText, { color: t.textSecondary }]} numberOfLines={2}>{item.description}</Text> : null}
           </View>
-        </View>
-        <View style={[styles.cardActions, { borderTopColor: t.border }]}>
-          {item.status === 'pending' ? (
-            <>
-              <Pressable style={[styles.actionBtn, { backgroundColor: `${t.error}12` }]} onPress={() => handleDeleteReportedObject(item.id, item.objectId)}>
-                <MaterialIcons name="delete" size={16} color={t.error} />
-                <Text style={[styles.actionBtnText, { color: t.error }]}>Remove</Text>
-              </Pressable>
-              <Pressable style={[styles.actionBtn, { backgroundColor: '#10B98112' }]} onPress={() => handleUpdateStatus(item.id, 'reviewed')}>
-                <MaterialIcons name="check-circle" size={16} color="#10B981" />
-                <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Safe</Text>
-              </Pressable>
-              <Pressable style={[styles.actionBtn, { backgroundColor: t.surfaceElevated }]} onPress={() => handleUpdateStatus(item.id, 'dismissed')}>
-                <MaterialIcons name="close" size={16} color={t.textMuted} />
-                <Text style={[styles.actionBtnText, { color: t.textMuted }]}>Dismiss</Text>
-              </Pressable>
-            </>
-          ) : (
-            <View style={[styles.statusBadge, { backgroundColor: `${statusColor}15` }]}>
-              <MaterialIcons name={item.status === 'reviewed' ? 'check-circle' : 'remove-circle'} size={14} color={statusColor} />
-              <Text style={[styles.statusBadgeText, { color: statusColor }]}>{item.status.charAt(0).toUpperCase() + item.status.slice(1)}</Text>
+          {!bulkMode ? (
+            <View style={[styles.cardActions, { borderTopColor: t.border }]}>
+              {item.status === 'pending' ? (
+                <>
+                  <Pressable style={[styles.actionBtn, { backgroundColor: `${t.error}12` }]} onPress={() => handleDeleteReportedObject(item.id, item.objectId)}>
+                    <MaterialIcons name="delete" size={16} color={t.error} />
+                    <Text style={[styles.actionBtnText, { color: t.error }]}>Remove</Text>
+                  </Pressable>
+                  <Pressable style={[styles.actionBtn, { backgroundColor: '#10B98112' }]} onPress={() => handleUpdateStatus(item.id, 'reviewed')}>
+                    <MaterialIcons name="check-circle" size={16} color="#10B981" />
+                    <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Safe</Text>
+                  </Pressable>
+                  <Pressable style={[styles.actionBtn, { backgroundColor: t.surfaceElevated }]} onPress={() => handleUpdateStatus(item.id, 'dismissed')}>
+                    <MaterialIcons name="close" size={16} color={t.textMuted} />
+                    <Text style={[styles.actionBtnText, { color: t.textMuted }]}>Dismiss</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <View style={[styles.statusBadge, { backgroundColor: `${statusColor}15` }]}>
+                  <MaterialIcons name={item.status === 'reviewed' ? 'check-circle' : 'remove-circle'} size={14} color={statusColor} />
+                  <Text style={[styles.statusBadgeText, { color: statusColor }]}>{item.status.charAt(0).toUpperCase() + item.status.slice(1)}</Text>
+                </View>
+              )}
             </View>
-          )}
+          ) : null}
         </View>
-      </View>
+      </Pressable>
     );
   };
 
-  const renderQueueItem = ({ item }: { item: FlaggedSubmission }) => (
-    <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.border }]}>
-      <View style={styles.cardHeader}>
-        <Pressable onPress={() => router.push(`/object/${item.id}`)} style={styles.cardImageWrap}>
-          <Image source={{ uri: item.imageUrl }} style={styles.cardImage} contentFit="cover" />
-        </Pressable>
-        <View style={styles.cardInfo}>
-          <View style={styles.cardReasonRow}>
-            {item.isBanned ? (
-              <View style={[styles.bannedChip, { backgroundColor: '#EF444420' }]}>
-                <MaterialIcons name="block" size={12} color="#EF4444" />
-                <Text style={{ fontSize: 10, fontWeight: '700', color: '#EF4444' }}>BANNED USER</Text>
-              </View>
+  const renderQueueItem = ({ item }: { item: FlaggedSubmission }) => {
+    const isSelected = selectedQueueIds.has(item.id);
+    return (
+      <Pressable
+        onPress={bulkMode ? () => toggleQueueSelection(item.id) : undefined}
+        onLongPress={() => {
+          if (!bulkMode) {
+            setBulkMode(true);
+            setSelectedQueueIds(new Set([item.id]));
+          }
+        }}
+      >
+        <View style={[styles.card, { backgroundColor: t.surface, borderColor: isSelected ? t.primary : t.border }, isSelected && { borderWidth: 2 }]}>
+          <View style={styles.cardHeader}>
+            {bulkMode ? (
+              <Pressable style={[styles.checkbox, { borderColor: isSelected ? t.primary : t.border }, isSelected && { backgroundColor: t.primary }]} onPress={() => toggleQueueSelection(item.id)}>
+                {isSelected ? <MaterialIcons name="check" size={14} color="#fff" /> : null}
+              </Pressable>
             ) : null}
-            {item.reportCount > 0 ? (
-              <View style={[styles.bannedChip, { backgroundColor: '#F59E0B20' }]}>
-                <MaterialIcons name="flag" size={12} color="#F59E0B" />
-                <Text style={{ fontSize: 10, fontWeight: '700', color: '#F59E0B' }}>{item.reportCount} REPORTS</Text>
+            <Pressable onPress={() => router.push(`/object/${item.id}`)} style={styles.cardImageWrap}>
+              <Image source={{ uri: item.imageUrl }} style={styles.cardImage} contentFit="cover" />
+            </Pressable>
+            <View style={styles.cardInfo}>
+              <View style={styles.cardReasonRow}>
+                {item.isBanned ? (
+                  <View style={[styles.bannedChip, { backgroundColor: '#EF444420' }]}>
+                    <MaterialIcons name="block" size={12} color="#EF4444" />
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#EF4444' }}>BANNED USER</Text>
+                  </View>
+                ) : null}
+                {item.reportCount > 0 ? (
+                  <View style={[styles.bannedChip, { backgroundColor: '#F59E0B20' }]}>
+                    <MaterialIcons name="flag" size={12} color="#F59E0B" />
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#F59E0B' }}>{item.reportCount} REPORTS</Text>
+                  </View>
+                ) : null}
               </View>
-            ) : null}
+              <View style={styles.reporterRow}>
+                <Image source={{ uri: item.userAvatar }} style={styles.reporterAvatar} contentFit="cover" />
+                <Text style={[styles.reporterName, { color: t.textSecondary }]}>@{item.username}</Text>
+                <Text style={[styles.timeText, { color: t.textMuted }]}>{timeAgo(item.createdAt)}</Text>
+              </View>
+              {item.description ? <Text style={[styles.descText, { color: t.textSecondary }]} numberOfLines={2}>{item.description}</Text> : null}
+            </View>
           </View>
-          <View style={styles.reporterRow}>
-            <Image source={{ uri: item.userAvatar }} style={styles.reporterAvatar} contentFit="cover" />
-            <Text style={[styles.reporterName, { color: t.textSecondary }]}>@{item.username}</Text>
-            <Text style={[styles.timeText, { color: t.textMuted }]}>{timeAgo(item.createdAt)}</Text>
-          </View>
-          {item.description ? <Text style={[styles.descText, { color: t.textSecondary }]} numberOfLines={2}>{item.description}</Text> : null}
+          {!bulkMode ? (
+            <View style={[styles.cardActions, { borderTopColor: t.border }]}>
+              <Pressable style={[styles.actionBtn, { backgroundColor: `${t.error}12` }]} onPress={() => handleQueueDelete(item)}>
+                <MaterialIcons name="delete" size={16} color={t.error} />
+                <Text style={[styles.actionBtnText, { color: t.error }]}>Remove</Text>
+              </Pressable>
+              <Pressable style={[styles.actionBtn, { backgroundColor: '#10B98112' }]} onPress={() => handleQueueApprove(item)}>
+                <MaterialIcons name="check-circle" size={16} color="#10B981" />
+                <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Approve</Text>
+              </Pressable>
+              {!item.isBanned ? (
+                <Pressable style={[styles.actionBtn, { backgroundColor: '#EF444412' }]} onPress={() => openBanModal({ id: item.userId, username: item.username, email: '', avatar: item.userAvatar, isBanned: false, banReason: null, bannedAt: null, isAdmin: false, createdAt: '', submissionCount: 0 })}>
+                  <MaterialIcons name="block" size={16} color="#EF4444" />
+                  <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Ban</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
         </View>
-      </View>
-      <View style={[styles.cardActions, { borderTopColor: t.border }]}>
-        <Pressable style={[styles.actionBtn, { backgroundColor: `${t.error}12` }]} onPress={() => handleQueueDelete(item)}>
-          <MaterialIcons name="delete" size={16} color={t.error} />
-          <Text style={[styles.actionBtnText, { color: t.error }]}>Remove</Text>
-        </Pressable>
-        <Pressable style={[styles.actionBtn, { backgroundColor: '#10B98112' }]} onPress={() => handleQueueApprove(item)}>
-          <MaterialIcons name="check-circle" size={16} color="#10B981" />
-          <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Approve</Text>
-        </Pressable>
-        {!item.isBanned ? (
-          <Pressable style={[styles.actionBtn, { backgroundColor: '#EF444412' }]} onPress={() => openBanModal({ id: item.userId, username: item.username, email: '', avatar: item.userAvatar, isBanned: false, banReason: null, bannedAt: null, isAdmin: false, createdAt: '', submissionCount: 0 })}>
-            <MaterialIcons name="block" size={16} color="#EF4444" />
-            <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Ban</Text>
-          </Pressable>
-        ) : null}
-      </View>
-    </View>
-  );
+      </Pressable>
+    );
+  };
 
   const renderUser = ({ item }: { item: AdminUserEntry }) => (
     <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.border }]}>
@@ -447,43 +614,102 @@ export default function AdminScreen() {
 
   const currentData = activeTab === 'reports' ? filteredReports : activeTab === 'queue' ? queue : activeTab === 'users' ? users : activityLog;
   const isLoading = activeTab === 'reports' ? reportsLoading : activeTab === 'queue' ? queueLoading : activeTab === 'users' ? usersLoading : logLoading;
+  const hasBulkSelection = (activeTab === 'reports' && selectedReportIds.size > 0) || (activeTab === 'queue' && selectedQueueIds.size > 0);
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: t.background }]}>
       <View style={styles.header}>
-        <Pressable style={[styles.backBtn, { backgroundColor: t.surface }]} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={22} color={t.textPrimary} />
+        <Pressable style={[styles.backBtn, { backgroundColor: t.surface }]} onPress={() => { if (bulkMode) { setBulkMode(false); setSelectedReportIds(new Set()); setSelectedQueueIds(new Set()); } else { router.back(); } }}>
+          <MaterialIcons name={bulkMode ? 'close' : 'arrow-back'} size={22} color={t.textPrimary} />
         </Pressable>
         <View style={styles.headerCenter}>
-          <View style={[styles.adminIcon, { backgroundColor: `${t.error}15` }]}>
-            <MaterialIcons name="shield" size={18} color={t.error} />
-          </View>
-          <Text style={[styles.headerTitle, { color: t.textPrimary }]}>Admin Panel</Text>
+          {bulkMode ? (
+            <Text style={[styles.headerTitle, { color: t.textPrimary }]}>
+              {activeTab === 'reports' ? selectedReportIds.size : selectedQueueIds.size} selected
+            </Text>
+          ) : (
+            <>
+              <View style={[styles.adminIcon, { backgroundColor: `${t.error}15` }]}>
+                <MaterialIcons name="shield" size={18} color={t.error} />
+              </View>
+              <Text style={[styles.headerTitle, { color: t.textPrimary }]}>Admin Panel</Text>
+            </>
+          )}
         </View>
-        <View style={{ width: 40 }} />
+        {(activeTab === 'reports' || activeTab === 'queue') && !bulkMode ? (
+          <Pressable style={[styles.backBtn, { backgroundColor: t.surface }]} onPress={() => setBulkMode(true)}>
+            <MaterialIcons name="checklist" size={20} color={t.textSecondary} />
+          </Pressable>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
       </View>
 
       {/* Tab Bar */}
-      <View style={styles.tabBar}>
-        {tabs.map(tab => (
-          <Pressable
-            key={tab.key}
-            style={[styles.tab, activeTab === tab.key && { borderBottomColor: t.primary, borderBottomWidth: 2 }]}
-            onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.key); }}
-          >
-            <MaterialIcons name={tab.icon} size={18} color={activeTab === tab.key ? t.primary : t.textMuted} />
-            <Text style={[styles.tabLabel, { color: activeTab === tab.key ? t.primary : t.textMuted }]}>{tab.label}</Text>
-            {tab.badge && tab.badge > 0 ? (
-              <View style={[styles.tabBadge, { backgroundColor: t.error }]}>
-                <Text style={styles.tabBadgeText}>{tab.badge > 99 ? '99+' : tab.badge}</Text>
-              </View>
-            ) : null}
+      {!bulkMode ? (
+        <View style={styles.tabBar}>
+          {tabs.map(tab => (
+            <Pressable
+              key={tab.key}
+              style={[styles.tab, activeTab === tab.key && { borderBottomColor: t.primary, borderBottomWidth: 2 }]}
+              onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.key); }}
+            >
+              <MaterialIcons name={tab.icon} size={18} color={activeTab === tab.key ? t.primary : t.textMuted} />
+              <Text style={[styles.tabLabel, { color: activeTab === tab.key ? t.primary : t.textMuted }]}>{tab.label}</Text>
+              {tab.badge && tab.badge > 0 ? (
+                <View style={[styles.tabBadge, { backgroundColor: t.error }]}>
+                  <Text style={styles.tabBadgeText}>{tab.badge > 99 ? '99+' : tab.badge}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+
+      {/* Bulk Action Bar */}
+      {bulkMode ? (
+        <View style={[styles.bulkBar, { backgroundColor: t.surface, borderColor: t.border }]}>
+          <Pressable style={[styles.bulkSelectAll, { backgroundColor: `${t.primary}12` }]} onPress={activeTab === 'reports' ? selectAllReports : selectAllQueue}>
+            <MaterialIcons name="select-all" size={16} color={t.primary} />
+            <Text style={[styles.bulkSelectAllText, { color: t.primary }]}>
+              {activeTab === 'reports'
+                ? (selectedReportIds.size === filteredReports.filter(r => r.status === 'pending').length ? 'Deselect All' : 'Select All Pending')
+                : (selectedQueueIds.size === queue.length ? 'Deselect All' : 'Select All')
+              }
+            </Text>
           </Pressable>
-        ))}
-      </View>
+          {hasBulkSelection ? (
+            <View style={styles.bulkActions}>
+              {activeTab === 'reports' ? (
+                <>
+                  <Pressable style={[styles.bulkActionBtn, { backgroundColor: '#10B98115' }]} onPress={handleBulkReviewReports} disabled={bulkProcessing}>
+                    {bulkProcessing ? <ActivityIndicator size="small" color="#10B981" /> : <MaterialIcons name="check-circle" size={16} color="#10B981" />}
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#10B981' }}>Safe</Text>
+                  </Pressable>
+                  <Pressable style={[styles.bulkActionBtn, { backgroundColor: `${t.textMuted}10` }]} onPress={handleBulkDismissReports} disabled={bulkProcessing}>
+                    {bulkProcessing ? <ActivityIndicator size="small" color={t.textMuted} /> : <MaterialIcons name="close" size={16} color={t.textMuted} />}
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: t.textMuted }}>Dismiss</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <>
+                  <Pressable style={[styles.bulkActionBtn, { backgroundColor: '#10B98115' }]} onPress={handleBulkApproveQueue} disabled={bulkProcessing}>
+                    {bulkProcessing ? <ActivityIndicator size="small" color="#10B981" /> : <MaterialIcons name="check-circle" size={16} color="#10B981" />}
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#10B981' }}>Approve</Text>
+                  </Pressable>
+                  <Pressable style={[styles.bulkActionBtn, { backgroundColor: '#EF444415' }]} onPress={handleBulkDeleteQueue} disabled={bulkProcessing}>
+                    {bulkProcessing ? <ActivityIndicator size="small" color="#EF4444" /> : <MaterialIcons name="delete" size={16} color="#EF4444" />}
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#EF4444' }}>Delete</Text>
+                  </Pressable>
+                </>
+              )}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
 
       {/* Reports Stats */}
-      {activeTab === 'reports' ? (
+      {activeTab === 'reports' && !bulkMode ? (
         <>
           <View style={styles.statsRow}>
             <View style={[styles.statCard, { backgroundColor: '#F59E0B15', borderColor: '#F59E0B30' }]}>
@@ -635,6 +861,16 @@ const styles = StyleSheet.create({
   tabBadge: { minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, marginLeft: 2 },
   tabBadgeText: { fontSize: 9, fontWeight: '700', color: '#fff' },
 
+  // Bulk action bar
+  bulkBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 16, marginBottom: 12, borderRadius: 12, padding: 10, borderWidth: 1, gap: 8 },
+  bulkSelectAll: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  bulkSelectAllText: { fontSize: 11, fontWeight: '600' },
+  bulkActions: { flexDirection: 'row', gap: 6 },
+  bulkActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+
+  // Checkbox
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginRight: 6 },
+
   statsRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginBottom: 12 },
   statCard: { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1 },
   statNumber: { fontSize: 20, fontWeight: '800' },
@@ -649,7 +885,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14 },
 
   card: { borderRadius: 14, borderWidth: 1, marginBottom: 10, overflow: 'hidden' },
-  cardHeader: { flexDirection: 'row', padding: 12, gap: 10 },
+  cardHeader: { flexDirection: 'row', padding: 12, gap: 10, alignItems: 'center' },
   cardImageWrap: { width: 52, height: 52, borderRadius: 10, overflow: 'hidden' },
   cardImage: { width: '100%', height: '100%' },
   cardImagePlaceholder: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', borderRadius: 10 },

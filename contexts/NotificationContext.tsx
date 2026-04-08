@@ -1,8 +1,10 @@
-import React, { createContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useCallback, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { useAuth } from '@/template';
 import { AppNotification, NotificationType } from '../services/notificationTypes';
+import { registerPushToken, removePushToken, sendPushNotification } from '../services/pushService';
 
 export type NotificationPreferences = Record<NotificationType, boolean>;
 
@@ -11,6 +13,7 @@ const DEFAULT_PREFS: NotificationPreferences = {
   name_suggestion: true,
   featured: true,
   milestone: true,
+  comment: true,
 };
 
 Notifications.setNotificationHandler({
@@ -27,6 +30,7 @@ interface NotificationContextType {
   notifications: AppNotification[];
   unreadCount: number;
   addNotification: (notification: Omit<AppNotification, 'id' | 'read' | 'createdAt'>) => void;
+  sendRemotePush: (params: { targetUserId: string; title: string; body: string; data?: Record<string, any> }) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearAll: () => void;
@@ -34,6 +38,7 @@ interface NotificationContextType {
   updatePreference: (type: NotificationType, enabled: boolean) => void;
   masterEnabled: boolean;
   setMasterEnabled: (enabled: boolean) => void;
+  pushToken: string | null;
 }
 
 export const NotificationContext = createContext<NotificationContextType>({} as NotificationContextType);
@@ -43,31 +48,55 @@ const PREFS_KEY = 'itsnameis_notif_prefs';
 const MASTER_KEY = 'itsnameis_notif_master';
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
+  const { user: authUser } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_PREFS);
   const [masterEnabled, setMasterEnabledState] = useState(true);
+  const [pushToken, setPushToken] = useState<string | null>(null);
+  const tokenRegistered = useRef(false);
+
+  // Notification response listener - handle taps
+  useEffect(() => {
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      if (data?.objectId) {
+        // Navigation will be handled by the app
+      }
+    });
+
+    return () => {
+      responseSubscription.remove();
+    };
+  }, []);
+
+  // Register push token when auth changes
+  useEffect(() => {
+    if (authUser?.id && !tokenRegistered.current) {
+      tokenRegistered.current = true;
+      registerPushToken(authUser.id).then(({ token }) => {
+        if (token) setPushToken(token);
+      });
+    }
+    if (!authUser?.id) {
+      tokenRegistered.current = false;
+      setPushToken(null);
+    }
+  }, [authUser?.id]);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then(stored => {
       if (stored) {
-        try {
-          setNotifications(JSON.parse(stored));
-        } catch {
-          // ignore parse errors
-        }
+        try { setNotifications(JSON.parse(stored)); } catch {}
       }
     });
     AsyncStorage.getItem(PREFS_KEY).then(stored => {
       if (stored) {
-        try {
-          setPreferences({ ...DEFAULT_PREFS, ...JSON.parse(stored) });
-        } catch {}
+        try { setPreferences({ ...DEFAULT_PREFS, ...JSON.parse(stored) }); } catch {}
       }
     });
     AsyncStorage.getItem(MASTER_KEY).then(stored => {
       if (stored === 'false') setMasterEnabledState(false);
     });
-    requestPermissions();
   }, []);
 
   useEffect(() => {
@@ -82,14 +111,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     AsyncStorage.setItem(MASTER_KEY, String(masterEnabled));
   }, [masterEnabled]);
 
-  const requestPermissions = async () => {
-    if (Platform.OS === 'web') return;
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') {
-      await Notifications.requestPermissionsAsync();
-    }
-  };
-
   const sendLocalNotification = async (title: string, body: string) => {
     if (Platform.OS === 'web') return;
     try {
@@ -97,9 +118,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         content: { title, body, sound: 'default' },
         trigger: null,
       });
-    } catch {
-      // silently fail if notifications not available
-    }
+    } catch {}
   };
 
   const updatePreference = useCallback((type: NotificationType, enabled: boolean) => {
@@ -111,7 +130,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const addNotification = useCallback((notification: Omit<AppNotification, 'id' | 'read' | 'createdAt'>) => {
-    // Check if this notification type is enabled
     if (!masterEnabled || !preferences[notification.type]) return;
 
     const newNotif: AppNotification = {
@@ -123,6 +141,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setNotifications(prev => [newNotif, ...prev].slice(0, 50));
     sendLocalNotification(notification.title, notification.body);
   }, [masterEnabled, preferences]);
+
+  // Send remote push notification to another user
+  const sendRemotePush = useCallback((params: { targetUserId: string; title: string; body: string; data?: Record<string, any> }) => {
+    // Don't send push to yourself
+    if (params.targetUserId === authUser?.id) return;
+    // Fire and forget - don't block the UI
+    sendPushNotification(params).catch(() => {});
+  }, [authUser?.id]);
 
   const markAsRead = useCallback((id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
@@ -140,9 +166,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   return (
     <NotificationContext.Provider value={{
-      notifications, unreadCount, addNotification,
+      notifications, unreadCount, addNotification, sendRemotePush,
       markAsRead, markAllAsRead, clearAll,
       preferences, updatePreference, masterEnabled, setMasterEnabled,
+      pushToken,
     }}>
       {children}
     </NotificationContext.Provider>

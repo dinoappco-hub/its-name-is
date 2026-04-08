@@ -22,6 +22,7 @@ const NOTIF_OPTIONS: NotifOption[] = [
   { type: 'name_suggestion', icon: 'chat-bubble', color: '#7C5CFC', title: 'Name Suggestions', description: 'When someone suggests a new name for your object' },
   { type: 'featured', icon: 'star', color: '#FFD700', title: 'Featured', description: 'When your object gets featured on the homepage' },
   { type: 'milestone', icon: 'emoji-events', color: '#F59E0B', title: 'Milestones', description: 'Achievements like reaching vote or submission goals' },
+  { type: 'comment', icon: 'forum', color: '#3B82F6', title: 'Comments', description: 'When someone comments on your object or replies to you' },
 ];
 
 export default function NotificationSettingsScreen() {
