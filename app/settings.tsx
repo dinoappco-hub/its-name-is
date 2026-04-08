@@ -198,7 +198,11 @@ export default function SettingsScreen() {
                 style: 'destructive',
                 onPress: async () => {
                   const { error } = await logout();
-                  if (error) showAlert('Error', error);
+                  if (error) {
+                    showAlert('Error', error);
+                  } else {
+                    router.replace('/');
+                  }
                 },
               },
             ]);
