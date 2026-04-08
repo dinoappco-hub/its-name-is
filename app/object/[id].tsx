@@ -31,7 +31,7 @@ export default function ObjectDetailScreen() {
   }, [router]);
   const { user: authUser } = useAuth();
   const { colors: t, typo } = useAppTheme();
-  const { objects, vote, addNameSuggestion, currentUser, trackView, deleteSubmission } = useApp();
+  const { objects, vote, addNameSuggestion, currentUser, trackView, deleteSubmission, updateDescription } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, a11yProps } = useAccessibility();
   const [newName, setNewName] = useState('');
   const [showInput, setShowInput] = useState(false);
@@ -54,6 +54,11 @@ export default function ObjectDetailScreen() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
   const [sharing, setSharing] = useState(false);
+
+  // Edit description state
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState('');
+  const [savingDescription, setSavingDescription] = useState(false);
 
   const object = useMemo(() => objects.find(o => o.id === id), [objects, id]);
 
@@ -112,6 +117,33 @@ export default function ObjectDetailScreen() {
       hasUserReported(authUser.id, id).then(setAlreadyReported);
     }
   }, [authUser?.id, id]);
+
+  const isOwnPost = object?.submittedBy.id === authUser?.id;
+
+  const handleStartEditDescription = useCallback(() => {
+    if (!object) return;
+    triggerHaptic('selection');
+    setEditedDescription(object.description || '');
+    setEditingDescription(true);
+  }, [object, triggerHaptic]);
+
+  const handleSaveDescription = useCallback(async () => {
+    if (!object) return;
+    setSavingDescription(true);
+    const { error } = await updateDescription(object.id, editedDescription.trim());
+    setSavingDescription(false);
+    if (error) {
+      showAlert('Error', error);
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setEditingDescription(false);
+  }, [object, editedDescription, updateDescription, showAlert]);
+
+  const handleCancelEditDescription = useCallback(() => {
+    setEditingDescription(false);
+    setEditedDescription('');
+  }, []);
 
   const handleDeletePost = useCallback(() => {
     triggerHaptic('impact');
@@ -507,11 +539,52 @@ export default function ObjectDetailScreen() {
               </Animated.View>
             ) : null}
 
-            {object.description ? (
-              <Animated.View entering={shouldAnimate ? FadeInUp.delay(250) : undefined}>
-                <Text style={[styles.description, { color: t.textSecondary }]}>{object.description}</Text>
-              </Animated.View>
-            ) : null}
+            <Animated.View entering={shouldAnimate ? FadeInUp.delay(250) : undefined}>
+              {editingDescription ? (
+                <View style={[styles.editDescWrap, { backgroundColor: t.surface, borderColor: t.border }]}>
+                  <TextInput
+                    style={[styles.editDescInput, { color: t.textPrimary, borderColor: t.border }]}
+                    value={editedDescription}
+                    onChangeText={setEditedDescription}
+                    placeholder="Add a description..."
+                    placeholderTextColor={t.textMuted}
+                    multiline
+                    maxLength={300}
+                    autoFocus
+                  />
+                  <Text style={[styles.editDescCount, { color: t.textMuted }]}>{editedDescription.length}/300</Text>
+                  <View style={styles.editDescActions}>
+                    <Pressable style={[styles.editDescCancelBtn, { borderColor: t.border }]} onPress={handleCancelEditDescription}>
+                      <Text style={[styles.editDescCancelText, { color: t.textSecondary }]}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.editDescSaveBtn, { backgroundColor: t.primary }, savingDescription && { opacity: 0.5 }]}
+                      onPress={handleSaveDescription}
+                      disabled={savingDescription}
+                    >
+                      {savingDescription ? (
+                        <ActivityIndicator size="small" color={t.background} />
+                      ) : (
+                        <Text style={[styles.editDescSaveText, { color: t.background }]}>Save</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.descriptionRow}>
+                  {object.description ? (
+                    <Text style={[styles.description, { color: t.textSecondary, flex: 1 }]}>{object.description}</Text>
+                  ) : isOwnPost ? (
+                    <Text style={[styles.description, { color: t.textMuted, fontStyle: 'italic', flex: 1 }]}>No description yet</Text>
+                  ) : null}
+                  {isOwnPost ? (
+                    <Pressable style={styles.editDescBtn} onPress={handleStartEditDescription} hitSlop={8}>
+                      <MaterialIcons name="edit" size={16} color={t.primary} />
+                    </Pressable>
+                  ) : null}
+                </View>
+              )}
+            </Animated.View>
 
             <View style={styles.namesSection}>
               <View style={styles.namesSectionHeader}>
@@ -800,6 +873,16 @@ const styles = StyleSheet.create({
   },
   categoryBadgeText: { fontSize: 12, fontWeight: '700' },
   description: { fontSize: 15, marginBottom: 16, lineHeight: 22 },
+  descriptionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 16 },
+  editDescBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: -4 },
+  editDescWrap: { borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1 },
+  editDescInput: { fontSize: 15, lineHeight: 22, minHeight: 60, textAlignVertical: 'top', marginBottom: 6 },
+  editDescCount: { fontSize: 11, textAlign: 'right', marginBottom: 10 },
+  editDescActions: { flexDirection: 'row', gap: 10, justifyContent: 'flex-end' },
+  editDescCancelBtn: { borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1 },
+  editDescCancelText: { fontSize: 13, fontWeight: '600' },
+  editDescSaveBtn: { borderRadius: 8, paddingHorizontal: 20, paddingVertical: 8, minWidth: 70, alignItems: 'center' },
+  editDescSaveText: { fontSize: 13, fontWeight: '700' },
   namesSection: { marginTop: 4 },
   namesSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   namesSectionTitle: { fontSize: 18, fontWeight: '700' },

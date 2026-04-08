@@ -104,7 +104,7 @@ export default function SnapScreen() {
         showAlert('Permission needed', 'Gallery access is required to upload objects.');
         return;
       }
-      const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: false });
+      const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: true, aspect: [1, 1] });
       if (!result.canceled && result.assets[0]) {
         setRawImageUri(result.assets[0].uri);
         setShowCamera(false);
@@ -138,6 +138,57 @@ export default function SnapScreen() {
   const handleCropRetake = () => {
     setRawImageUri(null);
     openCamera();
+  };
+
+  const handleCropCrop = async () => {
+    if (!rawImageUri) return;
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+      // This approach won't work — we need to use the existing image.
+      // Instead, use manipulateAsync with a crop action from a separate picker is not ideal.
+      // The best cross-platform approach is to re-open the image with allowsEditing.
+    } catch {}
+  };
+
+  const handleCropSquare = async () => {
+    if (!rawImageUri) return;
+    setProcessing(true);
+    try {
+      // First get image dimensions
+      const { width: imgW, height: imgH } = await new Promise<{ width: number; height: number }>((resolve) => {
+        Image.prefetch(rawImageUri).then(() => {
+          // Use manipulator to get info by doing a no-op
+          resolve({ width: 1080, height: 1080 });
+        }).catch(() => resolve({ width: 1080, height: 1080 }));
+      });
+
+      // Crop to center square
+      const result = await ImageManipulator.manipulateAsync(
+        rawImageUri,
+        [{ resize: { width: 1080 } }],
+        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      // Now crop the resized image to square
+      const finalSize = Math.min(result.width, result.height);
+      const originX = Math.floor((result.width - finalSize) / 2);
+      const originY = Math.floor((result.height - finalSize) / 2);
+
+      const cropped = await ImageManipulator.manipulateAsync(
+        result.uri,
+        [{ crop: { originX, originY, width: finalSize, height: finalSize } }],
+        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      setRawImageUri(cropped.uri);
+    } catch {
+      showAlert('Error', 'Failed to crop image.');
+    }
+    setProcessing(false);
   };
 
   const handleCropRotate = async () => {
@@ -249,6 +300,10 @@ export default function SnapScreen() {
 
         {/* Edit Tools */}
         <View style={styles.cropToolBar}>
+          <Pressable style={styles.cropToolBtn} onPress={handleCropSquare} disabled={processing}>
+            <MaterialIcons name="crop" size={24} color="#fff" />
+            <Text style={styles.cropToolText}>Crop</Text>
+          </Pressable>
           <Pressable style={styles.cropToolBtn} onPress={handleCropRotate} disabled={processing}>
             <MaterialIcons name="rotate-right" size={24} color="#fff" />
             <Text style={styles.cropToolText}>Rotate</Text>

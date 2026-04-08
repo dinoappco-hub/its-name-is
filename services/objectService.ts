@@ -343,6 +343,27 @@ export async function updateUserProfile(
   }
 }
 
+// ──────────────────────────── Update Submission Description ────────────────────────────
+
+export async function updateSubmissionDescription(
+  objectId: string,
+  userId: string,
+  description: string,
+): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from('object_submissions')
+      .update({ description })
+      .eq('id', objectId)
+      .eq('user_id', userId);
+
+    if (error) return { error: error.message };
+    return { error: null };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to update description' };
+  }
+}
+
 // ──────────────────────────── Delete Submission ────────────────────────────
 
 export async function deleteSubmission(objectId: string, userId: string): Promise<{ error: string | null }> {

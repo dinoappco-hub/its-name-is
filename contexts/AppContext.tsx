@@ -8,6 +8,7 @@ import {
   castVote,
   uploadObjectImage,
   deleteSubmission as deleteSubmissionService,
+  updateSubmissionDescription as updateDescriptionService,
   incrementViewCount,
   getUserStats,
   getSubmissionsToday,
@@ -32,6 +33,7 @@ interface AppContextType {
   trackView: (objectId: string) => void;
   updateProfile: (params: { displayName: string; username: string; avatarLocalUri?: string }) => Promise<{ error: string | null }>;
   deleteSubmission: (objectId: string) => Promise<{ error: string | null }>;
+  updateDescription: (objectId: string, description: string) => Promise<{ error: string | null }>;
 }
 
 const defaultUser: User = {
@@ -242,6 +244,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   }, [authUser?.id, refreshObjects]);
 
+  const updateDescription = useCallback(async (objectId: string, description: string): Promise<{ error: string | null }> => {
+    if (!authUser?.id) return { error: 'Not authenticated' };
+
+    // Optimistic update
+    setObjects(prev => prev.map(o => o.id === objectId ? { ...o, description } : o));
+
+    const { error } = await updateDescriptionService(objectId, authUser.id, description);
+    if (error) {
+      await refreshObjects();
+      return { error };
+    }
+    return { error: null };
+  }, [authUser?.id, refreshObjects]);
+
   const updateProfile = useCallback(async (params: { displayName: string; username: string; avatarLocalUri?: string }): Promise<{ error: string | null }> => {
     if (!authUser?.id) return { error: 'Not authenticated' };
 
@@ -299,7 +315,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       loading, refreshing,
       addSubmission, addNameSuggestion, vote,
       searchObjects, getUserObjects, refreshObjects,
-      trackView, updateProfile, deleteSubmission,
+      trackView, updateProfile, deleteSubmission, updateDescription,
     }}>
       {children}
     </AppContext.Provider>
