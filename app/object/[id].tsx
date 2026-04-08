@@ -16,7 +16,8 @@ import { SuggestedName } from '../../services/types';
 
 import { CATEGORIES } from '../../constants/config';
 import { theme as staticTheme } from '../../constants/theme';
-import { REPORT_REASONS, submitReport, hasUserReported } from '../../services/reportService';
+import { REPORT_REASONS, submitReport, hasUserReported, getReportReasonMeta } from '../../services/reportService';
+import { flagSubmission } from '../../services/adminService';
 import { Comment, fetchComments, addComment, deleteComment } from '../../services/commentService';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useAccessibility } from '../../hooks/useAccessibility';
@@ -222,8 +223,12 @@ export default function ObjectDetailScreen() {
     setAlreadyReported(true);
     showAlert('Report Submitted', 'Thank you. Our moderation team will review this content shortly.');
 
+    // Auto-flag the submission with the specific violation type
+    const reasonMeta = getReportReasonMeta(reportReason);
+    flagSubmission(id, reasonMeta.label);
+
     // Send push notifications to all admin users
-    const reasonLabel = REPORT_REASONS.find(r => r.key === reportReason)?.label || reportReason;
+    const reasonLabel = reasonMeta.label;
     fetchAdminUserIds().then(adminIds => {
       for (const adminId of adminIds) {
         if (adminId !== authUser?.id) {
@@ -887,18 +892,23 @@ export default function ObjectDetailScreen() {
                       setReportReason(reason.key);
                     }}
                   >
-                    <View style={[styles.reasonIcon, { backgroundColor: t.surfaceElevated }, selected && { backgroundColor: `${t.error}15` }]}>
+                    <View style={[styles.reasonIcon, { backgroundColor: t.surfaceElevated }, selected && { backgroundColor: `${reason.color}15` }]}>
                       <MaterialIcons
                         name={reason.icon}
                         size={18}
-                        color={selected ? t.error : t.textMuted}
+                        color={selected ? reason.color : t.textMuted}
                       />
                     </View>
-                    <Text style={[styles.reasonText, { color: t.textPrimary }, selected && { color: t.error }]}>
-                      {reason.label}
-                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.reasonText, { color: t.textPrimary }, selected && { color: reason.color }]}>
+                        {reason.label}
+                      </Text>
+                      <Text style={[{ fontSize: 11, marginTop: 1, color: t.textMuted }]}>
+                        {reason.contentType === 'image' ? 'Image content issue' : reason.contentType === 'text' ? 'Text/name issue' : 'General violation'}
+                      </Text>
+                    </View>
                     {selected ? (
-                      <MaterialIcons name="check-circle" size={20} color={t.error} />
+                      <MaterialIcons name="check-circle" size={20} color={reason.color} />
                     ) : (
                       <View style={[styles.reasonRadio, { borderColor: t.borderLight }]} />
                     )}
@@ -1250,7 +1260,7 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 10,
     alignItems: 'center', justifyContent: 'center',
   },
-  reasonText: { fontSize: 15, fontWeight: '600', flex: 1 },
+  reasonText: { fontSize: 15, fontWeight: '600' },
   reasonRadio: {
     width: 20, height: 20, borderRadius: 10,
     borderWidth: 2,

@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth, useAlert } from '@/template';
 import { useAppTheme } from '../hooks/useTheme';
 import { useApp } from '../contexts/AppContext';
-import { Report, fetchAllReports, updateReportStatus, REPORT_REASONS } from '../services/reportService';
+import { Report, fetchAllReports, updateReportStatus, REPORT_REASONS, getReportReasonMeta } from '../services/reportService';
 import {
   ActivityLogEntry, FlaggedSubmission, AdminUserEntry,
   logAdminAction, fetchActivityLog,
@@ -363,7 +363,21 @@ export default function AdminScreen() {
     return `${days}d ago`;
   };
 
-  const getReasonLabel = (key: string) => REPORT_REASONS.find(r => r.key === key)?.label || key;
+  const getReasonLabel = (key: string) => getReportReasonMeta(key).label;
+  const getReasonColor = (key: string) => getReportReasonMeta(key).color;
+  const getReasonIcon = (key: string): keyof typeof MaterialIcons.glyphMap => getReportReasonMeta(key).icon as keyof typeof MaterialIcons.glyphMap;
+  const getContentTypeLabel = (key: string) => {
+    const meta = getReportReasonMeta(key);
+    if (meta.contentType === 'image') return 'IMAGE';
+    if (meta.contentType === 'text') return 'TEXT';
+    return 'GENERAL';
+  };
+  const getContentTypeColor = (key: string) => {
+    const meta = getReportReasonMeta(key);
+    if (meta.contentType === 'image') return '#EF4444';
+    if (meta.contentType === 'text') return '#F97316';
+    return '#6B7280';
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return '#F59E0B';
@@ -435,6 +449,10 @@ export default function AdminScreen() {
             </Pressable>
             <View style={styles.cardInfo}>
               <View style={styles.cardReasonRow}>
+                <View style={[styles.contentTypeBadge, { backgroundColor: `${getReasonColor(item.reason)}15`, borderColor: `${getReasonColor(item.reason)}30` }]}>
+                  <MaterialIcons name={getReasonIcon(item.reason)} size={11} color={getReasonColor(item.reason)} />
+                  <Text style={[styles.contentTypeText, { color: getReasonColor(item.reason) }]}>{getContentTypeLabel(item.reason)}</Text>
+                </View>
                 <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
                 <Text style={[styles.cardReason, { color: t.textPrimary }]}>{getReasonLabel(item.reason)}</Text>
               </View>
@@ -500,6 +518,12 @@ export default function AdminScreen() {
             </Pressable>
             <View style={styles.cardInfo}>
               <View style={styles.cardReasonRow}>
+                {item.flagReason ? (
+                  <View style={[styles.flagReasonBadge, { backgroundColor: '#EF444415', borderColor: '#EF444430' }]}>
+                    <MaterialIcons name="warning" size={11} color="#EF4444" />
+                    <Text style={styles.flagReasonText}>{item.flagReason}</Text>
+                  </View>
+                ) : null}
                 {item.isBanned ? (
                   <View style={[styles.bannedChip, { backgroundColor: '#EF444420' }]}>
                     <MaterialIcons name="block" size={12} color="#EF4444" />
@@ -906,6 +930,10 @@ const styles = StyleSheet.create({
   statusBadgeText: { fontSize: 12, fontWeight: '600' },
 
   bannedChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 3 },
+  contentTypeBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1 },
+  contentTypeText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  flagReasonBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1 },
+  flagReasonText: { fontSize: 10, fontWeight: '700', color: '#EF4444' },
 
   userRow: { flexDirection: 'row', padding: 12, gap: 10, alignItems: 'center' },
   userAvatar: { width: 44, height: 44, borderRadius: 22 },

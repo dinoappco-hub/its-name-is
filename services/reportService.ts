@@ -3,13 +3,20 @@ import { getSupabaseClient } from '@/template';
 const supabase = getSupabaseClient();
 
 export const REPORT_REASONS = [
-  { key: 'inappropriate', label: 'Inappropriate Content', icon: 'block' as const },
-  { key: 'offensive_name', label: 'Offensive Name', icon: 'report' as const },
-  { key: 'spam', label: 'Spam or Misleading', icon: 'content-copy' as const },
-  { key: 'harassment', label: 'Harassment or Bullying', icon: 'person-off' as const },
-  { key: 'copyright', label: 'Copyright Violation', icon: 'copyright' as const },
-  { key: 'other', label: 'Other', icon: 'more-horiz' as const },
+  { key: 'inappropriate_image', label: 'Inappropriate Image', icon: 'broken-image' as const, color: '#EF4444', contentType: 'image' as const },
+  { key: 'inappropriate_text', label: 'Inappropriate Text', icon: 'text-fields' as const, color: '#F97316', contentType: 'text' as const },
+  { key: 'offensive_name', label: 'Offensive Name', icon: 'report' as const, color: '#DC2626', contentType: 'text' as const },
+  { key: 'spam', label: 'Spam or Misleading', icon: 'content-copy' as const, color: '#A855F7', contentType: 'general' as const },
+  { key: 'harassment', label: 'Harassment or Bullying', icon: 'person-off' as const, color: '#EC4899', contentType: 'general' as const },
+  { key: 'copyright', label: 'Copyright Violation', icon: 'copyright' as const, color: '#3B82F6', contentType: 'image' as const },
+  { key: 'other', label: 'Other', icon: 'more-horiz' as const, color: '#6B7280', contentType: 'general' as const },
 ] as const;
+
+export type ReportReasonKey = typeof REPORT_REASONS[number]['key'];
+
+export function getReportReasonMeta(key: string) {
+  return REPORT_REASONS.find(r => r.key === key) || { key, label: key, icon: 'flag' as const, color: '#6B7280', contentType: 'general' as const };
+}
 
 export async function submitReport(params: {
   reporterId: string;
