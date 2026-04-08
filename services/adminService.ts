@@ -72,6 +72,22 @@ export async function fetchActivityLog(limit: number = 50): Promise<{ data: Acti
   }
 }
 
+// ──────────────────────── Fetch Admin User IDs ────────────────────────
+
+export async function fetchAdminUserIds(): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('is_admin', true);
+
+    if (error || !data) return [];
+    return data.map((u: any) => u.id);
+  } catch {
+    return [];
+  }
+}
+
 // ──────────────────────── Ban / Unban Users ────────────────────────
 
 export async function banUser(userId: string, reason: string): Promise<{ error: string | null }> {

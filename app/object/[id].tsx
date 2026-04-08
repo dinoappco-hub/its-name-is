@@ -22,6 +22,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useAccessibility } from '../../hooks/useAccessibility';
 import { useMute } from '../../hooks/useMute';
 import { sendPushNotification } from '../../services/pushService';
+import { fetchAdminUserIds } from '../../services/adminService';
 
 export default function ObjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -220,6 +221,21 @@ export default function ObjectDetailScreen() {
     setShowReportModal(false);
     setAlreadyReported(true);
     showAlert('Report Submitted', 'Thank you. Our moderation team will review this content shortly.');
+
+    // Send push notifications to all admin users
+    const reasonLabel = REPORT_REASONS.find(r => r.key === reportReason)?.label || reportReason;
+    fetchAdminUserIds().then(adminIds => {
+      for (const adminId of adminIds) {
+        if (adminId !== authUser?.id) {
+          sendPushNotification({
+            targetUserId: adminId,
+            title: 'New Report Filed',
+            body: `@${currentUser.username} reported a post: ${reasonLabel}`,
+            data: { objectId: id, type: 'admin_report' },
+          });
+        }
+      }
+    });
   }, [reportReason, reportDescription, reportNameId, authUser?.id, id, showAlert]);
 
   const handlePostComment = useCallback(async () => {
