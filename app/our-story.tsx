@@ -14,7 +14,7 @@ const KIDS = [
   { name: 'Steggy', description: 'Brown Stegosaurus', color: '#8B6914', emoji: '🦖', bgColor: '#8B691415' },
   { name: 'Dino', description: 'Pink Stegosaurus', color: '#E91E8C', emoji: '🦖', bgColor: '#E91E8C15' },
   { name: 'Branchy', description: 'Brown Brachiosaurus', color: '#A0522D', emoji: '🦕', bgColor: '#A0522D15' },
-  { name: 'Cappy', description: 'Capybara', color: '#CD853F', emoji: '🦫', bgColor: '#CD853F15' },
+  { name: 'Cappy', description: 'Capybara', color: '#CD853F', emoji: '🐾', bgColor: '#CD853F15' },
   { name: 'Wallrey', description: 'Purple Walrus', color: '#7B2D8E', emoji: '🦭', bgColor: '#7B2D8E15' },
   { name: 'Barney', description: 'Purple Stegosaurus', color: '#9B59B6', emoji: '🦖', bgColor: '#9B59B615' },
 ];
