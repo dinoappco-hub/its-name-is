@@ -41,8 +41,6 @@ export default function EditProfileScreen() {
 
   const handleSave = async () => {
     if (!username.trim()) { showAlert('Required', 'Username cannot be empty.'); return; }
-    if (username.trim().length < 3) { showAlert('Too Short', 'Username must be at least 3 characters.'); return; }
-    if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) { showAlert('Invalid Username', 'Username can only contain letters, numbers, and underscores.'); return; }
     setSaving(true);
     const { error } = await updateProfile({ displayName: username.trim(), username: username.trim(), avatarLocalUri: newAvatarLocal || undefined });
     setSaving(false);
@@ -81,10 +79,10 @@ export default function EditProfileScreen() {
               <Text style={[styles.fieldLabel, { color: t.textSecondary }]}>Username</Text>
               <View style={[styles.inputWrap, { backgroundColor: t.surface, borderColor: t.border }]}>
                 <Text style={[styles.atSign, { color: t.textMuted }]}>@</Text>
-                <TextInput style={[styles.input, { color: t.textPrimary }]} value={username} onChangeText={(val) => setUsername(val.toLowerCase().replace(/[^a-z0-9_]/g, ''))} placeholder="your_username" placeholderTextColor={t.textMuted} maxLength={20} autoCapitalize="none" autoCorrect={false} />
-                <Text style={[styles.charCount, { color: t.textMuted }]}>{username.length}/20</Text>
+                <TextInput style={[styles.input, { color: t.textPrimary }]} value={username} onChangeText={setUsername} placeholder="your username" placeholderTextColor={t.textMuted} autoCorrect={false} />
+
               </View>
-              <Text style={[styles.fieldHint, { color: t.textMuted }]}>Letters, numbers, and underscores only. Minimum 3 characters.</Text>
+              <Text style={[styles.fieldHint, { color: t.textMuted }]}>Use any characters you like — letters, symbols, spaces, emojis.</Text>
             </View>
           </Animated.View>
 
