@@ -279,7 +279,7 @@ export default function ObjectDetailScreen() {
             <View style={styles.commentHeader}>
               <Pressable style={styles.commentUserRow} onPress={() => navigateToUser(comment.user.id)} hitSlop={4}>
                 <Text style={[styles.commentUsername, { color: t.textPrimary }]} numberOfLines={1}>
-                  {comment.user.displayName}
+                  @{comment.user.username}
                 </Text>
               </Pressable>
               <Text style={[styles.commentTime, { color: t.textMuted }]}>{timeAgo(comment.createdAt)}</Text>
@@ -456,6 +456,7 @@ export default function ObjectDetailScreen() {
                     <Text style={[styles.submitterName, { color: t.textPrimary }]}>{object.submittedBy.displayName}</Text>
                     <MaterialIcons name="chevron-right" size={16} color={t.textMuted} />
                   </View>
+                  <Text style={[styles.submitterMeta, { color: t.textSecondary }]}>@{object.submittedBy.username}</Text>
                   <Text style={[styles.submitterMeta, { color: t.textMuted }]}>
                     {timeAgo(object.submittedAt)} · {object.submittedBy.totalSubmissions} submissions
                   </Text>
