@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Dimensions, Image as RNImage, LayoutChangeEvent } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -11,7 +11,7 @@ import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { useAlert } from '@/template';
 import { CATEGORIES } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAppTheme } from '../../hooks/useTheme';
 import CropOverlay from '../../components/CropOverlay';
 
@@ -35,6 +35,7 @@ export default function SnapScreen() {
 
   // Camera state
   const [showCamera, setShowCamera] = useState(false);
+  const [cameraPermDenied, setCameraPermDenied] = useState(false);
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -84,12 +85,13 @@ export default function SnapScreen() {
     return { x: dx, y: dy, width: Math.max(1, dw), height: Math.max(1, dh) };
   }, [imageNaturalSize, containerLayout]);
 
-  const openCamera = async () => {
+  const openCamera = async (silent = false) => {
     if (Platform.OS === 'web') {
       try {
         const camPerm = await ImagePicker.requestCameraPermissionsAsync();
         if (!camPerm.granted) {
-          showAlert('Permission Needed', 'Camera access is required to snap objects. Please enable it in your browser settings.');
+          setCameraPermDenied(true);
+          if (!silent) showAlert('Permission Needed', 'Camera access is required to snap objects. Please enable it in your browser settings.');
           return;
         }
         const result = await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true, aspect: [1, 1] });
@@ -99,7 +101,8 @@ export default function SnapScreen() {
           Haptics.selectionAsync();
         }
       } catch {
-        showAlert('Camera Unavailable', 'Camera is not available in this browser. Please use the gallery upload or try on a real device.');
+        setCameraPermDenied(true);
+        if (!silent) showAlert('Camera Unavailable', 'Camera is not available in this browser. Please use the gallery upload or try on a real device.');
       }
       return;
     }
@@ -107,13 +110,33 @@ export default function SnapScreen() {
     if (!permission?.granted) {
       const result = await requestPermission();
       if (!result.granted) {
-        showAlert('Permission Needed', 'Camera access is required to snap objects. Please enable it in your device settings.');
+        setCameraPermDenied(true);
+        if (!silent) showAlert('Permission Needed', 'Camera access is required to snap objects. Please enable it in your device settings.');
         return;
       }
     }
+    setCameraPermDenied(false);
     Haptics.selectionAsync();
     setShowCamera(true);
   };
+
+  // Auto-open camera when tab is focused and no image is selected
+  const autoOpenRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!imageUri && !rawImageUri && !submitted && !showCamera && !cameraPermDenied) {
+        autoOpenRef.current = true;
+      }
+      return () => { autoOpenRef.current = false; };
+    }, [imageUri, rawImageUri, submitted, showCamera, cameraPermDenied])
+  );
+
+  useEffect(() => {
+    if (autoOpenRef.current && !imageUri && !rawImageUri && !submitted && !showCamera && !cameraPermDenied) {
+      autoOpenRef.current = false;
+      openCamera(true);
+    }
+  }, [imageUri, rawImageUri, submitted, showCamera, cameraPermDenied]);
 
   const capturePhoto = async () => {
     if (!cameraRef.current || capturing) return;
@@ -247,6 +270,9 @@ export default function SnapScreen() {
     setDescription('');
     setCategory('random');
     setSubmitted(false);
+    setCameraPermDenied(false);
+    // Trigger auto-open on next render
+    autoOpenRef.current = true;
   };
 
   const styles = useMemo(() => createStyles(t, typo), [t, typo]);
