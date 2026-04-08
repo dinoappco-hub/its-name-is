@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, ScrollView as HScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, ScrollView as HScrollView, FlatList } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FlashList } from '@shopify/flash-list';
+
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -319,10 +319,9 @@ export default function FeedScreen() {
           </Pressable>
         </View>
       </View>
-      <FlashList
+      <FlatList
         data={filteredObjects}
         renderItem={renderCard}
-        estimatedItemSize={260}
         numColumns={2}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
@@ -330,6 +329,7 @@ export default function FeedScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id}
+        columnWrapperStyle={{ gap: CARD_GAP }}
       />
       <NavigationDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
     </SafeAreaView>

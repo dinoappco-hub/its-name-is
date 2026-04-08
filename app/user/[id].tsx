@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Dimensions, FlatList } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FlashList } from '@shopify/flash-list';
+
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -216,16 +216,16 @@ export default function PublicUserProfileScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <FlashList
+      <FlatList
         data={userObjects}
         renderItem={renderCard}
-        estimatedItemSize={220}
         numColumns={2}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id}
+        columnWrapperStyle={{ gap: CARD_GAP }}
       />
     </SafeAreaView>
   );
