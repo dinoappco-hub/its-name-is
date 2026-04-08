@@ -7,6 +7,7 @@ import {
   suggestName,
   castVote,
   uploadObjectImage,
+  deleteSubmission as deleteSubmissionService,
   incrementViewCount,
   getUserStats,
   getSubmissionsToday,
@@ -30,6 +31,7 @@ interface AppContextType {
   refreshObjects: () => Promise<void>;
   trackView: (objectId: string) => void;
   updateProfile: (params: { displayName: string; username: string; avatarLocalUri?: string }) => Promise<{ error: string | null }>;
+  deleteSubmission: (objectId: string) => Promise<{ error: string | null }>;
 }
 
 const defaultUser: User = {
@@ -224,6 +226,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setObjects(prev => prev.map(o => o.id === objectId ? { ...o, viewCount: o.viewCount + 1 } : o));
   }, []);
 
+  const deleteSubmission = useCallback(async (objectId: string): Promise<{ error: string | null }> => {
+    if (!authUser?.id) return { error: 'Not authenticated' };
+
+    // Optimistic removal
+    setObjects(prev => prev.filter(o => o.id !== objectId));
+    setCurrentUser(prev => ({ ...prev, totalSubmissions: Math.max(0, prev.totalSubmissions - 1) }));
+
+    const { error } = await deleteSubmissionService(objectId, authUser.id);
+    if (error) {
+      // Revert on failure
+      await refreshObjects();
+      return { error };
+    }
+    return { error: null };
+  }, [authUser?.id, refreshObjects]);
+
   const updateProfile = useCallback(async (params: { displayName: string; username: string; avatarLocalUri?: string }): Promise<{ error: string | null }> => {
     if (!authUser?.id) return { error: 'Not authenticated' };
 
@@ -281,7 +299,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       loading, refreshing,
       addSubmission, addNameSuggestion, vote,
       searchObjects, getUserObjects, refreshObjects,
-      trackView, updateProfile,
+      trackView, updateProfile, deleteSubmission,
     }}>
       {children}
     </AppContext.Provider>

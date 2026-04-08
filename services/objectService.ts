@@ -343,6 +343,24 @@ export async function updateUserProfile(
   }
 }
 
+// ──────────────────────────── Delete Submission ────────────────────────────
+
+export async function deleteSubmission(objectId: string, userId: string): Promise<{ error: string | null }> {
+  try {
+    // Delete the object (cascade will remove suggested_names, votes, comments, reports)
+    const { error } = await supabase
+      .from('object_submissions')
+      .delete()
+      .eq('id', objectId)
+      .eq('user_id', userId);
+
+    if (error) return { error: error.message };
+    return { error: null };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to delete submission' };
+  }
+}
+
 // ──────────────────────────── Fetch User Profile ────────────────────────────
 
 export async function fetchUserProfile(userId: string): Promise<{ data: UserProfile | null; error: string | null }> {

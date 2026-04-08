@@ -31,7 +31,7 @@ export default function ObjectDetailScreen() {
   }, [router]);
   const { user: authUser } = useAuth();
   const { colors: t, typo } = useAppTheme();
-  const { objects, vote, addNameSuggestion, currentUser, trackView } = useApp();
+  const { objects, vote, addNameSuggestion, currentUser, trackView, deleteSubmission } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, a11yProps } = useAccessibility();
   const [newName, setNewName] = useState('');
   const [showInput, setShowInput] = useState(false);
@@ -112,6 +112,25 @@ export default function ObjectDetailScreen() {
       hasUserReported(authUser.id, id).then(setAlreadyReported);
     }
   }, [authUser?.id, id]);
+
+  const handleDeletePost = useCallback(() => {
+    triggerHaptic('impact');
+    showAlert('Delete Submission', 'This will permanently remove this post and all its names, votes, and comments. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const { error } = await deleteSubmission(id!);
+          if (error) {
+            showAlert('Error', error);
+          } else {
+            router.back();
+          }
+        },
+      },
+    ]);
+  }, [id, deleteSubmission, triggerHaptic, showAlert, router]);
 
   const openReportModal = useCallback((nameId?: string) => {
     if (alreadyReported) {
@@ -417,12 +436,21 @@ export default function ObjectDetailScreen() {
                       <MaterialIcons name="share" size={20} color="#fff" />
                     )}
                   </Pressable>
-                  <Pressable
-                    style={styles.heroReportBtn}
-                    onPress={() => openReportModal()}
-                  >
-                    <MaterialIcons name="flag" size={20} color={alreadyReported ? t.warning : '#fff'} />
-                  </Pressable>
+                  {object.submittedBy.id === authUser?.id ? (
+                    <Pressable
+                      style={styles.heroDeleteBtn}
+                      onPress={handleDeletePost}
+                    >
+                      <MaterialIcons name="delete" size={20} color="#EF4444" />
+                    </Pressable>
+                  ) : (
+                    <Pressable
+                      style={styles.heroReportBtn}
+                      onPress={() => openReportModal()}
+                    >
+                      <MaterialIcons name="flag" size={20} color={alreadyReported ? t.warning : '#fff'} />
+                    </Pressable>
+                  )}
                 </View>
               </View>
               <View style={styles.heroBottom}>
@@ -745,6 +773,7 @@ const styles = StyleSheet.create({
   heroRightActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 
   heroReportBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  heroDeleteBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   heroBack: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   heroShareBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   heroFeaturedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: staticTheme.primary, borderRadius: 9999, paddingHorizontal: 10, paddingVertical: 5 },

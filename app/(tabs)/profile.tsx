@@ -24,7 +24,7 @@ export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const { showAlert } = useAlert();
   const { colors: t, typo, isDark, toggleMode } = useAppTheme();
-  const { currentUser, getUserObjects, objects, loading, refreshing, refreshObjects } = useApp();
+  const { currentUser, getUserObjects, objects, loading, refreshing, refreshObjects, deleteSubmission } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor } = useAccessibility();
   const [dinoRefreshing, setDinoRefreshing] = useState(false);
 
@@ -62,12 +62,28 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const handleDeleteSubmission = useCallback((item: ObjectSubmission) => {
+    triggerHaptic('impact');
+    showAlert('Delete Submission', 'This will permanently remove this post and all its names, votes, and comments. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const { error } = await deleteSubmission(item.id);
+          if (error) showAlert('Error', error);
+        },
+      },
+    ]);
+  }, [deleteSubmission, triggerHaptic, showAlert]);
+
   const renderSubmissionCard = useCallback(({ item, index }: { item: ObjectSubmission; index: number }) => {
     const topName = [...item.suggestedNames].sort((a, b) => b.votes - a.votes)[0];
     return (
       <Pressable
         style={[styles.submissionCard, { width: CARD_W, backgroundColor: t.surface }]}
         onPress={() => { triggerHaptic('selection'); router.push(`/object/${item.id}`); }}
+        onLongPress={() => handleDeleteSubmission(item)}
       >
         <Image source={{ uri: item.imageUri }} style={styles.submissionImage} contentFit="cover" transition={200} />
         <View style={styles.submissionOverlay}>
@@ -85,9 +101,16 @@ export default function ProfileScreen() {
             <MaterialIcons name="star" size={10} color={t.background} />
           </View>
         ) : null}
+        <Pressable
+          style={[styles.deleteBtn, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+          onPress={() => handleDeleteSubmission(item)}
+          hitSlop={6}
+        >
+          <MaterialIcons name="delete-outline" size={14} color="#fff" />
+        </Pressable>
       </Pressable>
     );
-  }, [t, router, triggerHaptic]);
+  }, [t, router, triggerHaptic, handleDeleteSubmission]);
 
   const renderHeader = () => (
     <>
@@ -220,5 +243,6 @@ const styles = StyleSheet.create({
   submissionMeta: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 },
   submissionMetaText: { fontSize: 11, fontWeight: '600', color: '#fff' },
   featuredBadge: { position: 'absolute', top: 8, left: 8, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  deleteBtn: { position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   dinoRefreshWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 8, marginTop: -16 },
 });
