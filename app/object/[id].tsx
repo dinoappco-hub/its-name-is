@@ -17,13 +17,13 @@ import { SuggestedName } from '../../services/types';
 import { CATEGORIES } from '../../constants/config';
 import { theme as staticTheme } from '../../constants/theme';
 import { REPORT_REASONS, submitReport, hasUserReported, getReportReasonMeta } from '../../services/reportService';
-import { flagSubmission } from '../../services/adminService';
+import { flagSubmission, fetchReportNotificationTargets } from '../../services/adminService';
 import { Comment, fetchComments, addComment, deleteComment } from '../../services/commentService';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useAccessibility } from '../../hooks/useAccessibility';
 import { useMute } from '../../hooks/useMute';
 import { sendPushNotification } from '../../services/pushService';
-import { fetchAdminUserIds } from '../../services/adminService';
+
 
 export default function ObjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -227,13 +227,13 @@ export default function ObjectDetailScreen() {
     const reasonMeta = getReportReasonMeta(reportReason);
     flagSubmission(id, reasonMeta.label);
 
-    // Send push notifications to all admin users
+    // Send push notifications to all admin users + primary notification email
     const reasonLabel = reasonMeta.label;
-    fetchAdminUserIds().then(adminIds => {
-      for (const adminId of adminIds) {
-        if (adminId !== authUser?.id) {
+    fetchReportNotificationTargets().then(targetIds => {
+      for (const targetId of targetIds) {
+        if (targetId !== authUser?.id) {
           sendPushNotification({
-            targetUserId: adminId,
+            targetUserId: targetId,
             title: 'New Report Filed',
             body: `@${currentUser.username} reported a post: ${reasonLabel}`,
             data: { objectId: id, type: 'admin_report' },

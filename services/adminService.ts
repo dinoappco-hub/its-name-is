@@ -74,6 +74,9 @@ export async function fetchActivityLog(limit: number = 50): Promise<{ data: Acti
 
 // ──────────────────────── Fetch Admin User IDs ────────────────────────
 
+// Primary notification email for flagged content
+const NOTIFICATION_EMAIL = 'mdionisos02@gmail.com';
+
 export async function fetchAdminUserIds(): Promise<string[]> {
   try {
     const { data, error } = await supabase
@@ -83,6 +86,30 @@ export async function fetchAdminUserIds(): Promise<string[]> {
 
     if (error || !data) return [];
     return data.map((u: any) => u.id);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Returns all user IDs that should be notified on flagged content:
+ * all admins + the primary notification email.
+ */
+export async function fetchReportNotificationTargets(): Promise<string[]> {
+  try {
+    const adminIds = await fetchAdminUserIds();
+
+    // Always include the primary notification email
+    const { data: primary } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('email', NOTIFICATION_EMAIL)
+      .maybeSingle();
+
+    const targetSet = new Set(adminIds);
+    if (primary?.id) targetSet.add(primary.id);
+
+    return Array.from(targetSet);
   } catch {
     return [];
   }
