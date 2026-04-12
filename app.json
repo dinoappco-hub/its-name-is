@@ -26,7 +26,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.itsnameis.app",
       "versionCode": 1,
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "com.google.android.gms.permission.AD_ID"]
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
     },
     "web": {
       "bundler": "metro",
@@ -35,14 +35,7 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "react-native-google-mobile-ads",
-        {
-          "androidAppId": "ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy",  
-          "iosAppId": "ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy"    
-        }
-      ],
-      [
+[
         "expo-splash-screen",
         {
           "image": "./assets/images/splash.png",
