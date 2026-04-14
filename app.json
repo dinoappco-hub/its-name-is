@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "itsnameis",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.itsnameis.app",
@@ -44,7 +44,6 @@
           "backgroundColor": "#0A0A0F"
         }
       ],
-      "expo-web-browser",
       [
         "expo-camera",
         {
