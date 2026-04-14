@@ -1,7 +1,6 @@
 import React, { Component, ErrorInfo } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Props {
   children: React.ReactNode;
@@ -32,11 +31,24 @@ export default class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
+  handleForceReload = () => {
+    // Force a full JS reload via Expo/DevClient if available
+    try {
+      const Updates = require('expo-updates');
+      if (Updates && Updates.reloadAsync) {
+        Updates.reloadAsync();
+        return;
+      }
+    } catch {}
+    // Fallback: just reset state
+    this.setState({ hasError: false, error: null, errorInfo: null });
+  };
+
   render() {
     if (this.state.hasError) {
       const { error } = this.state;
       return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
           <View style={styles.content}>
             <View style={styles.iconWrap}>
               <MaterialIcons name="error-outline" size={56} color="#EF4444" />
@@ -58,14 +70,22 @@ export default class ErrorBoundary extends Component<Props, State> {
               onPress={this.handleRestart}
             >
               <MaterialIcons name="refresh" size={20} color="#fff" />
-              <Text style={styles.restartBtnText}>Restart App</Text>
+              <Text style={styles.restartBtnText}>Try Again</Text>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [styles.forceReloadBtn, pressed && styles.restartBtnPressed]}
+              onPress={this.handleForceReload}
+            >
+              <MaterialIcons name="power-settings-new" size={18} color="#8E8E9A" />
+              <Text style={styles.forceReloadBtnText}>Force Reload</Text>
             </Pressable>
 
             <Text style={styles.hint}>
-              If this keeps happening, try closing and reopening the app.
+              If this keeps happening, try closing and reopening the app completely.
             </Text>
           </View>
-        </SafeAreaView>
+        </View>
       );
     }
 
@@ -77,6 +97,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0A0A0F',
+    paddingTop: 60,
   },
   content: {
     flex: 1,
@@ -147,7 +168,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     height: 52,
     width: '100%',
+    marginBottom: 12,
+  },
+  forceReloadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#1E1E2A',
+    borderRadius: 12,
+    height: 48,
+    width: '100%',
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A3A',
+  },
+  forceReloadBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8E8E9A',
   },
   restartBtnPressed: {
     opacity: 0.8,

@@ -108,8 +108,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const colors = useMemo(() => buildThemeColors(mode, colorPreset, customColors), [mode, colorPreset, customColors]);
   const typo = useMemo(() => createTypography(colors, fontPreset), [colors, fontPreset]);
 
-  if (!loaded) return null;
-
   return (
     <ThemeContext.Provider value={{ mode, isDark, colors, typo, setMode, toggleMode, colorPreset, setColorPreset, customColors, setCustomColors, fontPreset, setFontPreset }}>
       {children}
