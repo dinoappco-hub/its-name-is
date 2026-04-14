@@ -5,11 +5,12 @@ import { useAuth } from '@/template';
 import { AppNotification, NotificationType } from '../services/notificationTypes';
 import { registerPushToken, removePushToken, sendPushNotification } from '../services/pushService';
 
-let Notifications: any = null;
-try {
-  Notifications = require('expo-notifications');
-} catch {
-  // expo-notifications not available in this environment
+function getNotificationsModule(): any {
+  try {
+    return require('expo-notifications');
+  } catch {
+    return null;
+  }
 }
 
 export type NotificationPreferences = Record<NotificationType, boolean>;
@@ -22,16 +23,25 @@ const DEFAULT_PREFS: NotificationPreferences = {
   comment: true,
 };
 
-if (Notifications) {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+// Set handler lazily on first render, not at module scope
+let _handlerSet = false;
+function ensureNotificationHandler() {
+  if (_handlerSet) return;
+  _handlerSet = true;
+  const Notifications = getNotificationsModule();
+  if (Notifications) {
+    try {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+    } catch {}
+  }
 }
 
 interface NotificationContextType {
@@ -64,16 +74,21 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const tokenRegistered = useRef(false);
 
   useEffect(() => {
+    ensureNotificationHandler();
+    const Notifications = getNotificationsModule();
     if (!Notifications) return;
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
-      const data = response.notification.request.content.data;
-      if (data?.objectId) {
-        // Navigation will be handled by the app
-      }
-    });
+    let responseSubscription: any;
+    try {
+      responseSubscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
+        const data = response.notification.request.content.data;
+        if (data?.objectId) {
+          // Navigation will be handled by the app
+        }
+      });
+    } catch {}
 
     return () => {
-      responseSubscription.remove();
+      try { responseSubscription?.remove(); } catch {}
     };
   }, []);
 
@@ -119,6 +134,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [masterEnabled]);
 
   const sendLocalNotification = async (title: string, body: string) => {
+    const Notifications = getNotificationsModule();
     if (!Notifications) return;
     try {
       await Notifications.scheduleNotificationAsync({
