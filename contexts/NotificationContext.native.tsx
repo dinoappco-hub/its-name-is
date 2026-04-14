@@ -1,28 +1,8 @@
-import React, { createContext, useState, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 import { useAuth } from '@/template';
 import { AppNotification, NotificationType } from '../services/notificationTypes';
-import { registerPushToken, removePushToken, sendPushNotification } from '../services/pushService';
-
-// Safe lazy getter for expo-notifications that handles prototype errors
-let _notifModule: any = undefined; // undefined = not tried, null = failed
-function getNotificationsModule(): any {
-  if (_notifModule === undefined) {
-    try {
-      const mod = require('expo-notifications');
-      // Verify the module is actually usable by checking a known export
-      if (mod && typeof mod.setNotificationHandler === 'function') {
-        _notifModule = mod;
-      } else {
-        _notifModule = null;
-      }
-    } catch {
-      _notifModule = null;
-    }
-  }
-  return _notifModule;
-}
+import { sendPushNotification } from '../services/pushService';
 
 export type NotificationPreferences = Record<NotificationType, boolean>;
 
@@ -33,29 +13,6 @@ const DEFAULT_PREFS: NotificationPreferences = {
   milestone: true,
   comment: true,
 };
-
-// Set handler lazily — fully guarded
-let _handlerSet = false;
-function ensureNotificationHandler() {
-  if (_handlerSet) return;
-  _handlerSet = true;
-  try {
-    const Notifications = getNotificationsModule();
-    if (Notifications) {
-      Notifications.setNotificationHandler({
-        handleNotification: async () => ({
-          shouldShowAlert: true,
-          shouldPlaySound: true,
-          shouldSetBadge: true,
-          shouldShowBanner: true,
-          shouldShowList: true,
-        }),
-      });
-    }
-  } catch (e) {
-    console.warn('Failed to set notification handler:', e);
-  }
-}
 
 interface NotificationContextType {
   notifications: AppNotification[];
@@ -84,49 +41,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_PREFS);
   const [masterEnabled, setMasterEnabledState] = useState(true);
   const [pushToken, setPushToken] = useState<string | null>(null);
-  const tokenRegistered = useRef(false);
-
-  // Set up notification handler and response listener
-  useEffect(() => {
-    // Defer to next tick so any prototype error doesn't crash the commit phase
-    const timer = setTimeout(() => {
-      try {
-        ensureNotificationHandler();
-        const Notifications = getNotificationsModule();
-        if (Notifications && typeof Notifications.addNotificationResponseReceivedListener === 'function') {
-          const sub = Notifications.addNotificationResponseReceivedListener((response: any) => {
-            const data = response?.notification?.request?.content?.data;
-            if (data?.objectId) {
-              // Navigation handled by app
-            }
-          });
-          // Store for cleanup
-          (timer as any).__sub = sub;
-        }
-      } catch (e) {
-        console.warn('Notification setup failed:', e);
-      }
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      try { (timer as any).__sub?.remove(); } catch {}
-    };
-  }, []);
-
-  // Register push token when user logs in
-  useEffect(() => {
-    if (authUser?.id && !tokenRegistered.current) {
-      tokenRegistered.current = true;
-      registerPushToken(authUser.id).then(({ token }) => {
-        if (token) setPushToken(token);
-      }).catch(() => {});
-    }
-    if (!authUser?.id) {
-      tokenRegistered.current = false;
-      setPushToken(null);
-    }
-  }, [authUser?.id]);
 
   // Load persisted data
   useEffect(() => {
@@ -158,17 +72,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     AsyncStorage.setItem(MASTER_KEY, String(masterEnabled));
   }, [masterEnabled]);
 
-  const sendLocalNotification = async (title: string, body: string) => {
-    try {
-      const Notifications = getNotificationsModule();
-      if (!Notifications || typeof Notifications.scheduleNotificationAsync !== 'function') return;
-      await Notifications.scheduleNotificationAsync({
-        content: { title, body, sound: 'default' },
-        trigger: null,
-      });
-    } catch {}
-  };
-
   const updatePreference = useCallback((type: NotificationType, enabled: boolean) => {
     setPreferences(prev => ({ ...prev, [type]: enabled }));
   }, []);
@@ -187,7 +90,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       createdAt: new Date().toISOString(),
     };
     setNotifications(prev => [newNotif, ...prev].slice(0, 50));
-    sendLocalNotification(notification.title, notification.body);
   }, [masterEnabled, preferences]);
 
   const sendRemotePush = useCallback((params: { targetUserId: string; title: string; body: string; data?: Record<string, any> }) => {
