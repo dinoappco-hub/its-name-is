@@ -1,6 +1,5 @@
-// SafeAnimated — Drop-in replacement for react-native-reanimated
-// Uses React Native's built-in Animated API only — no native reanimated dependency
-// All entering/exiting/layout props are safely stripped from wrapper components
+// SafeAnimated — Uses real react-native-reanimated when available (native),
+// falls back to RN Animated stubs on web or if reanimated fails to load.
 
 import React, { forwardRef } from 'react';
 import {
@@ -11,109 +10,114 @@ import {
 } from 'react-native';
 
 // ──────────────────────────────────────────────
-// Wrapper components: strip reanimated-only props
+// Try to load real react-native-reanimated
 // ──────────────────────────────────────────────
 
-const AnimatedViewBase = RNAnimated.createAnimatedComponent(RNView);
-const AnimatedTextBase = RNAnimated.createAnimatedComponent(RNText);
+let Reanimated: any = null;
+try {
+  Reanimated = require('react-native-reanimated');
+} catch {}
 
-const SafeAnimatedView = forwardRef<RNView, any>((props, ref) => {
+const hasReanimated = !!(
+  Reanimated &&
+  Reanimated.default &&
+  Reanimated.default.View &&
+  typeof Reanimated.useSharedValue === 'function'
+);
+
+// ──────────────────────────────────────────────
+// If reanimated is available, re-export everything from it
+// ──────────────────────────────────────────────
+
+if (hasReanimated) {
+  // We'll export at the bottom of the file
+}
+
+// ──────────────────────────────────────────────
+// Fallback: stub wrapper components
+// ──────────────────────────────────────────────
+
+const FallbackAnimatedView = forwardRef<RNView, any>((props, ref) => {
   const { entering, exiting, layout, ...rest } = props;
   return <RNAnimated.View ref={ref} {...rest} />;
 });
-SafeAnimatedView.displayName = 'SafeAnimatedView';
+FallbackAnimatedView.displayName = 'FallbackAnimatedView';
 
-const SafeAnimatedText = forwardRef<RNText, any>((props, ref) => {
+const FallbackAnimatedText = forwardRef<RNText, any>((props, ref) => {
   const { entering, exiting, layout, ...rest } = props;
   return <RNAnimated.Text ref={ref} {...rest} />;
 });
-SafeAnimatedText.displayName = 'SafeAnimatedText';
+FallbackAnimatedText.displayName = 'FallbackAnimatedText';
 
-const SafeAnimatedScrollView = forwardRef<RNScrollView, any>((props, ref) => {
+const FallbackAnimatedScrollView = forwardRef<RNScrollView, any>((props, ref) => {
   const { entering, exiting, layout, ...rest } = props;
   return <RNAnimated.ScrollView ref={ref} {...rest} />;
 });
-SafeAnimatedScrollView.displayName = 'SafeAnimatedScrollView';
+FallbackAnimatedScrollView.displayName = 'FallbackAnimatedScrollView';
 
-const SafeAnimated = {
-  View: SafeAnimatedView,
-  Text: SafeAnimatedText,
-  ScrollView: SafeAnimatedScrollView,
+const FallbackAnimated = {
+  View: FallbackAnimatedView,
+  Text: FallbackAnimatedText,
+  ScrollView: FallbackAnimatedScrollView,
 };
 
-export default SafeAnimated;
-
 // ──────────────────────────────────────────────
-// Shared value — NO-OP stub (not backed by Animated.Value)
-// Used only by components that read .value in useAnimatedStyle
-// For real animations, use RN Animated directly (see NavigationDrawer, home)
+// Fallback: chainable no-op stubs for layout animations
 // ──────────────────────────────────────────────
 
-class SharedValueStub {
-  _v: number;
-  constructor(init: number) {
-    this._v = typeof init === 'number' ? init : 0;
-  }
-  get value() { return this._v; }
-  set value(v: any) {
-    // Handle withTiming/withSpring marker objects
-    if (v && typeof v === 'object') {
-      if (v.__timing || v.__spring) {
-        this._v = typeof v.toValue === 'number' ? v.toValue : this._v;
-        // Fire callback asynchronously if present
-        if (typeof v.callback === 'function') {
-          setTimeout(() => { try { v.callback(true); } catch {} }, v.duration || 300);
-        }
-        return;
-      }
-    }
-    if (typeof v === 'number') { this._v = v; }
-  }
+function createStub(): any {
+  const c: any = {};
+  const methods = ['duration', 'delay', 'springify', 'damping', 'stiffness',
+    'withInitialValues', 'withCallback', 'easing', 'build', 'mass',
+    'overshootClamping', 'restDisplacementThreshold', 'restSpeedThreshold'];
+  methods.forEach(m => { c[m] = (..._a: any[]) => c; });
+  return c;
 }
 
-export function useSharedValue(init: any): any {
-  const ref = React.useRef<SharedValueStub | null>(null);
-  if (!ref.current) ref.current = new SharedValueStub(typeof init === 'number' ? init : 0);
+const stubFadeIn = createStub();
+const stubFadeInDown = createStub();
+const stubFadeInUp = createStub();
+const stubFadeOut = createStub();
+const stubZoomIn = createStub();
+
+// ──────────────────────────────────────────────
+// Fallback: shared value / animation helpers
+// ──────────────────────────────────────────────
+
+function fallbackUseSharedValue(init: any): any {
+  const ref = React.useRef<any>(null);
+  if (!ref.current) {
+    ref.current = { _v: typeof init === 'number' ? init : 0 };
+    Object.defineProperty(ref.current, 'value', {
+      get() { return this._v; },
+      set(v: any) {
+        if (v && typeof v === 'object' && (v.__timing || v.__spring)) {
+          this._v = typeof v.toValue === 'number' ? v.toValue : this._v;
+          return;
+        }
+        if (typeof v === 'number') this._v = v;
+      },
+    });
+  }
   return ref.current;
 }
 
-// ──────────────────────────────────────────────
-// useAnimatedStyle — simple poll (only for welcome banner etc.)
-// ──────────────────────────────────────────────
-
-export function useAnimatedStyle(fn: () => any): any {
-  const [style, setStyle] = React.useState(() => {
-    try { return fn(); } catch { return {}; }
-  });
-  React.useEffect(() => {
-    const id = setInterval(() => {
-      try {
-        const s = fn();
-        setStyle(s);
-      } catch {}
-    }, 50);
-    return () => clearInterval(id);
-  }, []);
-  return style;
+function fallbackUseAnimatedStyle(fn: () => any): any {
+  try { return fn(); } catch { return {}; }
 }
 
-// ──────────────────────────────────────────────
-// Animation helpers — simple stubs
-// ──────────────────────────────────────────────
-
-export function withTiming(toValue: any, config?: any, callback?: (finished: boolean) => void): any {
-  return { __timing: true, toValue, duration: config?.duration || 300, callback };
+function fallbackWithTiming(toValue: any, _config?: any, _cb?: any): any {
+  return { __timing: true, toValue, duration: _config?.duration || 300 };
+}
+function fallbackWithSpring(toValue: any, _config?: any): any {
+  return { __spring: true, toValue };
 }
 
-export function withSpring(toValue: any, config?: any): any {
-  return { __spring: true, toValue, config };
-}
+const fallbackRunOnJS = (fn: any) => fn;
+const fallbackWithRepeat = (_val: any, _c?: number, _r?: boolean) => _val;
+const fallbackWithDelay = (_d: any, anim: any) => anim;
 
-export const withRepeat = (_val: any, _count?: number, _reverse?: boolean) => _val;
-export const withDelay = (_d: any, anim: any) => anim;
-export const runOnJS = (fn: any) => fn;
-
-export function interpolate(val: number, input: number[], output: number[]): number {
+function fallbackInterpolate(val: number, input: number[], output: number[]): number {
   if (!input || !output || input.length < 2 || output.length < 2) return val;
   for (let i = 0; i < input.length - 1; i++) {
     if (val >= input[i] && val <= input[i + 1]) {
@@ -125,7 +129,7 @@ export function interpolate(val: number, input: number[], output: number[]): num
   return output[output.length - 1];
 }
 
-export const Easing = {
+const fallbackEasing = {
   linear: (t: number) => t,
   ease: (t: number) => t,
   bezier: () => (t: number) => t,
@@ -135,22 +139,28 @@ export const Easing = {
   cubic: (t: number) => t,
 };
 
+const fallbackUseAnimatedScrollHandler = () => undefined;
+
 // ──────────────────────────────────────────────
-// Layout animation stubs — chainable no-ops
+// Export: real reanimated if available, stubs otherwise
 // ──────────────────────────────────────────────
 
-function createStub(): any {
-  const c: any = {};
-  ['duration', 'delay', 'springify', 'damping', 'stiffness', 'withInitialValues', 'withCallback', 'easing', 'build'].forEach(m => {
-    c[m] = (..._a: any[]) => c;
-  });
-  return c;
-}
+const SafeAnimated = hasReanimated ? Reanimated.default : FallbackAnimated;
+export default SafeAnimated;
 
-export const FadeIn = createStub();
-export const FadeInDown = createStub();
-export const FadeInUp = createStub();
-export const FadeOut = createStub();
-export const ZoomIn = createStub();
+export const FadeIn = hasReanimated ? Reanimated.FadeIn : stubFadeIn;
+export const FadeInDown = hasReanimated ? Reanimated.FadeInDown : stubFadeInDown;
+export const FadeInUp = hasReanimated ? Reanimated.FadeInUp : stubFadeInUp;
+export const FadeOut = hasReanimated ? Reanimated.FadeOut : stubFadeOut;
+export const ZoomIn = hasReanimated ? Reanimated.ZoomIn : stubZoomIn;
 
-export const useAnimatedScrollHandler = () => undefined;
+export const useSharedValue = hasReanimated ? Reanimated.useSharedValue : fallbackUseSharedValue;
+export const useAnimatedStyle = hasReanimated ? Reanimated.useAnimatedStyle : fallbackUseAnimatedStyle;
+export const withTiming = hasReanimated ? Reanimated.withTiming : fallbackWithTiming;
+export const withSpring = hasReanimated ? Reanimated.withSpring : fallbackWithSpring;
+export const withRepeat = hasReanimated ? Reanimated.withRepeat : fallbackWithRepeat;
+export const withDelay = hasReanimated ? Reanimated.withDelay : fallbackWithDelay;
+export const runOnJS = hasReanimated ? Reanimated.runOnJS : fallbackRunOnJS;
+export const interpolate = hasReanimated ? Reanimated.interpolate : fallbackInterpolate;
+export const Easing = hasReanimated ? Reanimated.Easing : fallbackEasing;
+export const useAnimatedScrollHandler = hasReanimated ? Reanimated.useAnimatedScrollHandler : fallbackUseAnimatedScrollHandler;
