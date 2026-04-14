@@ -40,11 +40,19 @@ export const Easing = {
   cubic: (t: number) => t,
 };
 
-// Layout animations — undefined means no entering/exiting animations
-export const FadeIn = undefined;
-export const FadeInDown = undefined;
-export const FadeInUp = undefined;
-export const FadeOut = undefined;
-export const ZoomIn = undefined;
+// Chainable no-op layout animation stubs
+const createAnimationStub = (): any => {
+  const stub: any = undefined;
+  const chainable: any = {};
+  const methods = ['duration', 'delay', 'springify', 'damping', 'stiffness', 'withInitialValues', 'withCallback', 'easing', 'build'];
+  methods.forEach(m => { chainable[m] = (..._args: any[]) => chainable; });
+  return chainable;
+};
+
+export const FadeIn = createAnimationStub();
+export const FadeInDown = createAnimationStub();
+export const FadeInUp = createAnimationStub();
+export const FadeOut = createAnimationStub();
+export const ZoomIn = createAnimationStub();
 
 export const useAnimatedScrollHandler = () => undefined;
