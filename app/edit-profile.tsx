@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
 import * as ImagePicker from 'expo-image-picker';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown } from '../components/SafeAnimated';
 import { useAuth, useAlert } from '@/template';
 import { useApp } from '../contexts/AppContext';
 import { useAppTheme } from '../hooks/useTheme';

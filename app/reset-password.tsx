@@ -7,7 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MaterialIcons } from '../components/SafeIcons';
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp } from '../components/SafeAnimated';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getSupabaseClient } from '@/template';
 import { useAlert } from '@/template';

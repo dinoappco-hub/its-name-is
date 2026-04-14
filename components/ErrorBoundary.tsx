@@ -62,6 +62,12 @@ export default class ErrorBoundary extends Component<Props, State> {
               <ScrollView style={styles.errorBox} contentContainerStyle={styles.errorBoxContent} showsVerticalScrollIndicator={false}>
                 <Text style={styles.errorLabel}>Error Details</Text>
                 <Text style={styles.errorText} selectable>{error.name}: {error.message}</Text>
+                {error.stack ? (
+                  <>
+                    <Text style={[styles.errorLabel, { marginTop: 12 }]}>Stack Trace</Text>
+                    <Text style={[styles.errorText, { fontSize: 10, color: '#F59E0B' }]} selectable>{error.stack.slice(0, 1500)}</Text>
+                  </>
+                ) : null}
               </ScrollView>
             ) : null}
 
@@ -137,7 +143,7 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     width: '100%',
-    maxHeight: 140,
+    maxHeight: 300,
     backgroundColor: '#16161F',
     borderRadius: 12,
     borderWidth: 1,

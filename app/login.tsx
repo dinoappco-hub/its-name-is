@@ -8,7 +8,7 @@ import { Image } from 'expo-image';
 import { MaterialIcons } from '../components/SafeIcons';
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp } from '../components/SafeAnimated';
 import { useRouter } from 'expo-router';
 import { useAuth, useAlert, getSupabaseClient } from '@/template';
 import { useAppTheme } from '../hooks/useTheme';

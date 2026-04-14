@@ -6,7 +6,7 @@ import { MaterialIcons } from '../../components/SafeIcons';
 import * as ImagePicker from 'expo-image-picker';
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
-import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, ZoomIn } from '../../components/SafeAnimated';
 import { useAlert } from '@/template';
 import { CATEGORIES } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';

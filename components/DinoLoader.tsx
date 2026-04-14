@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
   Easing,
   interpolate,
-} from 'react-native-reanimated';
+} from './SafeAnimated';
 import { useAppTheme } from '../hooks/useTheme';
 
 interface DinoLoaderProps {

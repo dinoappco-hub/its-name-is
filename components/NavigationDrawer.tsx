@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
   withSpring,
   Easing,
-} from 'react-native-reanimated';
+} from './SafeAnimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { config } from '../constants/config';
 import { useApp } from '../contexts/AppContext';

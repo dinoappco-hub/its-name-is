@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, ScrollView, Switch, Platform } from 
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '../components/SafeIcons';
 import { useRouter } from 'expo-router';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown } from '../components/SafeAnimated';
 import { useAppTheme } from '../hooks/useTheme';
 import { useAccessibility } from '../hooks/useAccessibility';
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Linking, Platform } from 'react-native';
-import Animated, { FadeIn, FadeOut, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, FadeInUp } from '../components/SafeAnimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '../components/SafeIcons';
 import { useRouter } from 'expo-router';

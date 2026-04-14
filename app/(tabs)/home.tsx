@@ -7,7 +7,7 @@ import { MaterialIcons } from '../../components/SafeIcons';
 import { useRouter } from 'expo-router';
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
-import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from 'react-native-reanimated';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from '../../components/SafeAnimated';
 import { CATEGORIES, CategoryKey } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '@/template';

@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AlertProvider, AuthProvider } from '@/template';
 
@@ -12,7 +11,11 @@ import { NotificationProvider } from '../contexts/NotificationContext';
 import { MuteProvider } from '../contexts/MuteContext';
 import { AppProvider } from '../contexts/AppContext';
 
-
+let StatusBarComponent: React.ComponentType<any> | null = null;
+try {
+  const mod = require('expo-status-bar');
+  StatusBarComponent = mod?.StatusBar || null;
+} catch {}
 
 function AppStack() {
   return (
@@ -54,7 +57,7 @@ export default function RootLayout() {
                   <NotificationProvider>
                     <MuteProvider>
                       <AppProvider>
-                        <StatusBar style="auto" />
+                        {StatusBarComponent ? <StatusBarComponent style="auto" /> : null}
                         <AppStack />
                       </AppProvider>
                     </MuteProvider>
