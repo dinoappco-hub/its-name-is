@@ -7,9 +7,11 @@ import { AppProvider } from '../contexts/AppContext';
 import { AccessibilityProvider } from '../contexts/AccessibilityContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { MuteProvider } from '../contexts/MuteContext';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function RootLayout() {
   return (
+    <ErrorBoundary>
     <AlertProvider>
       <SafeAreaProvider>
         <ThemeProvider>
@@ -50,5 +52,6 @@ export default function RootLayout() {
         </ThemeProvider>
       </SafeAreaProvider>
     </AlertProvider>
+    </ErrorBoundary>
   );
 }
