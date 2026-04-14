@@ -5,7 +5,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+let Haptics: any = null;
+try { Haptics = require('expo-haptics'); } catch {}
 import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from 'react-native-reanimated';
 import { CATEGORIES, CategoryKey } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
@@ -49,8 +50,6 @@ export default function FeedScreen() {
     return {
       opacity: p,
       transform: [{ scale: 0.9 + 0.1 * p }],
-      maxHeight: p * 300,
-      marginBottom: p * 14,
     };
   });
 
@@ -148,7 +147,7 @@ export default function FeedScreen() {
   const renderHeader = () => (
     <View style={styles.headerContent}>
       {showWelcome ? (
-        <Animated.View style={[welcomeAnimStyle, { overflow: 'hidden' }]}>
+        <Animated.View style={welcomeAnimStyle}>
           <View style={[styles.welcomeBanner, { backgroundColor: t.surface, borderColor: t.border }]}>
             <View style={styles.welcomeBannerRow}>
               <View style={[styles.welcomeIconWrap, { backgroundColor: `${t.primary}15` }]}>

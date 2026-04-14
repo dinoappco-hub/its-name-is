@@ -4,7 +4,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+let Haptics: any = null;
+try { Haptics = require('expo-haptics'); } catch {}
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth, useAlert } from '@/template';
 import { useApp } from '../../contexts/AppContext';
@@ -143,7 +144,7 @@ export default function ProfileScreen() {
           {displayEmail ? <Text style={[styles.email, { color: t.textSecondary }]}>{displayEmail}</Text> : null}
           <Text style={[styles.joined, { color: t.textMuted }]}>Joined {new Date(currentUser.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</Text>
         </View>
-        <Pressable style={[styles.editProfileBtn, { backgroundColor: `${t.primary}15`, borderColor: `${t.primary}30` }]} onPress={() => { Haptics.selectionAsync(); router.push('/edit-profile'); }}>
+        <Pressable style={[styles.editProfileBtn, { backgroundColor: `${t.primary}15`, borderColor: `${t.primary}30` }]} onPress={() => { Haptics?.selectionAsync(); router.push('/edit-profile'); }}>
           <MaterialIcons name="edit" size={16} color={t.primary} />
         </Pressable>
       </Animated.View>

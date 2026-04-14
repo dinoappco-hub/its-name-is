@@ -3,7 +3,8 @@ import { View, Text, Pressable, StyleSheet, Dimensions, Platform, BackHandler } 
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+let Haptics: any = null;
+try { Haptics = require('expo-haptics'); } catch {}
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

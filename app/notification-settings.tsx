@@ -3,7 +3,8 @@ import { View, Text, Pressable, StyleSheet, ScrollView, Switch } from 'react-nat
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+let Haptics: any = null;
+try { Haptics = require('expo-haptics'); } catch {}
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAppTheme } from '../hooks/useTheme';
 import { useNotifications } from '../hooks/useNotifications';

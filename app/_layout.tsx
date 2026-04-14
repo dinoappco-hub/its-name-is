@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -8,48 +8,13 @@ import { useFonts } from 'expo-font';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as SplashScreen from 'expo-splash-screen';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { ThemeProvider } from '../contexts/ThemeContext';
+import { AccessibilityProvider } from '../contexts/AccessibilityContext';
+import { NotificationProvider } from '../contexts/NotificationContext';
+import { MuteProvider } from '../contexts/MuteContext';
+import { AppProvider } from '../contexts/AppContext';
 
-// Keep splash screen visible while fonts load
 SplashScreen.preventAutoHideAsync().catch(() => {});
-
-// Lazy-load all custom providers to isolate initialization failures
-let ThemeProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
-let AccessibilityProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
-let NotificationProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
-let MuteProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
-let AppProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
-
-let providerLoadError: string | null = null;
-
-try {
-  ThemeProvider = require('../contexts/ThemeContext').ThemeProvider;
-} catch (e: any) {
-  providerLoadError = `ThemeProvider: ${e.message}`;
-}
-
-try {
-  AccessibilityProvider = require('../contexts/AccessibilityContext').AccessibilityProvider;
-} catch (e: any) {
-  providerLoadError = `AccessibilityProvider: ${e.message}`;
-}
-
-try {
-  NotificationProvider = require('../contexts/NotificationContext').NotificationProvider;
-} catch (e: any) {
-  providerLoadError = `NotificationProvider: ${e.message}`;
-}
-
-try {
-  MuteProvider = require('../contexts/MuteContext').MuteProvider;
-} catch (e: any) {
-  providerLoadError = `MuteProvider: ${e.message}`;
-}
-
-try {
-  AppProvider = require('../contexts/AppContext').AppProvider;
-} catch (e: any) {
-  providerLoadError = `AppProvider: ${e.message}`;
-}
 
 function AppStack() {
   return (
@@ -79,40 +44,6 @@ function AppStack() {
   );
 }
 
-function ProviderTree({ children }: { children: React.ReactNode }) {
-  // If any provider failed to load, show diagnostic info
-  if (providerLoadError) {
-    return (
-      <View style={diagStyles.container}>
-        <Text style={diagStyles.title}>Provider Load Error</Text>
-        <Text style={diagStyles.error}>{providerLoadError}</Text>
-        <Text style={diagStyles.hint}>A context provider failed to load. This is usually caused by a missing native module.</Text>
-      </View>
-    );
-  }
-
-  // Build provider chain — skip any that failed to load
-  let content = <>{children}</>;
-
-  if (AppProvider) {
-    content = <AppProvider>{content}</AppProvider>;
-  }
-  if (MuteProvider) {
-    content = <MuteProvider>{content}</MuteProvider>;
-  }
-  if (NotificationProvider) {
-    content = <NotificationProvider>{content}</NotificationProvider>;
-  }
-  if (AccessibilityProvider) {
-    content = <AccessibilityProvider>{content}</AccessibilityProvider>;
-  }
-  if (ThemeProvider) {
-    content = <ThemeProvider>{content}</ThemeProvider>;
-  }
-
-  return content;
-}
-
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     ...MaterialIcons.font,
@@ -125,20 +56,27 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) {
-    // Return null while fonts load — splash screen stays visible
     return null;
   }
 
   return (
     <ErrorBoundary>
-      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <View style={styles.root} onLayout={onLayoutRootView}>
         <AlertProvider>
           <SafeAreaProvider>
             <AuthProvider>
-              <ProviderTree>
-                <StatusBar style="auto" />
-                <AppStack />
-              </ProviderTree>
+              <ThemeProvider>
+                <AccessibilityProvider>
+                  <NotificationProvider>
+                    <MuteProvider>
+                      <AppProvider>
+                        <StatusBar style="auto" />
+                        <AppStack />
+                      </AppProvider>
+                    </MuteProvider>
+                  </NotificationProvider>
+                </AccessibilityProvider>
+              </ThemeProvider>
             </AuthProvider>
           </SafeAreaProvider>
         </AlertProvider>
@@ -147,33 +85,6 @@ export default function RootLayout() {
   );
 }
 
-const diagStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0A0A0F',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#EF4444',
-    marginBottom: 12,
-  },
-  error: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#F97316',
-    textAlign: 'center',
-    marginBottom: 16,
-    fontFamily: 'monospace',
-  },
-  hint: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#8E8E9A',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+const styles = StyleSheet.create({
+  root: { flex: 1 },
 });
