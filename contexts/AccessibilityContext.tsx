@@ -1,6 +1,11 @@
 import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
+let Haptics: any = null;
+try {
+  Haptics = require('expo-haptics');
+} catch {
+  // expo-haptics may not be available on web
+}
 import { TextStyle } from 'react-native';
 
 const STORAGE_KEY = 'accessibility_settings';
@@ -109,21 +114,23 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
   // Haptic wrapper: only fires if enabled
   const triggerHaptic = useCallback((type: 'selection' | 'success' | 'warning' | 'error' = 'selection') => {
-    if (!settings.hapticFeedback) return;
-    switch (type) {
-      case 'selection':
-        Haptics.selectionAsync();
-        break;
-      case 'success':
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        break;
-      case 'warning':
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        break;
-      case 'error':
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        break;
-    }
+    if (!settings.hapticFeedback || !Haptics) return;
+    try {
+      switch (type) {
+        case 'selection':
+          Haptics.selectionAsync();
+          break;
+        case 'success':
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          break;
+        case 'warning':
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          break;
+        case 'error':
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          break;
+      }
+    } catch {}
   }, [settings.hapticFeedback]);
 
   const shouldAnimate = !settings.reducedMotion;

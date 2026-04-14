@@ -3,12 +3,14 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AlertProvider, AuthProvider } from '@/template';
-import { ThemeProvider } from '../contexts/ThemeContext';
-import { AccessibilityProvider } from '../contexts/AccessibilityContext';
-import { NotificationProvider } from '../contexts/NotificationContext';
-import { MuteProvider } from '../contexts/MuteContext';
-import { AppProvider } from '../contexts/AppContext';
-import ErrorBoundary from '../components/ErrorBoundary';
+
+// Lazy-load all custom providers to prevent module-level crashes
+// that block Expo Router's route tree initialization
+const ThemeProvider = React.lazy(() => import('../contexts/ThemeContext').then(m => ({ default: m.ThemeProvider })));
+const AccessibilityProvider = React.lazy(() => import('../contexts/AccessibilityContext').then(m => ({ default: m.AccessibilityProvider })));
+const NotificationProvider = React.lazy(() => import('../contexts/NotificationContext').then(m => ({ default: m.NotificationProvider })));
+const MuteProvider = React.lazy(() => import('../contexts/MuteContext').then(m => ({ default: m.MuteProvider })));
+const AppProvider = React.lazy(() => import('../contexts/AppContext').then(m => ({ default: m.AppProvider })));
 
 function AppStack() {
   return (
@@ -38,11 +40,15 @@ function AppStack() {
   );
 }
 
+function FallbackLoader() {
+  return null;
+}
+
 export default function RootLayout() {
   return (
-    <ErrorBoundary>
-      <AlertProvider>
-        <SafeAreaProvider>
+    <AlertProvider>
+      <SafeAreaProvider>
+        <React.Suspense fallback={<FallbackLoader />}>
           <ThemeProvider>
             <AccessibilityProvider>
               <AuthProvider>
@@ -57,8 +63,8 @@ export default function RootLayout() {
               </AuthProvider>
             </AccessibilityProvider>
           </ThemeProvider>
-        </SafeAreaProvider>
-      </AlertProvider>
-    </ErrorBoundary>
+        </React.Suspense>
+      </SafeAreaProvider>
+    </AlertProvider>
   );
 }
