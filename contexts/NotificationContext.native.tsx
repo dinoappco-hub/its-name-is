@@ -55,7 +55,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [pushToken, setPushToken] = useState<string | null>(null);
   const tokenRegistered = useRef(false);
 
-  // Notification response listener - handle taps
   useEffect(() => {
     const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
@@ -69,7 +68,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     };
   }, []);
 
-  // Register push token when auth changes
   useEffect(() => {
     if (authUser?.id && !tokenRegistered.current) {
       tokenRegistered.current = true;
@@ -112,7 +110,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [masterEnabled]);
 
   const sendLocalNotification = async (title: string, body: string) => {
-    if (Platform.OS === 'web') return;
     try {
       await Notifications.scheduleNotificationAsync({
         content: { title, body, sound: 'default' },
@@ -142,11 +139,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     sendLocalNotification(notification.title, notification.body);
   }, [masterEnabled, preferences]);
 
-  // Send remote push notification to another user
   const sendRemotePush = useCallback((params: { targetUserId: string; title: string; body: string; data?: Record<string, any> }) => {
-    // Don't send push to yourself
     if (params.targetUserId === authUser?.id) return;
-    // Fire and forget - don't block the UI
     sendPushNotification(params).catch(() => {});
   }, [authUser?.id]);
 

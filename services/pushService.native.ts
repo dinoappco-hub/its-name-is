@@ -8,7 +8,6 @@ const supabase = getSupabaseClient();
 
 export async function registerPushToken(userId: string): Promise<{ token: string | null; error: string | null }> {
   try {
-    if (Platform.OS === 'web') return { token: null, error: null };
     if (!Device.isDevice) return { token: null, error: 'Push notifications require a physical device' };
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -23,7 +22,6 @@ export async function registerPushToken(userId: string): Promise<{ token: string
       return { token: null, error: 'Push notification permission not granted' };
     }
 
-    // Set notification channel for Android
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Default',
@@ -34,21 +32,13 @@ export async function registerPushToken(userId: string): Promise<{ token: string
     }
 
     const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
-    const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId,
-    });
-
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     const token = tokenData.data;
 
-    // Upsert the token
     const { error } = await supabase
       .from('push_tokens')
       .upsert(
-        {
-          user_id: userId,
-          token,
-          platform: Platform.OS,
-        },
+        { user_id: userId, token, platform: Platform.OS },
         { onConflict: 'user_id,token' }
       );
 
@@ -66,7 +56,6 @@ export async function registerPushToken(userId: string): Promise<{ token: string
 
 export async function removePushToken(userId: string): Promise<void> {
   try {
-    if (Platform.OS === 'web') return;
     const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     await supabase
