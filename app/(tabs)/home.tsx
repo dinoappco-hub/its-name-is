@@ -49,7 +49,7 @@ export default function FeedScreen() {
     return {
       opacity: p,
       transform: [{ scale: 0.9 + 0.1 * p }],
-      height: p === 0 ? 0 : undefined,
+      maxHeight: p * 300,
       marginBottom: p * 14,
     };
   });
