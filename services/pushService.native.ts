@@ -3,11 +3,45 @@ import { Platform } from 'react-native';
 
 const supabase = getSupabaseClient();
 
+// Safe lazy getters that won't crash if native modules are unavailable
+function getDevice(): any {
+  try {
+    return require('expo-device');
+  } catch {
+    return null;
+  }
+}
+
+function getNotifications(): any {
+  try {
+    const mod = require('expo-notifications');
+    if (mod && typeof mod.getPermissionsAsync === 'function') {
+      return mod;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getConstants(): any {
+  try {
+    const mod = require('expo-constants');
+    return mod?.default || mod;
+  } catch {
+    return null;
+  }
+}
+
 export async function registerPushToken(userId: string): Promise<{ token: string | null; error: string | null }> {
   try {
-    const Device = require('expo-device');
-    const Notifications = require('expo-notifications');
-    const Constants = require('expo-constants').default || require('expo-constants');
+    const Device = getDevice();
+    const Notifications = getNotifications();
+    const Constants = getConstants();
+
+    if (!Device || !Notifications || !Constants) {
+      return { token: null, error: 'Push notification modules not available' };
+    }
 
     if (!Device.isDevice) return { token: null, error: 'Push notifications require a physical device' };
 
@@ -24,12 +58,14 @@ export async function registerPushToken(userId: string): Promise<{ token: string
     }
 
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'Default',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FFD700',
-      });
+      try {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'Default',
+          importance: Notifications.AndroidImportance?.MAX ?? 4,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FFD700',
+        });
+      } catch {}
     }
 
     const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
@@ -57,8 +93,10 @@ export async function registerPushToken(userId: string): Promise<{ token: string
 
 export async function removePushToken(userId: string): Promise<void> {
   try {
-    const Notifications = require('expo-notifications');
-    const Constants = require('expo-constants').default || require('expo-constants');
+    const Notifications = getNotifications();
+    const Constants = getConstants();
+    if (!Notifications || !Constants) return;
+    
     const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     await supabase
