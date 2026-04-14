@@ -20,14 +20,20 @@ import { useAccessibility } from '../../hooks/useAccessibility';
 import { useAppTheme } from '../../hooks/useTheme';
 import { useMute } from '../../hooks/useMute';
 
-const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 10;
-const CARD_W = (SCREEN_W - 16 * 2 - CARD_GAP) / 2;
 
 type SortMode = 'trending' | 'new' | 'top';
 
 export default function FeedScreen() {
   const insets = useSafeAreaInsets();
+  const [screenWidth, setScreenWidth] = useState(() => Math.max(Dimensions.get('window').width, 375));
+  useEffect(() => {
+    const update = () => setScreenWidth(Math.max(Dimensions.get('window').width, 375));
+    update();
+    const sub = Dimensions.addEventListener('change', update);
+    return () => sub?.remove();
+  }, []);
+  const CARD_W = Math.max(1, (screenWidth - 16 * 2 - CARD_GAP) / 2);
   const router = useRouter();
   const { colors: t, typo, isDark, toggleMode } = useAppTheme();
   const { objects, searchObjects, loading, refreshing, refreshObjects, currentUser } = useApp();
@@ -110,7 +116,7 @@ export default function FeedScreen() {
     return (
       <Animated.View entering={shouldAnimate ? FadeInDown.delay(Math.min(index * 50, 300)).duration(400) : undefined}>
         <Pressable
-          style={[styles.card, { backgroundColor: t.surface }]}
+          style={[styles.card, { backgroundColor: t.surface, width: CARD_W }]}
           onPress={() => { triggerHaptic('selection'); router.push(`/object/${item.id}`); }}
         >
           <View style={styles.cardImageWrap}>
@@ -416,7 +422,7 @@ const styles = StyleSheet.create({
   sortChips: { flexDirection: 'row', gap: 6 },
   sortChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 9999 },
   sortChipText: { fontSize: 11, fontWeight: '500' },
-  card: { width: CARD_W, marginBottom: CARD_GAP, borderRadius: 12, overflow: 'hidden' },
+  card: { marginBottom: CARD_GAP, borderRadius: 12, overflow: 'hidden' },
   cardImageWrap: { width: '100%', aspectRatio: 0.65 },
   cardImage: { width: '100%', height: '100%' },
   featuredBadge: { position: 'absolute', top: 8, left: 8, flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 9999, paddingHorizontal: 6, paddingVertical: 3 },

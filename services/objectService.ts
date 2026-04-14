@@ -59,7 +59,10 @@ export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error:
       .select('*, user_profiles!user_id(*)')
       .order('created_at', { ascending: false });
 
-    if (objErr) return { data: [], error: objErr.message };
+    if (objErr) {
+      console.error('fetchObjects query error:', objErr.message, objErr);
+      return { data: [], error: objErr.message };
+    }
     if (!objects || objects.length === 0) return { data: [], error: null };
 
     const objectIds = objects.map((o: any) => o.id);
@@ -70,7 +73,10 @@ export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error:
       .select('*, user_profiles!user_id(*)')
       .in('object_id', objectIds);
 
-    if (nameErr) return { data: [], error: nameErr.message };
+    if (nameErr) {
+      console.error('fetchObjects names query error:', nameErr.message);
+      return { data: [], error: nameErr.message };
+    }
 
     const nameIds = (names || []).map((n: any) => n.id);
 
@@ -82,7 +88,10 @@ export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error:
         .select('*')
         .in('name_id', nameIds);
 
-      if (voteErr) return { data: [], error: voteErr.message };
+      if (voteErr) {
+        console.error('fetchObjects votes query error:', voteErr.message);
+        return { data: [], error: voteErr.message };
+      }
       votes = voteData || [];
     }
 
@@ -129,6 +138,7 @@ export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error:
 
     return { data: result, error: null };
   } catch (err: any) {
+    console.error('fetchObjects exception:', err?.message || err);
     return { data: [], error: err.message || 'Failed to fetch objects' };
   }
 }

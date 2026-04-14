@@ -94,13 +94,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser(toUser(profileRes.data, stats));
       }
 
-      if (objectsRes.data) {
+      if (objectsRes.error) {
+        console.error('Failed to fetch objects:', objectsRes.error);
+      }
+      if (objectsRes.data && objectsRes.data.length >= 0) {
         setObjects(objectsRes.data);
       }
 
       setSubmissionsToday(todayCount);
-    } catch (err) {
-      console.error('Failed to load app data:', err);
+    } catch (err: any) {
+      console.error('Failed to load app data:', err?.message || err);
     } finally {
       setLoading(false);
     }
@@ -109,7 +112,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refreshObjects = useCallback(async () => {
     setRefreshing(true);
     try {
-      const { data } = await fetchObjects();
+      const { data, error } = await fetchObjects();
+      if (error) console.error('Refresh objects error:', error);
       if (data) setObjects(data);
 
       if (authUser?.id) {
