@@ -1,9 +1,8 @@
-// Safe icon wrapper that avoids @expo/vector-icons entirely
-// on environments where the native font module crashes Hermes.
+// Safe icon wrapper — pure JS, no native font dependency.
 // Uses unicode/emoji fallbacks that work everywhere.
 
 import React from 'react';
-import { Text, Platform } from 'react-native';
+import { Text } from 'react-native';
 
 // Comprehensive unicode/symbol map for MaterialIcons names used in the app
 const ICON_MAP: Record<string, string> = {
@@ -55,6 +54,7 @@ const ICON_MAP: Record<string, string> = {
   // Media
   'camera-alt': '📷',
   'camera': '📷',
+  'photo-camera': '📷',
   'photo': '🖼',
   'image': '🖼',
   'broken-image': '🖼',
@@ -69,7 +69,9 @@ const ICON_MAP: Record<string, string> = {
   'person-off': '👤',
   'people': '👥',
   'group': '👥',
+  'groups': '👥',
   'account-circle': '👤',
+  'emoji-people': '🧑',
 
   // Content
   'star': '★',
@@ -118,6 +120,8 @@ const ICON_MAP: Record<string, string> = {
   'gavel': '⚖',
   'auto-stories': '📖',
   'history': '⏱',
+  'preview': '👁',
+  'restart-alt': '↻',
 
   // Objects / Categories
   'explore': '🧭',
@@ -131,6 +135,8 @@ const ICON_MAP: Record<string, string> = {
   'whatshot': '🔥',
   'new-releases': '✨',
   'lightbulb': '💡',
+  'lightbulb-outline': '💡',
+  'emoji-objects': '💡',
   'flash-on': '⚡',
   'flash-off': '⚡',
   'flash-auto': '⚡',
@@ -161,9 +167,12 @@ const ICON_MAP: Record<string, string> = {
   'accessibility-new': '♿',
   'text-fields': 'Aa',
   'format-size': 'Aa',
+  'format-bold': 'B',
   'contrast': '◑',
+  'animation': '↻',
   'motion-photos-auto': '↻',
   'vibration': '📳',
+  'record-voice-over': '🗣',
   'crop': '⬜',
   'rotate-right': '↻',
   'flip': '⇔',
@@ -187,6 +196,17 @@ const ICON_MAP: Record<string, string> = {
   // Featured
   'local-fire-department': '🔥',
   'bolt': '⚡',
+
+  // Additional icons used in the app
+  'apps': '⊞',
+  'directions-car': '🚗',
+  'cruelty-free': '🐰',
+  'weekend': '🛋',
+  'shuffle': '🔀',
+  'handshake': '🤝',
+  'copyright': '©',
+  'update': '🔄',
+  'thumb-up-alt': '👍',
 };
 
 // Fallback for any unmapped icon
@@ -196,20 +216,18 @@ function getIconChar(name: string): string {
   return ICON_MAP[name] || DEFAULT_ICON;
 }
 
-// The safe MaterialIcons component — pure JS, no native font dependency
-const MaterialIconsSafe = React.forwardRef(({ name, size = 24, color = '#888', style, ...rest }: any, ref: any) => {
+// Plain function component — no forwardRef, no Proxy, maximum compatibility
+function MaterialIconsComponent({ name, size = 24, color = '#888', style, ...rest }: any) {
   const iconChar = getIconChar(name);
-  // Emoji/unicode characters need slightly different sizing than icon fonts
   const fontSize = iconChar.length > 1 ? size * 0.55 : size * 0.7;
 
   return (
     <Text
-      ref={ref}
       style={[
         {
           fontSize,
           color,
-          textAlign: 'center',
+          textAlign: 'center' as const,
           width: size,
           height: size,
           lineHeight: size,
@@ -223,23 +241,14 @@ const MaterialIconsSafe = React.forwardRef(({ name, size = 24, color = '#888', s
       {iconChar}
     </Text>
   );
-});
+}
 
-MaterialIconsSafe.displayName = 'MaterialIcons';
+// Simple glyphMap object for type checks (keyof typeof MaterialIcons.glyphMap)
+const glyphMap: Record<string, number> = {};
+Object.keys(ICON_MAP).forEach(key => { glyphMap[key] = 0; });
 
-// Provide a glyphMap-like object for type checks (e.g., `keyof typeof MaterialIcons.glyphMap`)
-const glyphMap = new Proxy({} as Record<string, number>, {
-  get(_target, prop) {
-    if (typeof prop === 'string') return 0; // any string key returns a valid value
-    return undefined;
-  },
-  has() { return true; },
-});
+// Attach glyphMap as a static property
+(MaterialIconsComponent as any).glyphMap = glyphMap;
 
-Object.defineProperty(MaterialIconsSafe, 'glyphMap', {
-  value: glyphMap,
-  writable: false,
-  configurable: false,
-});
-
-export { MaterialIconsSafe as MaterialIcons };
+// Export as MaterialIcons for drop-in replacement
+export const MaterialIcons = MaterialIconsComponent as typeof MaterialIconsComponent & { glyphMap: Record<string, number> };
