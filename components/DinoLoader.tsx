@@ -1,14 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-  interpolate,
-} from './SafeAnimated';
 import { useAppTheme } from '../hooks/useTheme';
 
 interface DinoLoaderProps {
@@ -24,104 +16,86 @@ const DINO_SIZES = {
 
 export default function DinoLoader({ message = 'Loading...', size = 'medium' }: DinoLoaderProps) {
   const { colors: t } = useAppTheme();
-  const rotation = useSharedValue(0);
-  const bounce = useSharedValue(0);
   const dims = DINO_SIZES[size];
+  const [rotation, setRotation] = useState(0);
+  const [bounce, setBounce] = useState(0);
+  const [dotPhase, setDotPhase] = useState(0);
+  const animRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(360, { duration: 2400, easing: Easing.linear }),
-      -1,
-      false,
-    );
-    bounce.value = withRepeat(
-      withTiming(1, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) }),
-      -1,
-      true,
-    );
+    let startTime = Date.now();
+    animRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      // Rotation: full cycle every 2400ms
+      setRotation((elapsed / 2400) * 360);
+      // Bounce: ping-pong every 600ms
+      const bouncePhase = (elapsed % 1200) / 600;
+      setBounce(bouncePhase <= 1 ? bouncePhase : 2 - bouncePhase);
+      // Dots: cycle every 900ms
+      setDotPhase((elapsed % 900) / 900);
+    }, 32);
     return () => {
-      rotation.value = 0;
-      bounce.value = 0;
+      if (animRef.current) clearInterval(animRef.current);
     };
-  }, [rotation, bounce]);
+  }, []);
 
-  const stegoStyle = useAnimatedStyle(() => {
-    const angle = (rotation.value * Math.PI) / 180;
+  const getTransform = (angleOffset: number) => {
+    const angle = ((rotation * Math.PI) / 180) + angleOffset;
     const x = Math.cos(angle) * dims.orbit;
     const y = Math.sin(angle) * dims.orbit * 0.4;
-    const scale = interpolate(Math.sin(angle), [-1, 1], [0.75, 1.1]);
-    const zIdx = Math.sin(angle) > 0 ? 2 : 0;
-    const translateY = interpolate(bounce.value, [0, 1], [0, -4]);
+    const sinVal = Math.sin(angle);
+    const scale = 0.75 + (sinVal + 1) * 0.175; // maps [-1,1] to [0.75,1.1]
+    const translateY = angleOffset === 0
+      ? bounce * -4
+      : (1 - bounce) * -4;
+    const rotDeg = sinVal * 12 * (angleOffset === 0 ? 1 : -1);
     return {
       transform: [
         { translateX: x },
         { translateY: y + translateY },
         { scale },
-        { rotate: `${Math.sin(angle) * 12}deg` },
+        { rotate: `${rotDeg}deg` },
       ],
-      zIndex: zIdx,
+      zIndex: sinVal > 0 ? 2 : 0,
     };
-  });
+  };
 
-  const brontoStyle = useAnimatedStyle(() => {
-    const angle = (rotation.value * Math.PI) / 180 + Math.PI;
-    const x = Math.cos(angle) * dims.orbit;
-    const y = Math.sin(angle) * dims.orbit * 0.4;
-    const scale = interpolate(Math.sin(angle), [-1, 1], [0.75, 1.1]);
-    const zIdx = Math.sin(angle) > 0 ? 2 : 0;
-    const translateY = interpolate(bounce.value, [0, 1], [-4, 0]);
-    return {
-      transform: [
-        { translateX: x },
-        { translateY: y + translateY },
-        { scale },
-        { rotate: `${Math.sin(angle) * -12}deg` },
-      ],
-      zIndex: zIdx,
-    };
-  });
+  const stegoStyle = getTransform(0);
+  const brontoStyle = getTransform(Math.PI);
 
-  const dotStyle1 = useAnimatedStyle(() => ({
-    opacity: interpolate(bounce.value, [0, 0.5, 1], [0.3, 1, 0.3]),
-  }));
-  const dotStyle2 = useAnimatedStyle(() => ({
-    opacity: interpolate(bounce.value, [0, 0.5, 1], [1, 0.3, 1]),
-  }));
-  const dotStyle3 = useAnimatedStyle(() => ({
-    opacity: interpolate(bounce.value, [0, 0.5, 1], [0.6, 0.6, 1]),
-  }));
+  const dot1Opacity = dotPhase < 0.33 ? 1 : 0.3;
+  const dot2Opacity = dotPhase >= 0.33 && dotPhase < 0.66 ? 1 : 0.3;
+  const dot3Opacity = dotPhase >= 0.66 ? 1 : 0.3;
 
   return (
     <View style={styles.container}>
       <View style={[styles.orbitContainer, { width: dims.container, height: dims.container }]}>
-        {/* Shadow/trail effect */}
         <View style={[styles.orbitShadow, { width: dims.orbit * 2.2, height: dims.orbit * 0.9, backgroundColor: `${t.textMuted}10`, borderRadius: dims.orbit }]} />
-
-        <Animated.View style={[styles.dinoWrap, { width: dims.dino, height: dims.dino }, stegoStyle]}>
+        <View style={[styles.dinoWrap, { width: dims.dino, height: dims.dino }, stegoStyle]}>
           <Image
             source={require('../assets/images/dino-stego.png')}
             style={{ width: dims.dino, height: dims.dino }}
             contentFit="contain"
           />
-        </Animated.View>
-
-        <Animated.View style={[styles.dinoWrap, { width: dims.dino, height: dims.dino }, brontoStyle]}>
+        </View>
+        <View style={[styles.dinoWrap, { width: dims.dino, height: dims.dino }, brontoStyle]}>
           <Image
             source={require('../assets/images/dino-bronto.png')}
             style={{ width: dims.dino, height: dims.dino }}
             contentFit="contain"
           />
-        </Animated.View>
-      </View>
-
-      <View style={styles.messageRow}>
-        <Text style={[styles.message, { color: t.textSecondary }]}>{message}</Text>
-        <View style={styles.dotsRow}>
-          <Animated.View style={[styles.dot, { backgroundColor: t.primary }, dotStyle1]} />
-          <Animated.View style={[styles.dot, { backgroundColor: t.primary }, dotStyle2]} />
-          <Animated.View style={[styles.dot, { backgroundColor: t.primary }, dotStyle3]} />
         </View>
       </View>
+      {message ? (
+        <View style={styles.messageRow}>
+          <Text style={[styles.message, { color: t.textSecondary }]}>{message}</Text>
+          <View style={styles.dotsRow}>
+            <View style={[styles.dot, { backgroundColor: t.primary, opacity: dot1Opacity }]} />
+            <View style={[styles.dot, { backgroundColor: t.primary, opacity: dot2Opacity }]} />
+            <View style={[styles.dot, { backgroundColor: t.primary, opacity: dot3Opacity }]} />
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }

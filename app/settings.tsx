@@ -228,7 +228,7 @@ export default function SettingsScreen() {
                     showAlert('Error', error);
                   } else {
                     setTimeout(() => {
-                      router.replace('/');
+                      router.replace('/login');
                     }, 1800);
                   }
                 },
