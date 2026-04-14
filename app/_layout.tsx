@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AlertProvider, AuthProvider } from '@/template';
+import { useFonts } from 'expo-font';
+import { MaterialIcons } from '@expo/vector-icons';
+import * as SplashScreen from 'expo-splash-screen';
 import ErrorBoundary from '../components/ErrorBoundary';
+
+// Keep splash screen visible while fonts load
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Lazy-load all custom providers to isolate initialization failures
 let ThemeProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
@@ -108,18 +114,35 @@ function ProviderTree({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    ...MaterialIcons.font,
+  });
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded || fontError) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    // Return null while fonts load — splash screen stays visible
+    return null;
+  }
+
   return (
     <ErrorBoundary>
-      <AlertProvider>
-        <SafeAreaProvider>
-          <AuthProvider>
-            <ProviderTree>
-              <StatusBar style="auto" />
-              <AppStack />
-            </ProviderTree>
-          </AuthProvider>
-        </SafeAreaProvider>
-      </AlertProvider>
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <AlertProvider>
+          <SafeAreaProvider>
+            <AuthProvider>
+              <ProviderTree>
+                <StatusBar style="auto" />
+                <AppStack />
+              </ProviderTree>
+            </AuthProvider>
+          </SafeAreaProvider>
+        </AlertProvider>
+      </View>
     </ErrorBoundary>
   );
 }

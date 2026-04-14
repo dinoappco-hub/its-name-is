@@ -1,6 +1,8 @@
 import React, { Component, ErrorInfo } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+
+// DO NOT import @expo/vector-icons here — ErrorBoundary wraps the entire app
+// including font loading, so icons may not be available when this renders.
 
 interface Props {
   children: React.ReactNode;
@@ -32,7 +34,6 @@ export default class ErrorBoundary extends Component<Props, State> {
   };
 
   handleForceReload = () => {
-    // Force a full JS reload via Expo/DevClient if available
     try {
       const Updates = require('expo-updates');
       if (Updates && Updates.reloadAsync) {
@@ -40,7 +41,6 @@ export default class ErrorBoundary extends Component<Props, State> {
         return;
       }
     } catch {}
-    // Fallback: just reset state
     this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
@@ -51,7 +51,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         <View style={styles.container}>
           <View style={styles.content}>
             <View style={styles.iconWrap}>
-              <MaterialIcons name="error-outline" size={56} color="#EF4444" />
+              <Text style={styles.iconEmoji}>⚠️</Text>
             </View>
             <Text style={styles.title}>Something went wrong</Text>
             <Text style={styles.subtitle}>
@@ -69,7 +69,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               style={({ pressed }) => [styles.restartBtn, pressed && styles.restartBtnPressed]}
               onPress={this.handleRestart}
             >
-              <MaterialIcons name="refresh" size={20} color="#fff" />
+              <Text style={styles.btnEmoji}>🔄</Text>
               <Text style={styles.restartBtnText}>Try Again</Text>
             </Pressable>
 
@@ -77,7 +77,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               style={({ pressed }) => [styles.forceReloadBtn, pressed && styles.restartBtnPressed]}
               onPress={this.handleForceReload}
             >
-              <MaterialIcons name="power-settings-new" size={18} color="#8E8E9A" />
+              <Text style={styles.btnEmoji}>⏻</Text>
               <Text style={styles.forceReloadBtnText}>Force Reload</Text>
             </Pressable>
 
@@ -113,6 +113,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
+  },
+  iconEmoji: {
+    fontSize: 48,
+  },
+  btnEmoji: {
+    fontSize: 18,
   },
   title: {
     fontSize: 22,
