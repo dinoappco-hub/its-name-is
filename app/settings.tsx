@@ -229,7 +229,7 @@ export default function SettingsScreen() {
                   } else {
                     setTimeout(() => {
                       router.replace('/login');
-                    }, 1800);
+                    }, 500);
                   }
                 },
               },
