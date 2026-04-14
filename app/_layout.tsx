@@ -1,12 +1,10 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AlertProvider, AuthProvider } from '@/template';
-import { useFonts } from 'expo-font';
-import { MaterialIcons } from '@expo/vector-icons';
-import * as SplashScreen from 'expo-splash-screen';
+
 import ErrorBoundary from '../components/ErrorBoundary';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { AccessibilityProvider } from '../contexts/AccessibilityContext';
@@ -14,7 +12,7 @@ import { NotificationProvider } from '../contexts/NotificationContext';
 import { MuteProvider } from '../contexts/MuteContext';
 import { AppProvider } from '../contexts/AppContext';
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+
 
 function AppStack() {
   return (
@@ -45,23 +43,9 @@ function AppStack() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
-    ...MaterialIcons.font,
-  });
-
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded || fontError) {
-      await SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
-
   return (
     <ErrorBoundary>
-      <View style={styles.root} onLayout={onLayoutRootView}>
+      <View style={styles.root}>
         <AlertProvider>
           <SafeAreaProvider>
             <AuthProvider>
