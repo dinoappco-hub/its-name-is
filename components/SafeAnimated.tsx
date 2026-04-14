@@ -1,111 +1,154 @@
-// Safe wrapper — pure JS fallbacks, no native dependencies
-// Reanimated is loaded at runtime only when truly available
+// Safe wrapper — pure JS fallbacks using React Native Animated for smoothness
+// No native reanimated dependencies
 
-import { View, Text as RNText, ScrollView as RNScrollView } from 'react-native';
-import { useRef, useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  Text as RNText,
+  ScrollView as RNScrollView,
+  Animated as RNAnimated,
+} from 'react-native';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 
-// Animated components are plain RN components (no animation on web preview)
+// Use RN Animated components for smooth transitions
 const SafeAnimated = {
-  View: View,
-  Text: RNText,
-  ScrollView: RNScrollView,
+  View: RNAnimated.View,
+  Text: RNAnimated.Text,
+  ScrollView: RNAnimated.ScrollView,
 };
 
 export default SafeAnimated;
 
-// SharedValue that supports live updates via subscribers
+// SharedValue backed by RN Animated.Value for smooth interpolation
 class SharedValueImpl {
-  _value: any;
+  _animValue: RNAnimated.Value;
+  _rawValue: number;
   _listeners: Set<() => void>;
 
-  constructor(init: any) {
-    this._value = init;
+  constructor(init: number) {
+    this._rawValue = typeof init === 'number' ? init : 0;
+    this._animValue = new RNAnimated.Value(this._rawValue);
     this._listeners = new Set();
   }
 
   get value() {
-    return this._value;
+    return this._rawValue;
   }
 
   set value(newVal: any) {
-    this._value = newVal;
-    this._listeners.forEach(fn => { try { fn(); } catch {} });
+    // Handle animated marker objects from withTiming/withSpring
+    if (newVal && typeof newVal === 'object' && newVal.__timing) {
+      this._animateTo(newVal.toValue, newVal.duration || 300, newVal.callback);
+      return;
+    }
+    if (newVal && typeof newVal === 'object' && newVal.__spring) {
+      this._springTo(newVal.toValue, newVal.callback);
+      return;
+    }
+    // Plain number — set immediately
+    if (typeof newVal === 'number') {
+      this._rawValue = newVal;
+      this._animValue.setValue(newVal);
+      this._listeners.forEach(fn => { try { fn(); } catch {} });
+    }
   }
 
-  _subscribe(fn: () => void) {
-    this._listeners.add(fn);
-    return () => this._listeners.delete(fn);
+  // Internal: for withTiming to use
+  _animateTo(toValue: number, duration: number, callback?: (finished: boolean) => void) {
+    RNAnimated.timing(this._animValue, {
+      toValue,
+      duration,
+      useNativeDriver: false,
+    }).start((result) => {
+      this._rawValue = toValue;
+      this._listeners.forEach(fn => { try { fn(); } catch {} });
+      if (callback) callback(result.finished);
+    });
+  }
+
+  _springTo(toValue: number, callback?: (finished: boolean) => void) {
+    RNAnimated.spring(this._animValue, {
+      toValue,
+      damping: 22,
+      stiffness: 200,
+      mass: 0.8,
+      useNativeDriver: false,
+    }).start((result) => {
+      this._rawValue = toValue;
+      this._listeners.forEach(fn => { try { fn(); } catch {} });
+      if (callback) callback(result.finished);
+    });
   }
 }
 
 export const useSharedValue = (init: any) => {
   const ref = useRef<SharedValueImpl | null>(null);
   if (!ref.current) {
-    ref.current = new SharedValueImpl(init);
+    ref.current = new SharedValueImpl(typeof init === 'number' ? init : 0);
   }
   return ref.current as any;
 };
 
 export const useAnimatedStyle = (fn: () => any) => {
+  // For RN Animated, we return plain styles calculated from shared values
+  // We use a re-render approach driven by value changes
   const [style, setStyle] = useState(() => {
     try { return fn(); } catch { return {}; }
   });
 
-  // We cannot easily subscribe to SharedValue changes in a pure stub
-  // Instead, use a polling interval for continuous animations
   useEffect(() => {
+    // Poll at 16ms (~60fps) for smooth updates
     const interval = setInterval(() => {
       try {
         const newStyle = fn();
         setStyle(newStyle);
       } catch {}
-    }, 32); // ~30fps
+    }, 16);
     return () => clearInterval(interval);
   }, []);
 
   return style;
 };
 
-// Timing animation using JS intervals
+// withTiming: animate a shared value smoothly
 export const withTiming = (toValue: any, config?: any, callback?: any) => {
-  // For simple assignment — just return the value
-  // The actual animation happens via setInterval in useAnimatedStyle
+  if (typeof toValue === 'number') {
+    // Return a marker that useSharedValue.set can detect
+    return { __timing: true, toValue, duration: config?.duration || 300, callback };
+  }
   if (callback) {
     try { callback(true); } catch {}
   }
   return toValue;
 };
 
-// Repeat animation: continuously cycles the value
-let _repeatTimers: ReturnType<typeof setInterval>[] = [];
-
-export const withRepeat = (targetValue: any, count?: number, reverse?: boolean) => {
-  // Return a special marker object that tells useSharedValue.set to start a loop
-  return { __repeat: true, target: targetValue, count: count || -1, reverse: reverse || false };
+// withSpring: spring animation
+export const withSpring = (toValue: any, config?: any) => {
+  if (typeof toValue === 'number') {
+    return { __spring: true, toValue, config };
+  }
+  return toValue;
 };
 
-export const withSpring = (toValue: any) => toValue;
+export const withRepeat = (targetValue: any, count?: number, reverse?: boolean) => targetValue;
 export const withDelay = (_d: any, anim: any) => anim;
 export const runOnJS = (fn: any) => fn;
 
 export const interpolate = (val: number, input: number[], output: number[]) => {
   if (!input || !output || input.length < 2 || output.length < 2) return val;
-  // Clamp and interpolate
   const minIn = input[0];
   const maxIn = input[input.length - 1];
-  const t = Math.max(0, Math.min(1, (val - minIn) / (maxIn - minIn || 1)));
-  const minOut = output[0];
-  const maxOut = output[output.length - 1];
   // Multi-stop interpolation
-  if (input.length > 2 && output.length > 2) {
-    for (let i = 0; i < input.length - 1; i++) {
-      if (val >= input[i] && val <= input[i + 1]) {
-        const segT = (val - input[i]) / (input[i + 1] - input[i] || 1);
-        return output[i] + segT * (output[i + 1] - output[i]);
-      }
+  for (let i = 0; i < input.length - 1; i++) {
+    if (val >= input[i] && val <= input[i + 1]) {
+      const segT = (val - input[i]) / (input[i + 1] - input[i] || 1);
+      return output[i] + segT * (output[i + 1] - output[i]);
     }
   }
-  return minOut + t * (maxOut - minOut);
+  // Clamp
+  if (val <= minIn) return output[0];
+  if (val >= maxIn) return output[output.length - 1];
+  const t = Math.max(0, Math.min(1, (val - minIn) / (maxIn - minIn || 1)));
+  return output[0] + t * (output[output.length - 1] - output[0]);
 };
 
 export const Easing = {
