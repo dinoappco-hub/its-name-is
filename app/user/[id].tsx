@@ -39,7 +39,7 @@ export default function PublicUserProfileScreen() {
 
   const handleToggleMute = () => {
     if (!id || !profileUser) return;
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     if (isMuted) {
       showAlert('Unmute User', `Show posts from @${profileUser.username} again?`, [
         { text: 'Cancel', style: 'cancel' },
@@ -97,7 +97,7 @@ export default function PublicUserProfileScreen() {
         <Pressable
           style={[styles.card, { backgroundColor: t.surface }]}
           onPress={() => {
-            Haptics.selectionAsync();
+            Haptics?.selectionAsync();
             router.push(`/object/${item.id}`);
           }}
         >
@@ -197,7 +197,7 @@ export default function PublicUserProfileScreen() {
         {isOwnProfile ? (
           <Pressable
             style={[styles.editBtn, { backgroundColor: `${t.primary}12`, borderColor: `${t.primary}30` }]}
-            onPress={() => { Haptics.selectionAsync(); router.push('/edit-profile'); }}
+            onPress={() => { Haptics?.selectionAsync(); router.push('/edit-profile'); }}
           >
             <MaterialIcons name="edit" size={16} color={t.primary} />
             <Text style={[styles.editBtnText, { color: t.primary }]}>Edit Profile</Text>

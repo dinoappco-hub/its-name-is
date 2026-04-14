@@ -33,7 +33,7 @@ export default function EditProfileScreen() {
   const displayAvatar = newAvatarLocal || avatarUri;
 
   const handlePickAvatar = async () => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') { showAlert('Permission Required', 'Please allow access to your photo library to change your avatar.'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
@@ -46,7 +46,7 @@ export default function EditProfileScreen() {
     const { error } = await updateProfile({ displayName: username.trim(), username: username.trim(), avatarLocalUri: newAvatarLocal || undefined });
     setSaving(false);
     if (error) { showAlert('Error', error); return; }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
     router.back();
   };
 

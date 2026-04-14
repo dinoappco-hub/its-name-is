@@ -103,7 +103,7 @@ export default function FeedScreen() {
     setTimeout(() => setDinoRefreshing(false), 1200);
   }, [refreshObjects]);
 
-  const navigateToUser = useCallback((userId: string) => { Haptics.selectionAsync(); router.push(`/user/${userId}`); }, [router]);
+  const navigateToUser = useCallback((userId: string) => { Haptics?.selectionAsync(); router.push(`/user/${userId}`); }, [router]);
 
   const renderCard = ({ item, index }: { item: ObjectSubmission; index: number }) => {
     const topName = [...item.suggestedNames].sort((a, b) => b.votes - a.votes)[0];
@@ -177,7 +177,7 @@ export default function FeedScreen() {
       </View>
 
       {!search && communityStats ? (
-        <Pressable style={[styles.communityBanner, { backgroundColor: t.surface, borderColor: t.border }]} onPress={() => { Haptics.selectionAsync(); router.push('/leaderboard'); }}>
+        <Pressable style={[styles.communityBanner, { backgroundColor: t.surface, borderColor: t.border }]} onPress={() => { Haptics?.selectionAsync(); router.push('/leaderboard'); }}>
           <View style={styles.communityBannerLeft}>
             <MaterialIcons name="people" size={18} color={t.primary} />
             <Text style={[styles.communityBannerText, { color: t.textSecondary }]}>
@@ -192,7 +192,7 @@ export default function FeedScreen() {
         <View style={styles.activeSection}>
           <View style={styles.activeSectionHeader}>
             <Text style={[styles.activeSectionTitle, { color: t.textPrimary }]}>Active Community</Text>
-            <Pressable style={styles.leaderboardBtn} onPress={() => { Haptics.selectionAsync(); router.push('/leaderboard'); }}>
+            <Pressable style={styles.leaderboardBtn} onPress={() => { Haptics?.selectionAsync(); router.push('/leaderboard'); }}>
               <MaterialIcons name="emoji-events" size={14} color={t.primary} />
               <Text style={[styles.leaderboardBtnText, { color: t.primary }]}>Leaderboard</Text>
             </Pressable>
@@ -216,7 +216,7 @@ export default function FeedScreen() {
             const isSelected = selectedCategory === cat.key;
             const count = cat.key === 'all' ? objects.length : objects.filter(o => o.category === cat.key).length;
             return (
-              <Pressable key={cat.key} style={[styles.categoryPill, { backgroundColor: t.surface, borderColor: t.border }, isSelected && { backgroundColor: cat.color, borderColor: cat.color }]} onPress={() => { Haptics.selectionAsync(); setSelectedCategory(cat.key); }}>
+              <Pressable key={cat.key} style={[styles.categoryPill, { backgroundColor: t.surface, borderColor: t.border }, isSelected && { backgroundColor: cat.color, borderColor: cat.color }]} onPress={() => { Haptics?.selectionAsync(); setSelectedCategory(cat.key); }}>
                 <MaterialIcons name={cat.icon} size={15} color={isSelected ? '#fff' : cat.color} />
                 <Text style={[styles.categoryPillText, { color: t.textSecondary }, isSelected && { color: '#fff' }]}>{cat.label}</Text>
                 {count > 0 ? (
@@ -237,7 +237,7 @@ export default function FeedScreen() {
             {featuredObjects.map((obj, idx) => {
               const topN = [...obj.suggestedNames].sort((a, b) => b.votes - a.votes)[0];
               return (
-                <Pressable key={obj.id} style={[styles.featuredCard, idx === 0 && styles.featuredCardFirst]} onPress={() => { Haptics.selectionAsync(); router.push(`/object/${obj.id}`); }}>
+                <Pressable key={obj.id} style={[styles.featuredCard, idx === 0 && styles.featuredCardFirst]} onPress={() => { Haptics?.selectionAsync(); router.push(`/object/${obj.id}`); }}>
                   <Image source={{ uri: obj.imageUri }} style={styles.featuredImage} contentFit="cover" transition={200} />
                   <View style={styles.featuredOverlay}>
                     <Text style={styles.featuredName} numberOfLines={1}>{topN?.name || 'Unnamed'}</Text>
@@ -259,7 +259,7 @@ export default function FeedScreen() {
         <Text style={[styles.sectionTitle, { color: t.textPrimary }]}>Community</Text>
         <View style={styles.sortChips}>
           {(['trending', 'new', 'top'] as SortMode[]).map(mode => (
-            <Pressable key={mode} style={[styles.sortChip, { backgroundColor: t.surface }, sortMode === mode && { backgroundColor: t.primary }]} onPress={() => { Haptics.selectionAsync(); setSortMode(mode); }}>
+            <Pressable key={mode} style={[styles.sortChip, { backgroundColor: t.surface }, sortMode === mode && { backgroundColor: t.primary }]} onPress={() => { Haptics?.selectionAsync(); setSortMode(mode); }}>
               <Text style={[styles.sortChipText, { color: t.textSecondary }, sortMode === mode && { color: t.background, fontWeight: '700' }]}>{mode.charAt(0).toUpperCase() + mode.slice(1)}</Text>
             </Pressable>
           ))}

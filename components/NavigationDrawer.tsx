@@ -72,7 +72,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
   const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropOpacity.value }));
 
   const handleNavigate = useCallback((route: string) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     onClose();
     setTimeout(() => { router.push(route as any); }, 180);
   }, [onClose, router]);

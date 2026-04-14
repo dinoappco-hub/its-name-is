@@ -31,7 +31,7 @@ export default function ObjectDetailScreen() {
   const router = useRouter();
 
   const navigateToUser = useCallback((userId: string) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     router.push(`/user/${userId}`);
   }, [router]);
   const { user: authUser } = useAuth();
@@ -151,7 +151,7 @@ export default function ObjectDetailScreen() {
       showAlert('Error', error);
       return;
     }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
     setEditingDescription(false);
   }, [object, editedDescription, updateDescription, showAlert]);
 
@@ -195,7 +195,7 @@ export default function ObjectDetailScreen() {
       showAlert('Already Reported', 'You have already reported this submission. Our team will review it.');
       return;
     }
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     setReportNameId(nameId || null);
     setReportReason('');
     setReportDescription('');
@@ -224,7 +224,7 @@ export default function ObjectDetailScreen() {
       return;
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
     setShowReportModal(false);
     setAlreadyReported(true);
     showAlert('Report Submitted', 'Thank you. Our moderation team will review this content shortly.');
@@ -269,7 +269,7 @@ export default function ObjectDetailScreen() {
       return;
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
     setCommentText('');
 
     // Send push notification to the object owner for new comments
@@ -319,7 +319,7 @@ export default function ObjectDetailScreen() {
             showAlert('Error', error);
             return;
           }
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
           await loadComments();
         },
       },
@@ -327,7 +327,7 @@ export default function ObjectDetailScreen() {
   }, [showAlert]);
 
   const handleReply = useCallback((commentId: string, username: string) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     setReplyingTo({ id: commentId, username });
     setCommentText(`@${username} `);
   }, []);
@@ -383,7 +383,7 @@ export default function ObjectDetailScreen() {
       showAlert('Error', error);
       return;
     }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
     setNewName('');
     setShowInput(false);
   };
@@ -581,7 +581,7 @@ export default function ObjectDetailScreen() {
                       <Pressable
                         style={[styles.heroReportBtn, isUserMuted(object.submittedBy.id) && { backgroundColor: 'rgba(239,68,68,0.5)' }]}
                         onPress={() => {
-                          Haptics.selectionAsync();
+                          Haptics?.selectionAsync();
                           const muted = isUserMuted(object.submittedBy.id);
                           if (muted) {
                             showAlert('Unmute User', `Show posts from @${object.submittedBy.username} again?`, [
@@ -837,7 +837,7 @@ export default function ObjectDetailScreen() {
                     <Pressable
                       style={styles.showMoreBtn}
                       onPress={() => {
-                        Haptics.selectionAsync();
+                        Haptics?.selectionAsync();
                         setShowAllComments(true);
                       }}
                     >
@@ -894,7 +894,7 @@ export default function ObjectDetailScreen() {
                     key={reason.key}
                     style={[styles.reasonRow, { backgroundColor: t.surface, borderColor: t.border }, selected && { borderColor: `${t.error}50`, backgroundColor: `${t.error}08` }]}
                     onPress={() => {
-                      Haptics.selectionAsync();
+                      Haptics?.selectionAsync();
                       setReportReason(reason.key);
                     }}
                   >

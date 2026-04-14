@@ -32,12 +32,12 @@ export default function ReportProblemScreen() {
 
   const handleSubmit = async () => {
     if (!category) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Warning);
       showAlert('Select a Category', 'Please select what type of problem you are experiencing.');
       return;
     }
     if (description.trim().length < 10) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Warning);
       showAlert('More Details Needed', 'Please describe the problem in at least 10 characters so we can help.');
       return;
     }
@@ -57,7 +57,7 @@ export default function ReportProblemScreen() {
       return;
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
     setSubmitted(true);
   };
 
@@ -127,7 +127,7 @@ export default function ReportProblemScreen() {
                     { backgroundColor: t.surface, borderColor: t.border },
                     selected && { borderColor: t.accent, backgroundColor: `${t.accent}08` },
                   ]}
-                  onPress={() => { Haptics.selectionAsync(); setCategory(cat.key); }}
+                  onPress={() => { Haptics?.selectionAsync(); setCategory(cat.key); }}
                 >
                   <View style={[styles.categoryIconWrap, { backgroundColor: t.surfaceElevated }, selected && { backgroundColor: t.accent }]}>
                     <MaterialIcons name={cat.icon} size={22} color={selected ? t.background : t.textMuted} />

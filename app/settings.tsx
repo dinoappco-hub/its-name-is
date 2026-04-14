@@ -72,7 +72,7 @@ export default function SettingsScreen() {
           label: isDark ? 'Dark Mode' : 'Light Mode',
           subtitle: `Tap to switch to ${isDark ? 'light' : 'dark'} mode`,
           onPress: () => {
-            Haptics.selectionAsync();
+            Haptics?.selectionAsync();
             toggleMode();
           },
           color: isDark ? '#7C5CFC' : '#F59E0B',
@@ -286,7 +286,7 @@ export default function SettingsScreen() {
                     idx < section.items.length - 1 && [styles.settingsRowBorder, { borderBottomColor: t.border }],
                   ]}
                   onPress={() => {
-                    Haptics.selectionAsync();
+                    Haptics?.selectionAsync();
                     item.onPress();
                   }}
                 >

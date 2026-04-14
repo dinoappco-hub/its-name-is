@@ -34,11 +34,11 @@ export default function LoginScreen() {
   const otpRefs = useRef<(TextInput | null)[]>([]);
 
   const resetForm = () => { setEmail(''); setPassword(''); setConfirmPassword(''); setOtp(['', '', '', '']); setSignupStep('form'); };
-  const switchMode = (newMode: AuthMode) => { Haptics.selectionAsync(); setMode(newMode); resetForm(); };
+  const switchMode = (newMode: AuthMode) => { Haptics?.selectionAsync(); setMode(newMode); resetForm(); };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) { showAlert('Missing Fields', 'Please enter your email and password.'); return; }
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     const { error } = await signInWithPassword(email.trim(), password);
     if (error) showAlert('Login Failed', 'Incorrect email or password. If you forgot your credentials, tap "Forgot Password?" below.');
   };
@@ -52,7 +52,7 @@ export default function LoginScreen() {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: 'itsnameis://reset-password' });
       if (error) { showAlert('Error', error.message); setSendingReset(false); return; }
       const usernameMsg = profile?.username ? `Your username is: @${profile.username}\n\n` : '';
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
       showAlert('Recovery Email Sent', `${usernameMsg}A password reset link has been sent to ${email.trim()}. Check your inbox (and spam folder) to set a new password.`);
     } catch { showAlert('Error', 'Something went wrong. Please try again.'); }
     setSendingReset(false);
@@ -62,7 +62,7 @@ export default function LoginScreen() {
     if (!email.trim()) { showAlert('Missing Email', 'Please enter your email address.'); return; }
     if (password.length < 6) { showAlert('Weak Password', 'Password must be at least 6 characters.'); return; }
     if (password !== confirmPassword) { showAlert('Password Mismatch', 'Passwords do not match.'); return; }
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     const { error } = await sendOTP(email.trim());
     if (error) { showAlert('Error', error); return; }
     setSignupStep('otp');
@@ -84,13 +84,13 @@ export default function LoginScreen() {
   const handleVerifyOTP = async () => {
     const code = otp.join('');
     if (code.length !== 4) { showAlert('Incomplete Code', 'Please enter the full 4-digit code.'); return; }
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     const { error } = await verifyOTPAndLogin(email.trim(), code, { password });
     if (error) showAlert('Verification Failed', error);
   };
 
   const handleResendOTP = async () => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     const { error } = await sendOTP(email.trim());
     if (error) { showAlert('Error', error); } else { showAlert('Code Resent', 'A new verification code has been sent.'); setOtp(['', '', '', '']); }
   };

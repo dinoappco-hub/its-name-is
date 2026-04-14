@@ -77,7 +77,7 @@ export default function ResetPasswordScreen() {
     }
 
     setLoading(true);
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
 
     try {
       const supabase = getSupabaseClient();
@@ -89,7 +89,7 @@ export default function ResetPasswordScreen() {
         return;
       }
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
       showAlert('Password Updated', 'Your password has been successfully reset. You are now signed in.', [
         {
           text: 'Continue',

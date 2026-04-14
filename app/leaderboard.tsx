@@ -68,7 +68,7 @@ export default function LeaderboardScreen() {
             const avatarSize = isFirst ? 68 : 54;
             const podiumHeight = isFirst ? 90 : entry.rank === 2 ? 68 : 52;
             return (
-              <Pressable key={entry.user.id} style={styles.podiumItem} onPress={() => { Haptics.selectionAsync(); router.push(`/user/${entry.user.id}`); }}>
+              <Pressable key={entry.user.id} style={styles.podiumItem} onPress={() => { Haptics?.selectionAsync(); router.push(`/user/${entry.user.id}`); }}>
                 <View style={styles.podiumAvatarWrap}>
                   <Image source={{ uri: entry.user.avatar }} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }} contentFit="cover" />
                   <View style={[styles.rankBadge, isFirst && { backgroundColor: t.primary }]}>
@@ -124,7 +124,7 @@ export default function LeaderboardScreen() {
           {TABS.map((tab) => {
             const active = activeTab === tab.key;
             return (
-              <Pressable key={tab.key} style={[styles.tab, { backgroundColor: t.surface, borderColor: t.border }, active && { backgroundColor: t.primary, borderColor: t.primary }]} onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.key); }}>
+              <Pressable key={tab.key} style={[styles.tab, { backgroundColor: t.surface, borderColor: t.border }, active && { backgroundColor: t.primary, borderColor: t.primary }]} onPress={() => { Haptics?.selectionAsync(); setActiveTab(tab.key); }}>
                 <MaterialIcons name={tab.icon} size={16} color={active ? t.background : t.textSecondary} />
                 <Text style={[styles.tabText, { color: t.textSecondary }, active && { color: t.background }]}>{tab.label}</Text>
               </Pressable>
@@ -145,7 +145,7 @@ export default function LeaderboardScreen() {
             {renderPodium(list)}
             {list.slice(3).map((entry, idx) => (
               <Animated.View key={entry.user.id} entering={FadeInDown.delay(idx * 50).duration(300)}>
-                <Pressable style={[styles.listRow, { backgroundColor: t.surface, borderColor: t.border }]} onPress={() => { Haptics.selectionAsync(); router.push(`/user/${entry.user.id}`); }}>
+                <Pressable style={[styles.listRow, { backgroundColor: t.surface, borderColor: t.border }]} onPress={() => { Haptics?.selectionAsync(); router.push(`/user/${entry.user.id}`); }}>
                   <Text style={[styles.listRank, { color: t.textMuted }]}>{entry.rank}</Text>
                   <Image source={{ uri: entry.user.avatar }} style={styles.listAvatar} contentFit="cover" />
                   <View style={styles.listInfo}>

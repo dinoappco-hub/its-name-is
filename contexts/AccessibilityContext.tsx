@@ -118,16 +118,16 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     try {
       switch (type) {
         case 'selection':
-          Haptics.selectionAsync();
+          Haptics?.selectionAsync();
           break;
         case 'success':
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
           break;
         case 'warning':
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Warning);
           break;
         case 'error':
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Error);
           break;
       }
     } catch {}

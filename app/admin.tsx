@@ -138,7 +138,7 @@ export default function AdminScreen() {
   }), [reports]);
 
   const handleUpdateStatus = useCallback(async (reportId: string, status: string) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     const { error } = await updateReportStatus(reportId, status);
     if (error) { showAlert('Error', error); return; }
     setReports(prev => prev.map(r => r.id === reportId ? { ...r, status } : r));
@@ -159,7 +159,7 @@ export default function AdminScreen() {
           if (authUser?.id) {
             logAdminAction({ adminId: authUser.id, actionType: 'delete_submission', targetType: 'submission', targetId: objectId, details: 'Deleted reported submission' });
           }
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
         },
       },
     ]);
@@ -167,7 +167,7 @@ export default function AdminScreen() {
 
   // ──── Bulk Actions ────
   const toggleReportSelection = useCallback((id: string) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     setSelectedReportIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
@@ -176,7 +176,7 @@ export default function AdminScreen() {
   }, []);
 
   const toggleQueueSelection = useCallback((id: string) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     setSelectedQueueIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
@@ -185,7 +185,7 @@ export default function AdminScreen() {
   }, []);
 
   const selectAllReports = useCallback(() => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     const pending = filteredReports.filter(r => r.status === 'pending');
     if (selectedReportIds.size === pending.length) {
       setSelectedReportIds(new Set());
@@ -195,7 +195,7 @@ export default function AdminScreen() {
   }, [filteredReports, selectedReportIds]);
 
   const selectAllQueue = useCallback(() => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     if (selectedQueueIds.size === queue.length) {
       setSelectedQueueIds(new Set());
     } else {
@@ -217,7 +217,7 @@ export default function AdminScreen() {
     setSelectedReportIds(new Set());
     setBulkProcessing(false);
     setBulkMode(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
   }, [selectedReportIds, authUser?.id]);
 
   const handleBulkReviewReports = useCallback(async () => {
@@ -234,7 +234,7 @@ export default function AdminScreen() {
     setSelectedReportIds(new Set());
     setBulkProcessing(false);
     setBulkMode(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
   }, [selectedReportIds, authUser?.id]);
 
   const handleBulkApproveQueue = useCallback(async () => {
@@ -251,7 +251,7 @@ export default function AdminScreen() {
     setSelectedQueueIds(new Set());
     setBulkProcessing(false);
     setBulkMode(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
   }, [selectedQueueIds, authUser?.id]);
 
   const handleBulkDeleteQueue = useCallback(async () => {
@@ -273,7 +273,7 @@ export default function AdminScreen() {
           setSelectedQueueIds(new Set());
           setBulkProcessing(false);
           setBulkMode(false);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
         },
       },
     ]);
@@ -281,7 +281,7 @@ export default function AdminScreen() {
 
   // ──── Ban helpers ────
   const openBanModal = useCallback((user: AdminUserEntry) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     setBanTarget(user);
     setBanReason('');
     setShowBanModal(true);
@@ -303,7 +303,7 @@ export default function AdminScreen() {
 
     setUsers(prev => prev.map(u => u.id === banTarget.id ? { ...u, isBanned: true, banReason: banReason.trim(), bannedAt: new Date().toISOString() } : u));
     setShowBanModal(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
     showAlert('User Banned', `@${banTarget.username} has been banned.`);
   }, [banTarget, banReason, authUser?.id, showAlert]);
 
@@ -319,7 +319,7 @@ export default function AdminScreen() {
             logAdminAction({ adminId: authUser.id, actionType: 'unban_user', targetType: 'user', targetId: user.id, details: `Unbanned @${user.username}` });
           }
           setUsers(prev => prev.map(u => u.id === user.id ? { ...u, isBanned: false, banReason: null, bannedAt: null } : u));
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
         },
       },
     ]);
@@ -338,14 +338,14 @@ export default function AdminScreen() {
             logAdminAction({ adminId: authUser.id, actionType: 'delete_submission', targetType: 'submission', targetId: item.id, details: `Deleted flagged submission by @${item.username}` });
           }
           setQueue(prev => prev.filter(q => q.id !== item.id));
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
         },
       },
     ]);
   }, [adminDeleteSubmission, authUser?.id, showAlert]);
 
   const handleQueueApprove = useCallback(async (item: FlaggedSubmission) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     const { error } = await unflagSubmission(item.id);
     if (error) { showAlert('Error', error); return; }
     if (authUser?.id) {
@@ -677,7 +677,7 @@ export default function AdminScreen() {
             <Pressable
               key={tab.key}
               style={[styles.tab, activeTab === tab.key && { borderBottomColor: t.primary, borderBottomWidth: 2 }]}
-              onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.key); }}
+              onPress={() => { Haptics?.selectionAsync(); setActiveTab(tab.key); }}
             >
               <MaterialIcons name={tab.icon} size={18} color={activeTab === tab.key ? t.primary : t.textMuted} />
               <Text style={[styles.tabLabel, { color: activeTab === tab.key ? t.primary : t.textMuted }]}>{tab.label}</Text>
@@ -755,7 +755,7 @@ export default function AdminScreen() {
               <Pressable
                 key={f}
                 style={[styles.filterChip, { backgroundColor: t.surface, borderColor: t.border }, filter === f && { backgroundColor: t.primary, borderColor: t.primary }]}
-                onPress={() => { Haptics.selectionAsync(); setFilter(f); }}
+                onPress={() => { Haptics?.selectionAsync(); setFilter(f); }}
               >
                 <Text style={[styles.filterChipText, { color: t.textSecondary }, filter === f && { color: t.background }]}>
                   {f.charAt(0).toUpperCase() + f.slice(1)} ({statusCounts[f]})

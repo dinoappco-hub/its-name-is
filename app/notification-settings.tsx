@@ -33,12 +33,12 @@ export default function NotificationSettingsScreen() {
   const { preferences, updatePreference, masterEnabled, setMasterEnabled } = useNotifications();
 
   const handleMasterToggle = (value: boolean) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     setMasterEnabled(value);
   };
 
   const handleToggle = (type: NotificationType, value: boolean) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     updatePreference(type, value);
   };
 

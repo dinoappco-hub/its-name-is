@@ -117,7 +117,7 @@ export default function SnapScreen() {
         if (!result.canceled && result.assets[0]) {
           setImageUri(result.assets[0].uri);
           setSubmitted(false);
-          Haptics.selectionAsync();
+          Haptics?.selectionAsync();
         }
       } catch {
         setCameraPermDenied(true);
@@ -145,7 +145,7 @@ export default function SnapScreen() {
       return;
     }
     setCameraPermDenied(false);
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     setShowCamera(true);
   };
 
@@ -173,7 +173,7 @@ export default function SnapScreen() {
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
       if (photo?.uri) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
         setRawImageUri(photo.uri);
         setShowCamera(false);
       }
@@ -185,12 +185,12 @@ export default function SnapScreen() {
   };
 
   const toggleFacing = () => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     setFacing(prev => (prev === 'back' ? 'front' : 'back'));
   };
 
   const toggleFlash = () => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     setFlashOn(prev => !prev);
   };
 
@@ -212,7 +212,7 @@ export default function SnapScreen() {
         setRawImageUri(result.assets[0].uri);
         setShowCamera(false);
         setSubmitted(false);
-        Haptics.selectionAsync();
+        Haptics?.selectionAsync();
       }
     } catch {
       showAlert('Error', 'Could not access your photos.');
@@ -287,14 +287,14 @@ export default function SnapScreen() {
 
   const handleSubmit = async () => {
     if (!imageUri || !name.trim()) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Warning);
       showAlert('Missing info', 'Please add a photo and a name.');
       return;
     }
 
     // Check if user is banned
     if (currentUser.isBanned) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Error);
       showAlert('Account Suspended', 'Your account has been suspended. You cannot submit new objects.' + (currentUser.banReason ? ` Reason: ${currentUser.banReason}` : ''));
       return;
     }
@@ -308,7 +308,7 @@ export default function SnapScreen() {
       return;
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
     setSubmitted(true);
   };
 
@@ -364,7 +364,7 @@ export default function SnapScreen() {
         <SafeAreaView edges={['top']} style={styles.cropTopBar}>
           <Pressable
             style={styles.cropTopBtn}
-            onPress={() => { Haptics.selectionAsync(); setRawImageUri(null); router.navigate('/(tabs)/home'); }}
+            onPress={() => { Haptics?.selectionAsync(); setRawImageUri(null); router.navigate('/(tabs)/home'); }}
           >
             <MaterialIcons name="close" size={24} color="#fff" />
           </Pressable>
@@ -471,7 +471,7 @@ export default function SnapScreen() {
       <View style={styles.cameraContainer}>
         {CameraModule ? <CameraModule.CameraView ref={cameraRef} style={styles.cameraView} facing={facing} enableTorch={flashOn} zoom={zoom}>
           <SafeAreaView edges={['top']} style={styles.cameraTopBar}>
-            <Pressable style={styles.cameraTopBtn} onPress={() => { Haptics.selectionAsync(); setShowCamera(false); router.navigate('/(tabs)/home'); }}>
+            <Pressable style={styles.cameraTopBtn} onPress={() => { Haptics?.selectionAsync(); setShowCamera(false); router.navigate('/(tabs)/home'); }}>
               <MaterialIcons name="close" size={24} color="#fff" />
             </Pressable>
 <Pressable style={[styles.cameraTopBtn, flashOn && { backgroundColor: 'rgba(255,215,0,0.3)' }]} onPress={toggleFlash}>
@@ -502,7 +502,7 @@ export default function SnapScreen() {
                   <Pressable
                     key={val}
                     style={[styles.zoomPresetBtn, isActive && styles.zoomPresetBtnActive]}
-                    onPress={() => { Haptics.selectionAsync(); setZoom(val); }}
+                    onPress={() => { Haptics?.selectionAsync(); setZoom(val); }}
                   >
                     <Text style={[styles.zoomPresetText, isActive && styles.zoomPresetTextActive]}>{label}</Text>
                   </Pressable>
@@ -600,7 +600,7 @@ export default function SnapScreen() {
             <Animated.View entering={FadeIn.duration(400)}>
               <View style={styles.previewWrap}>
                 <Image source={{ uri: imageUri }} style={styles.previewImage} contentFit="cover" />
-                <Pressable style={styles.removeBtn} onPress={() => { setImageUri(null); Haptics.selectionAsync(); }}>
+                <Pressable style={styles.removeBtn} onPress={() => { setImageUri(null); Haptics?.selectionAsync(); }}>
                   <MaterialIcons name="close" size={20} color="#fff" />
                 </Pressable>
                 <Pressable style={styles.retakeBtn} onPress={() => { setImageUri(null); openCamera(); }}>
@@ -631,7 +631,7 @@ export default function SnapScreen() {
                       <Pressable
                         key={cat.key}
                         style={[styles.categoryChip, { backgroundColor: t.surface, borderColor: t.border }, selected && { backgroundColor: cat.color, borderColor: cat.color }]}
-                        onPress={() => { Haptics.selectionAsync(); setCategory(cat.key); }}
+                        onPress={() => { Haptics?.selectionAsync(); setCategory(cat.key); }}
                       >
                         <MaterialIcons name={cat.icon} size={16} color={selected ? '#fff' : cat.color} />
                         <Text style={[styles.categoryChipText, { color: t.textSecondary }, selected && { color: '#fff' }]}>{cat.label}</Text>

@@ -18,7 +18,7 @@ export default function MutedUsersScreen() {
   const { showAlert } = useAlert();
 
   const handleUnmute = useCallback((userId: string) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     showAlert('Unmute User', 'Show posts from this user again?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Unmute', onPress: () => unmuteUser(userId) },

@@ -41,7 +41,7 @@ export default function NotificationsScreen() {
   };
 
   const handleTapNotification = (notif: AppNotification) => {
-    Haptics.selectionAsync();
+    Haptics?.selectionAsync();
     markAsRead(notif.id);
     router.push(`/object/${notif.objectId}`);
   };
@@ -131,7 +131,7 @@ export default function NotificationsScreen() {
       </View>
 
       {unreadCount > 0 ? (
-        <Pressable style={[styles.markAllBar, { backgroundColor: `${t.accent}12`, borderColor: `${t.accent}25` }]} onPress={() => { Haptics.selectionAsync(); markAllAsRead(); }}>
+        <Pressable style={[styles.markAllBar, { backgroundColor: `${t.accent}12`, borderColor: `${t.accent}25` }]} onPress={() => { Haptics?.selectionAsync(); markAllAsRead(); }}>
           <MaterialIcons name="done-all" size={16} color={t.accent} />
           <Text style={[styles.markAllText, { color: t.accent }]}>Mark all as read ({unreadCount})</Text>
         </Pressable>
