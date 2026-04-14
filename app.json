@@ -57,8 +57,7 @@
           "photosPermission": "its name is. needs photo library access to upload objects.",
           "cameraPermission": "its name is. needs camera access to photograph objects."
         }
-      ],
-      "expo-haptics"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
