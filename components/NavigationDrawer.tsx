@@ -1,17 +1,10 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, Dimensions, Platform, BackHandler } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Dimensions, Platform, BackHandler, Animated, Easing, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from './SafeIcons';
 import { useRouter } from 'expo-router';
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  Easing,
-} from './SafeAnimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { config } from '../constants/config';
 import { useApp } from '../contexts/AppContext';
@@ -44,21 +37,45 @@ interface NavSection {
 export default function NavigationDrawer({ visible, onClose }: NavigationDrawerProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { colors: t, typo } = useAppTheme();
+  const { colors: t } = useAppTheme();
   const { currentUser } = useApp();
   const { unreadCount } = useNotifications();
   const { activeCount: a11yActiveCount, triggerHaptic } = useAccessibility();
 
-  const translateX = useSharedValue(-DRAWER_W);
-  const backdropOpacity = useSharedValue(0);
+  // Use RN Animated directly for smooth native-driven animations
+  const slideAnim = useRef(new Animated.Value(-DRAWER_W)).current;
+  const backdropAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
-      translateX.value = withSpring(0, { damping: 22, stiffness: 200, mass: 0.8 });
-      backdropOpacity.value = withTiming(1, { duration: 250 });
+      Animated.parallel([
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          damping: 22,
+          stiffness: 200,
+          mass: 0.8,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
     } else {
-      translateX.value = withTiming(-DRAWER_W, { duration: 220, easing: Easing.out(Easing.cubic) });
-      backdropOpacity.value = withTiming(0, { duration: 200 });
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: -DRAWER_W,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   }, [visible]);
 
@@ -67,9 +84,6 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
     const handler = BackHandler.addEventListener('hardwareBackPress', () => { onClose(); return true; });
     return () => handler.remove();
   }, [visible, onClose]);
-
-  const drawerStyle = useAnimatedStyle(() => ({ transform: [{ translateX: translateX.value }] }));
-  const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropOpacity.value }));
 
   const handleNavigate = useCallback((route: string) => {
     Haptics?.selectionAsync();
@@ -120,11 +134,11 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <Animated.View style={[styles.backdrop, backdropStyle]}>
+      <Animated.View style={[styles.backdrop, { opacity: backdropAnim }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
 
-      <Animated.View style={[styles.drawer, drawerStyle, { width: DRAWER_W, paddingTop: insets.top + 8, backgroundColor: t.background, borderRightColor: t.border }]}>
+      <Animated.View style={[styles.drawer, { width: DRAWER_W, paddingTop: insets.top + 8, backgroundColor: t.background, borderRightColor: t.border, transform: [{ translateX: slideAnim }] }]}>
         <Pressable style={[styles.profileSection, { borderBottomColor: t.border }]} onPress={() => handleNavigate('/(tabs)/profile')}>
           <View style={[styles.avatarWrap, { borderColor: t.border }]}>
             <Image source={{ uri: currentUser.avatar }} style={styles.avatar} contentFit="cover" />
@@ -144,7 +158,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
           <View style={styles.statItem}><Text style={[styles.statValue, { color: t.primary }]}>{currentUser.totalSubmissions + (currentUser.totalVotesReceived || 0)}</Text><Text style={[styles.statLabel, { color: t.textMuted }]}>Activity</Text></View>
         </View>
 
-        <Animated.ScrollView style={styles.navScroll} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.navScroll} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
           {sections.map((section) => (
             <View key={section.title} style={styles.navSection}>
               <Text style={[styles.navSectionTitle, { color: t.textMuted }]}>{section.title}</Text>
@@ -174,7 +188,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
             <Text style={[styles.footerAppName, { color: t.primary }]}>{config.appName}</Text>
             <Text style={[styles.footerVersion, { color: t.textMuted }]}>v{config.version}</Text>
           </View>
-        </Animated.ScrollView>
+        </ScrollView>
       </Animated.View>
     </View>
   );

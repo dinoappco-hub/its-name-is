@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef, memo } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, ScrollView as HScrollView, FlatList, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, ScrollView as HScrollView, FlatList, Platform, Animated as RNAnimated, Easing as RNEasing } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Image } from 'expo-image';
@@ -7,7 +7,7 @@ import { MaterialIcons } from '../../components/SafeIcons';
 import { useRouter } from 'expo-router';
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
-import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from '../../components/SafeAnimated';
+import Animated, { FadeInDown } from '../../components/SafeAnimated';
 import { CATEGORIES, CategoryKey } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '@/template';
@@ -64,23 +64,23 @@ export default function FeedScreen() {
   const { user: authUser } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
   const hasShownWelcome = useRef(false);
-  const welcomeProgress = useSharedValue(0);
+  const welcomeAnim = useRef(new RNAnimated.Value(0)).current;
 
-  const welcomeAnimStyle = useAnimatedStyle(() => {
-    const p = welcomeProgress.value;
-    return {
-      opacity: p,
-      transform: [{ scale: 0.9 + 0.1 * p }],
-    };
-  });
+  const welcomeAnimStyle = {
+    opacity: welcomeAnim,
+    transform: [{ scale: welcomeAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }],
+  };
 
   const dismissWelcome = useCallback(() => {
-    welcomeProgress.value = withTiming(0, { duration: 600, easing: Easing.inOut(Easing.cubic) }, (finished) => {
-      if (finished) {
-        runOnJS(setShowWelcome)(false);
-      }
+    RNAnimated.timing(welcomeAnim, {
+      toValue: 0,
+      duration: 600,
+      easing: RNEasing.inOut(RNEasing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setShowWelcome(false);
     });
-  }, [welcomeProgress]);
+  }, [welcomeAnim]);
 
   useEffect(() => { loadCommunityData(); }, []);
 
@@ -89,7 +89,7 @@ export default function FeedScreen() {
     if (!loading && !hasShownWelcome.current && objects.length >= 0) {
       hasShownWelcome.current = true;
       setShowWelcome(true);
-      welcomeProgress.value = withTiming(1, { duration: 500 });
+      RNAnimated.timing(welcomeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
       const timer = setTimeout(() => dismissWelcome(), 3000);
       return () => clearTimeout(timer);
     }
@@ -168,7 +168,7 @@ export default function FeedScreen() {
   const renderHeader = () => (
     <View style={styles.headerContent}>
       {showWelcome ? (
-        <Animated.View style={welcomeAnimStyle}>
+        <RNAnimated.View style={welcomeAnimStyle}>
           <View style={[styles.welcomeBanner, { backgroundColor: t.surface, borderColor: t.border }]}>
             <View style={styles.welcomeBannerRow}>
               <View style={[styles.welcomeIconWrap, { backgroundColor: `${t.primary}15` }]}>
@@ -187,7 +187,7 @@ export default function FeedScreen() {
               <DinoLoader message="" size="small" />
             </View>
           </View>
-        </Animated.View>
+        </RNAnimated.View>
       ) : null}
       <View style={styles.searchRow}>
         <View style={[styles.searchBar, { backgroundColor: t.surface }]}>
