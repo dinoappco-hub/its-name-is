@@ -117,8 +117,25 @@ export default function PrivacyScreen() {
         </Section>
 
         <Section number="6" title="Camera and Photo Access">
-          <P>{config.appName} requests access to your device camera and photo library solely for the purpose of capturing or selecting images of objects to submit to the community. We do not access your camera or photos for any other purpose.</P>
-          <P>Photos are uploaded to our secure servers and made publicly viewable within the app. You can delete your submissions at any time.</P>
+          <P>{config.appName} uses the <Text style={[styles.highlight, { color: t.primary }]}>android.permission.CAMERA</Text> permission to allow you to photograph objects directly within the app for community sharing.</P>
+          <SubHeading>Why We Need Camera Access</SubHeading>
+          <Bullet>To let you take photos of real-world objects using the in-app live viewfinder</Bullet>
+          <Bullet>Camera is the core feature — snapping objects is how the community discovers and names things</Bullet>
+          <SubHeading>How the Camera Is Used</SubHeading>
+          <Bullet>The camera activates only when you open the Snap tab or tap "Open Camera"</Bullet>
+          <Bullet>Photos are captured only when you press the shutter button — never automatically</Bullet>
+          <Bullet>We do not access your camera in the background or when the app is closed</Bullet>
+          <Bullet>Flash, zoom, and front/back camera controls are provided for your convenience</Bullet>
+          <SubHeading>Photo Library Access</SubHeading>
+          <Bullet>You may also choose photos from your device gallery as an alternative to taking new photos</Bullet>
+          <Bullet>We only access photos you explicitly select — we never scan or read your photo library</Bullet>
+          <SubHeading>What Happens to Your Photos</SubHeading>
+          <Bullet>Photos you submit are uploaded to our secure cloud storage</Bullet>
+          <Bullet>Uploaded photos are publicly visible to other users within the app</Bullet>
+          <Bullet>You can delete any photo you submitted at any time from your profile</Bullet>
+          <Bullet>When you delete a submission, the photo is permanently removed from our servers</Bullet>
+          <SubHeading>Denying Camera Permission</SubHeading>
+          <P>Camera access is optional. If you deny the permission, you can still use the gallery upload feature to submit photos. You can change camera permissions at any time in your device settings.</P>
         </Section>
 
         <Section number="7" title="Notifications">
