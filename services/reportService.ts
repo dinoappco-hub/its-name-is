@@ -1,6 +1,6 @@
 import { getSupabaseClient } from '@/template';
 
-const supabase = getSupabaseClient();
+const getClient = () => getSupabaseClient();
 
 export const REPORT_REASONS = [
   { key: 'inappropriate_image', label: 'Inappropriate Image', icon: 'broken-image' as const, color: '#EF4444', contentType: 'image' as const },
@@ -26,7 +26,7 @@ export async function submitReport(params: {
   description: string;
 }): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('reports')
       .insert({
         reporter_id: params.reporterId,
@@ -45,7 +45,7 @@ export async function submitReport(params: {
 
 export async function hasUserReported(reporterId: string, objectId: string): Promise<boolean> {
   try {
-    const { count } = await supabase
+    const { count } = await getClient()
       .from('reports')
       .select('id', { count: 'exact', head: true })
       .eq('reporter_id', reporterId)
@@ -75,7 +75,7 @@ export interface Report {
 
 export async function fetchAllReports(): Promise<{ data: Report[]; error: string | null }> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('reports')
       .select(`
         *,
@@ -108,7 +108,7 @@ export async function fetchAllReports(): Promise<{ data: Report[]; error: string
 
 export async function updateReportStatus(reportId: string, status: string): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('reports')
       .update({ status })
       .eq('id', reportId);

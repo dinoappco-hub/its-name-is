@@ -1,10 +1,10 @@
 import { getSupabaseClient } from '@/template';
 
-const supabase = getSupabaseClient();
+const getClient = () => getSupabaseClient();
 
 export async function fetchMutedUsers(userId: string): Promise<{ data: string[]; error: string | null }> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('muted_users')
       .select('muted_user_id')
       .eq('user_id', userId);
@@ -18,7 +18,7 @@ export async function fetchMutedUsers(userId: string): Promise<{ data: string[];
 
 export async function muteUser(userId: string, mutedUserId: string): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('muted_users')
       .insert({ user_id: userId, muted_user_id: mutedUserId });
 
@@ -34,7 +34,7 @@ export async function muteUser(userId: string, mutedUserId: string): Promise<{ e
 
 export async function unmuteUser(userId: string, mutedUserId: string): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('muted_users')
       .delete()
       .eq('user_id', userId)

@@ -10,12 +10,13 @@ import {
   toUser,
 } from './types';
 
-const supabase = getSupabaseClient();
+const getClient = () => getSupabaseClient();
 
 // ──────────────────────────── Image Upload ────────────────────────────
 
 export async function uploadObjectImage(userId: string, uri: string): Promise<{ url: string | null; error: string | null }> {
   try {
+    const supabase = getClient();
     const ext = uri.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${userId}/${Date.now()}.${ext}`;
     const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
@@ -51,6 +52,7 @@ export async function uploadObjectImage(userId: string, uri: string): Promise<{ 
 
 export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error: string | null }> {
   try {
+    const supabase = getClient();
     // Fetch all objects with their submitter profiles
     const { data: objects, error: objErr } = await supabase
       .from('object_submissions')
@@ -141,6 +143,7 @@ export async function createSubmission(
   category: string = 'random',
 ): Promise<{ data: { objectId: string; nameId: string } | null; error: string | null }> {
   try {
+    const supabase = getClient();
     // Insert object
     const { data: obj, error: objErr } = await supabase
       .from('object_submissions')
@@ -178,6 +181,7 @@ export async function suggestName(
   name: string,
 ): Promise<{ data: { nameId: string } | null; error: string | null }> {
   try {
+    const supabase = getClient();
     const { data, error } = await supabase
       .from('suggested_names')
       .insert({ object_id: objectId, user_id: userId, name })
@@ -205,6 +209,7 @@ export async function castVote(
   direction: 'up' | 'down',
 ): Promise<{ action: 'added' | 'changed' | 'removed'; error: string | null }> {
   try {
+    const supabase = getClient();
     // Check existing vote
     const { data: existing } = await supabase
       .from('votes')
@@ -238,13 +243,14 @@ export async function castVote(
 // ──────────────────────────── View Count ────────────────────────────
 
 export async function incrementViewCount(objectId: string): Promise<void> {
-  await supabase.rpc('increment_view_count', { obj_id: objectId });
+  await getClient().rpc('increment_view_count', { obj_id: objectId });
 }
 
 // ──────────────────────────── User Stats ────────────────────────────
 
 export async function getUserStats(userId: string): Promise<{ submissions: number; votesReceived: number }> {
   try {
+    const supabase = getClient();
     const { count: submissions } = await supabase
       .from('object_submissions')
       .select('id', { count: 'exact', head: true })
@@ -281,7 +287,7 @@ export async function getSubmissionsToday(userId: string): Promise<number> {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const { count } = await supabase
+    const { count } = await getClient()
       .from('object_submissions')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
@@ -297,6 +303,7 @@ export async function getSubmissionsToday(userId: string): Promise<number> {
 
 export async function uploadAvatarImage(userId: string, uri: string): Promise<{ url: string | null; error: string | null }> {
   try {
+    const supabase = getClient();
     const ext = uri.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${userId}/avatar_${Date.now()}.${ext}`;
     const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
@@ -333,7 +340,7 @@ export async function updateUserProfile(
   updates: { display_name?: string; username?: string; avatar_url?: string },
 ): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('user_profiles')
       .update(updates)
       .eq('id', userId);
@@ -353,7 +360,7 @@ export async function updateSubmissionDescription(
   description: string,
 ): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('object_submissions')
       .update({ description })
       .eq('id', objectId)
@@ -371,7 +378,7 @@ export async function updateSubmissionDescription(
 export async function deleteSubmission(objectId: string, userId: string): Promise<{ error: string | null }> {
   try {
     // Delete the object (cascade will remove suggested_names, votes, comments, reports)
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('object_submissions')
       .delete()
       .eq('id', objectId)
@@ -387,7 +394,7 @@ export async function deleteSubmission(objectId: string, userId: string): Promis
 // Admin: delete any submission (no user_id check, RLS enforced)
 export async function adminDeleteSubmission(objectId: string): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('object_submissions')
       .delete()
       .eq('id', objectId);
@@ -402,7 +409,7 @@ export async function adminDeleteSubmission(objectId: string): Promise<{ error: 
 // Admin: toggle featured status
 export async function adminToggleFeatured(objectId: string, isFeatured: boolean): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('object_submissions')
       .update({ is_featured: isFeatured })
       .eq('id', objectId);
@@ -417,7 +424,7 @@ export async function adminToggleFeatured(objectId: string, isFeatured: boolean)
 // ──────────────────────────── Fetch User Profile ────────────────────────────
 
 export async function fetchUserProfile(userId: string): Promise<{ data: UserProfile | null; error: string | null }> {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('user_profiles')
     .select('*')
     .eq('id', userId)

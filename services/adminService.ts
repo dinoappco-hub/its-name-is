@@ -1,6 +1,6 @@
 import { getSupabaseClient } from '@/template';
 
-const supabase = getSupabaseClient();
+const getClient = () => getSupabaseClient();
 
 // ──────────────────────── Activity Log ────────────────────────
 
@@ -24,7 +24,7 @@ export async function logAdminAction(params: {
   details: string;
 }): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('admin_activity_log')
       .insert({
         admin_id: params.adminId,
@@ -43,7 +43,7 @@ export async function logAdminAction(params: {
 
 export async function fetchActivityLog(limit: number = 50): Promise<{ data: ActivityLogEntry[]; error: string | null }> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('admin_activity_log')
       .select(`
         *,
@@ -79,7 +79,7 @@ const NOTIFICATION_EMAIL = 'mdionisos02@gmail.com';
 
 export async function fetchAdminUserIds(): Promise<string[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('user_profiles')
       .select('id')
       .eq('is_admin', true);
@@ -100,7 +100,7 @@ export async function fetchReportNotificationTargets(): Promise<string[]> {
     const adminIds = await fetchAdminUserIds();
 
     // Always include the primary notification email
-    const { data: primary } = await supabase
+    const { data: primary } = await getClient()
       .from('user_profiles')
       .select('id')
       .eq('email', NOTIFICATION_EMAIL)
@@ -119,7 +119,7 @@ export async function fetchReportNotificationTargets(): Promise<string[]> {
 
 export async function banUser(userId: string, reason: string): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('user_profiles')
       .update({
         is_banned: true,
@@ -137,7 +137,7 @@ export async function banUser(userId: string, reason: string): Promise<{ error: 
 
 export async function unbanUser(userId: string): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('user_profiles')
       .update({
         is_banned: false,
@@ -171,6 +171,7 @@ export interface FlaggedSubmission {
 
 export async function fetchFlaggedSubmissions(): Promise<{ data: FlaggedSubmission[]; error: string | null }> {
   try {
+    const supabase = getClient();
     // Get submissions that are flagged OR have 2+ reports
     const { data: flagged, error: flagErr } = await supabase
       .from('object_submissions')
@@ -255,7 +256,7 @@ export async function fetchFlaggedSubmissions(): Promise<{ data: FlaggedSubmissi
 
 export async function flagSubmission(objectId: string, reason: string): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('object_submissions')
       .update({ is_flagged: true, flag_reason: reason })
       .eq('id', objectId);
@@ -268,7 +269,7 @@ export async function flagSubmission(objectId: string, reason: string): Promise<
 
 export async function unflagSubmission(objectId: string): Promise<{ error: string | null }> {
   try {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('object_submissions')
       .update({ is_flagged: false, flag_reason: null })
       .eq('id', objectId);
@@ -296,6 +297,7 @@ export interface AdminUserEntry {
 
 export async function fetchUsersForAdmin(search?: string): Promise<{ data: AdminUserEntry[]; error: string | null }> {
   try {
+    const supabase = getClient();
     let query = supabase
       .from('user_profiles')
       .select('*')

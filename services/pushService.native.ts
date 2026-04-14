@@ -1,6 +1,6 @@
 import { getSupabaseClient } from '@/template';
 
-const supabase = getSupabaseClient();
+const getClient = () => getSupabaseClient();
 
 export async function registerPushToken(userId: string): Promise<{ token: string | null; error: string | null }> {
   // Push token registration disabled — expo-notifications native module
@@ -21,6 +21,7 @@ export async function sendPushNotification(params: {
   data?: Record<string, any>;
 }): Promise<{ error: string | null }> {
   try {
+    const supabase = getClient();
     const { data, error } = await supabase.functions.invoke('send-push-notification', {
       body: {
         targetUserId: params.targetUserId,

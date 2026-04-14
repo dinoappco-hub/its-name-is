@@ -1,6 +1,6 @@
 import { getSupabaseClient } from '@/template';
 
-const supabase = getSupabaseClient();
+const getClient = () => getSupabaseClient();
 
 export interface Comment {
   id: string;
@@ -74,7 +74,7 @@ function buildThreads(flatComments: Omit<Comment, 'replies'>[]): Comment[] {
 }
 
 export async function fetchComments(objectId: string): Promise<{ data: Comment[]; error: string | null }> {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('comments')
     .select('id, object_id, user_id, parent_id, content, created_at, user_profiles(id, username, display_name, avatar_url, is_premium)')
     .eq('object_id', objectId)
@@ -99,13 +99,13 @@ export async function addComment(
   };
   if (parentId) insert.parent_id = parentId;
 
-  const { error } = await supabase.from('comments').insert(insert);
+  const { error } = await getClient().from('comments').insert(insert);
   if (error) return { error: error.message };
   return { error: null };
 }
 
 export async function deleteComment(commentId: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.from('comments').delete().eq('id', commentId);
+  const { error } = await getClient().from('comments').delete().eq('id', commentId);
   if (error) return { error: error.message };
   return { error: null };
 }

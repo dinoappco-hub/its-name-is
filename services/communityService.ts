@@ -1,7 +1,7 @@
 import { getSupabaseClient } from '@/template';
 import { UserProfile, toUser, User } from './types';
 
-const supabase = getSupabaseClient();
+const getClient = () => getSupabaseClient();
 
 export interface LeaderboardEntry {
   user: User;
@@ -20,6 +20,7 @@ export interface CommunityStats {
 
 export async function fetchCommunityStats(): Promise<CommunityStats> {
   try {
+    const supabase = getClient();
     const [objRes, nameRes, voteRes, userRes] = await Promise.all([
       supabase.from('object_submissions').select('id', { count: 'exact', head: true }),
       supabase.from('suggested_names').select('id', { count: 'exact', head: true }),
@@ -43,7 +44,7 @@ export async function fetchCommunityStats(): Promise<CommunityStats> {
 export async function fetchTopContributors(limit: number = 10): Promise<LeaderboardEntry[]> {
   try {
     // Get all submissions grouped by user
-    const { data: submissions, error } = await supabase
+    const { data: submissions, error } = await getClient()
       .from('object_submissions')
       .select('user_id, user_profiles!user_id(*)');
 
@@ -79,7 +80,7 @@ export async function fetchTopContributors(limit: number = 10): Promise<Leaderbo
 
 export async function fetchTopNamers(limit: number = 10): Promise<LeaderboardEntry[]> {
   try {
-    const { data: names, error } = await supabase
+    const { data: names, error } = await getClient()
       .from('suggested_names')
       .select('user_id, user_profiles!user_id(*)');
 
@@ -114,7 +115,7 @@ export async function fetchTopNamers(limit: number = 10): Promise<LeaderboardEnt
 export async function fetchMostVotedUsers(limit: number = 10): Promise<LeaderboardEntry[]> {
   try {
     // Get all upvotes with name submitter info
-    const { data: votes, error } = await supabase
+    const { data: votes, error } = await getClient()
       .from('votes')
       .select('direction, suggested_names!name_id(user_id, user_profiles!user_id(*))')
       .eq('direction', 'up');
@@ -161,6 +162,7 @@ export async function fetchPublicUserProfile(userId: string): Promise<{
   error: string | null;
 }> {
   try {
+    const supabase = getClient();
     const { data: profile, error: profileErr } = await supabase
       .from('user_profiles')
       .select('*')
@@ -212,7 +214,7 @@ export async function fetchPublicUserProfile(userId: string): Promise<{
 export async function fetchRecentActiveUsers(limit: number = 8): Promise<User[]> {
   try {
     // Get recently active users from submissions
-    const { data: recentSubmissions, error } = await supabase
+    const { data: recentSubmissions, error } = await getClient()
       .from('object_submissions')
       .select('user_id, user_profiles!user_id(*)')
       .order('created_at', { ascending: false })
