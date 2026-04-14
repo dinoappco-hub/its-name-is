@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Linking } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '../components/SafeIcons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '../hooks/useTheme';
 import { config } from '../constants/config';

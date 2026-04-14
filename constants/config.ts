@@ -1,4 +1,4 @@
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '../components/SafeIcons';
 
 export const CATEGORIES = [
   { key: 'all', label: 'All', icon: 'apps' as keyof typeof MaterialIcons.glyphMap, color: '#9E9E9E' },

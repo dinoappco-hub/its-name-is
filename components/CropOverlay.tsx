@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { View, PanResponder, StyleSheet, Pressable, Text } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from './SafeIcons';
 
 const MIN_SIZE = 60;
 const CORNER_VIS = 22;
