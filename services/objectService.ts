@@ -1,7 +1,5 @@
 import { getSupabaseClient } from '@/template';
 import { Platform } from 'react-native';
-import { decode } from 'base64-arraybuffer';
-import * as FileSystem from 'expo-file-system';
 import {
   UserProfile,
   DbObjectSubmission,
@@ -30,6 +28,8 @@ export async function uploadObjectImage(userId: string, uri: string): Promise<{ 
         .upload(fileName, blob, { contentType, upsert: false });
       if (error) return { url: null, error: error.message };
     } else {
+      const FileSystem = require('expo-file-system');
+      const { decode } = require('base64-arraybuffer');
       const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
       const { error } = await supabase.storage
         .from('object-images')
@@ -309,6 +309,8 @@ export async function uploadAvatarImage(userId: string, uri: string): Promise<{ 
         .upload(fileName, blob, { contentType, upsert: false });
       if (error) return { url: null, error: error.message };
     } else {
+      const FileSystem = require('expo-file-system');
+      const { decode } = require('base64-arraybuffer');
       const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
       const { error } = await supabase.storage
         .from('object-images')

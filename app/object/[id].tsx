@@ -6,8 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+
 import { useAuth, useAlert } from '@/template';
 import { useAppTheme } from '../../hooks/useTheme';
 import DinoLoader from '../../components/DinoLoader';
@@ -98,18 +97,24 @@ export default function ObjectDetailScreen() {
 
     try {
       if (Platform.OS !== 'web') {
-        const isAvailable = await Sharing.isAvailableAsync();
-        if (isAvailable) {
-          const fileUri = `${FileSystem.cacheDirectory}share_${object.id}.jpg`;
-          const download = await FileSystem.downloadAsync(object.imageUri, fileUri);
-          if (download.status === 200) {
-            await Sharing.shareAsync(download.uri, {
-              mimeType: 'image/jpeg',
-              dialogTitle: shareText,
-            });
-            setSharing(false);
-            return;
+        try {
+          const FileSystem = require('expo-file-system');
+          const Sharing = require('expo-sharing');
+          const isAvailable = await Sharing.isAvailableAsync();
+          if (isAvailable) {
+            const fileUri = `${FileSystem.cacheDirectory}share_${object.id}.jpg`;
+            const download = await FileSystem.downloadAsync(object.imageUri, fileUri);
+            if (download.status === 200) {
+              await Sharing.shareAsync(download.uri, {
+                mimeType: 'image/jpeg',
+                dialogTitle: shareText,
+              });
+              setSharing(false);
+              return;
+            }
           }
+        } catch {
+          // Fall through to Share.share
         }
       }
       await Share.share({ message: shareText, url: object.imageUri });
