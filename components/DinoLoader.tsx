@@ -18,13 +18,11 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
   const { colors: t } = useAppTheme();
   const dims = DINO_SIZES[size];
 
-  // Use RN Animated for smooth 60fps native-driven animations
   const rotationAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const dotAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Rotation loop - full circle every 2400ms
     const rotLoop = Animated.loop(
       Animated.timing(rotationAnim, {
         toValue: 1,
@@ -34,7 +32,6 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
       })
     );
 
-    // Bounce loop - up and down every 1200ms
     const bounceLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(bounceAnim, {
@@ -52,7 +49,6 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
       ])
     );
 
-    // Dot animation loop
     const dotLoop = Animated.loop(
       Animated.timing(dotAnim, {
         toValue: 1,
@@ -73,7 +69,7 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
     };
   }, []);
 
-  // Stego: orbits at angle 0 offset
+  // Stego orbit transforms
   const stegoTranslateX = rotationAnim.interpolate({
     inputRange: [0, 0.25, 0.5, 0.75, 1],
     outputRange: [dims.orbit, 0, -dims.orbit, 0, dims.orbit],
@@ -86,16 +82,16 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
     inputRange: [0, 0.25, 0.5, 0.75, 1],
     outputRange: [1, 0.85, 0.75, 0.85, 1],
   });
-  const stegoBounce = bounceAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -4],
-  });
   const stegoRotate = rotationAnim.interpolate({
     inputRange: [0, 0.25, 0.5, 0.75, 1],
     outputRange: ['0deg', '-12deg', '0deg', '12deg', '0deg'],
   });
+  const stegoBounce = bounceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -4],
+  });
 
-  // Bronto: orbits at angle PI offset (opposite)
+  // Bronto orbit transforms
   const brontoTranslateX = rotationAnim.interpolate({
     inputRange: [0, 0.25, 0.5, 0.75, 1],
     outputRange: [-dims.orbit, 0, dims.orbit, 0, -dims.orbit],
@@ -108,13 +104,13 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
     inputRange: [0, 0.25, 0.5, 0.75, 1],
     outputRange: [0.75, 0.85, 1, 0.85, 0.75],
   });
-  const brontoBounce = bounceAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-4, 0],
-  });
   const brontoRotate = rotationAnim.interpolate({
     inputRange: [0, 0.25, 0.5, 0.75, 1],
     outputRange: ['0deg', '12deg', '0deg', '-12deg', '0deg'],
+  });
+  const brontoBounce = bounceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-4, 0],
   });
 
   // Dot opacities
@@ -135,41 +131,49 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
     <View style={styles.container}>
       <View style={[styles.orbitContainer, { width: dims.container, height: dims.container }]}>
         <View style={[styles.orbitShadow, { width: dims.orbit * 2.2, height: dims.orbit * 0.9, backgroundColor: `${t.textMuted}10`, borderRadius: dims.orbit }]} />
+
+        {/* Stego: outer view handles orbit, inner view handles bounce */}
         <Animated.View style={[
           styles.dinoWrap,
           { width: dims.dino, height: dims.dino },
           {
             transform: [
               { translateX: stegoTranslateX },
-              { translateY: Animated.add(stegoTranslateY, stegoBounce) },
+              { translateY: stegoTranslateY },
               { scale: stegoScale },
               { rotate: stegoRotate },
             ],
           },
         ]}>
-          <Image
-            source={require('../assets/images/dino-stego.png')}
-            style={{ width: dims.dino, height: dims.dino }}
-            contentFit="contain"
-          />
+          <Animated.View style={{ transform: [{ translateY: stegoBounce }] }}>
+            <Image
+              source={require('../assets/images/dino-stego.png')}
+              style={{ width: dims.dino, height: dims.dino }}
+              contentFit="contain"
+            />
+          </Animated.View>
         </Animated.View>
+
+        {/* Bronto: outer view handles orbit, inner view handles bounce */}
         <Animated.View style={[
           styles.dinoWrap,
           { width: dims.dino, height: dims.dino },
           {
             transform: [
               { translateX: brontoTranslateX },
-              { translateY: Animated.add(brontoTranslateY, brontoBounce) },
+              { translateY: brontoTranslateY },
               { scale: brontoScale },
               { rotate: brontoRotate },
             ],
           },
         ]}>
-          <Image
-            source={require('../assets/images/dino-bronto.png')}
-            style={{ width: dims.dino, height: dims.dino }}
-            contentFit="contain"
-          />
+          <Animated.View style={{ transform: [{ translateY: brontoBounce }] }}>
+            <Image
+              source={require('../assets/images/dino-bronto.png')}
+              style={{ width: dims.dino, height: dims.dino }}
+              contentFit="contain"
+            />
+          </Animated.View>
         </Animated.View>
       </View>
       {message ? (
