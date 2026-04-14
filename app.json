@@ -15,6 +15,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "its name is. needs camera access to photograph objects for the community to name.",
         "NSPhotoLibraryUsageDescription": "its name is. needs photo library access to upload objects for the community to name.",
+        "NSPhotoLibraryAddUsageDescription": "its name is. needs photo library access to save edited photos.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -61,10 +62,6 @@
     "experiments": {
       "typedRoutes": true
     },
-    "extra": {
-      "eas": {
-        "projectId": ""
-      }
-    }
+    "extra": {}
   }
 }
