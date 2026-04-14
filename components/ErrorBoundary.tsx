@@ -34,13 +34,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   };
 
   handleForceReload = () => {
-    try {
-      const Updates = require('expo-updates');
-      if (Updates && Updates.reloadAsync) {
-        Updates.reloadAsync();
-        return;
-      }
-    } catch {}
+    // Simply reset error state — expo-updates may not be available
     this.setState({ hasError: false, error: null, errorInfo: null });
   };
 

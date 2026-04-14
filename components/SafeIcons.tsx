@@ -197,7 +197,15 @@ const ICON_MAP: Record<string, string> = {
   'local-fire-department': '🔥',
   'bolt': '⚡',
 
+  // Camera icons
+  'flip-camera-ios': '🔄',
+  'flip-camera-android': '🔄',
+  
   // Additional icons used in the app
+  'reply': '↩',
+  'expand-more': '▼',
+  'expand-less': '▲',
+  'star-outline': '☆',
   'apps': '⊞',
   'directions-car': '🚗',
   'cruelty-free': '🐰',
