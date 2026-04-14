@@ -5,9 +5,7 @@ import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import * as ImageManipulator from 'expo-image-manipulator';
 import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
-import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { useAlert } from '@/template';
 import { CATEGORIES } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
@@ -33,12 +31,20 @@ export default function SnapScreen() {
   const { showAlert } = useAlert();
 
 
+  // Lazy-load native modules to prevent crash during Expo Router's eager route loading
+  const ImageManipulator = useMemo(() => {
+    try { return require('expo-image-manipulator'); } catch { return null; }
+  }, []);
+  const CameraModule = useMemo(() => {
+    try { return require('expo-camera'); } catch { return null; }
+  }, []);
+
   // Camera state
   const [showCamera, setShowCamera] = useState(false);
   const [cameraPermDenied, setCameraPermDenied] = useState(false);
-  const [facing, setFacing] = useState<CameraType>('back');
-  const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView>(null);
+  const [facing, setFacing] = useState<'back' | 'front'>('back');
+  const [cameraPermission, setCameraPermission] = useState<any>(null);
+  const cameraRef = useRef<any>(null);
   const [capturing, setCapturing] = useState(false);
   const [flashOn, setFlashOn] = useState(false);
   const [zoom, setZoom] = useState(0);
@@ -88,6 +94,15 @@ export default function SnapScreen() {
     return { x: dx, y: dy, width: Math.max(1, dw), height: Math.max(1, dh) };
   }, [imageNaturalSize, containerLayout]);
 
+  // Request camera permission lazily
+  useEffect(() => {
+    if (CameraModule) {
+      CameraModule.Camera?.getCameraPermissionsAsync?.().then((perm: any) => {
+        setCameraPermission(perm);
+      }).catch(() => {});
+    }
+  }, [CameraModule]);
+
   const openCamera = async (silent = false) => {
     if (Platform.OS === 'web') {
       try {
@@ -110,13 +125,23 @@ export default function SnapScreen() {
       return;
     }
 
-    if (!permission?.granted) {
-      const result = await requestPermission();
-      if (!result.granted) {
+    if (!CameraModule) {
+      if (!silent) showAlert('Camera Unavailable', 'Camera module is not available. Please use the gallery upload.');
+      return;
+    }
+
+    try {
+      const perm = await CameraModule.Camera.requestCameraPermissionsAsync();
+      setCameraPermission(perm);
+      if (!perm.granted) {
         setCameraPermDenied(true);
         if (!silent) showAlert('Permission Needed', 'Camera access is required to snap objects. Please enable it in your device settings.');
         return;
       }
+    } catch {
+      setCameraPermDenied(true);
+      if (!silent) showAlert('Camera Unavailable', 'Could not access camera.');
+      return;
     }
     setCameraPermDenied(false);
     Haptics.selectionAsync();
@@ -198,6 +223,7 @@ export default function SnapScreen() {
     if (!rawImageUri) return;
     setProcessing(true);
     try {
+      if (!ImageManipulator) { showAlert('Error', 'Image processing unavailable.'); setProcessing(false); return; }
       const result = await ImageManipulator.manipulateAsync(
         rawImageUri,
         [{ resize: { width: 1080 } }],
@@ -222,6 +248,7 @@ export default function SnapScreen() {
     setProcessing(true);
     setCropMode(false);
     try {
+      if (!ImageManipulator) { setProcessing(false); return; }
       const scaleX = imageNaturalSize.width / imageRect.width;
       const scaleY = imageNaturalSize.height / imageRect.height;
       const originX = Math.max(0, Math.round(region.x * scaleX));
@@ -242,7 +269,7 @@ export default function SnapScreen() {
   };
 
   const handleCropRotate = async () => {
-    if (!rawImageUri) return;
+    if (!rawImageUri || !ImageManipulator) return;
     setProcessing(true);
     try {
       const result = await ImageManipulator.manipulateAsync(
@@ -397,7 +424,8 @@ export default function SnapScreen() {
               if (!rawImageUri) return;
               setProcessing(true);
               try {
-                const result = await ImageManipulator.manipulateAsync(
+                if (!ImageManipulator) { setProcessing(false); return; }
+              const result = await ImageManipulator.manipulateAsync(
                   rawImageUri,
                   [{ flip: ImageManipulator.FlipType.Horizontal }],
                   { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
@@ -440,7 +468,7 @@ export default function SnapScreen() {
   if (showCamera) {
     return (
       <View style={styles.cameraContainer}>
-        <CameraView ref={cameraRef} style={styles.cameraView} facing={facing} enableTorch={flashOn} zoom={zoom}>
+        {CameraModule ? <CameraModule.CameraView ref={cameraRef} style={styles.cameraView} facing={facing} enableTorch={flashOn} zoom={zoom}>
           <SafeAreaView edges={['top']} style={styles.cameraTopBar}>
             <Pressable style={styles.cameraTopBtn} onPress={() => { Haptics.selectionAsync(); setShowCamera(false); router.navigate('/(tabs)/home'); }}>
               <MaterialIcons name="close" size={24} color="#fff" />
@@ -517,7 +545,7 @@ export default function SnapScreen() {
               <MaterialIcons name="flip-camera-ios" size={26} color="transparent" />
             </View>
           </SafeAreaView>
-        </CameraView>
+        </CameraModule.CameraView> : null}
       </View>
     );
   }

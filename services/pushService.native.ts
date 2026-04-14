@@ -1,13 +1,14 @@
 import { getSupabaseClient } from '@/template';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 
 const supabase = getSupabaseClient();
 
 export async function registerPushToken(userId: string): Promise<{ token: string | null; error: string | null }> {
   try {
+    const Device = require('expo-device');
+    const Notifications = require('expo-notifications');
+    const Constants = require('expo-constants').default || require('expo-constants');
+
     if (!Device.isDevice) return { token: null, error: 'Push notifications require a physical device' };
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -56,6 +57,8 @@ export async function registerPushToken(userId: string): Promise<{ token: string
 
 export async function removePushToken(userId: string): Promise<void> {
   try {
+    const Notifications = require('expo-notifications');
+    const Constants = require('expo-constants').default || require('expo-constants');
     const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     await supabase

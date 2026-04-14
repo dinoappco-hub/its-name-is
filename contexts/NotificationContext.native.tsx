@@ -1,10 +1,16 @@
 import React, { createContext, useState, useCallback, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { useAuth } from '@/template';
 import { AppNotification, NotificationType } from '../services/notificationTypes';
 import { registerPushToken, removePushToken, sendPushNotification } from '../services/pushService';
+
+let Notifications: any = null;
+try {
+  Notifications = require('expo-notifications');
+} catch {
+  // expo-notifications not available in this environment
+}
 
 export type NotificationPreferences = Record<NotificationType, boolean>;
 
@@ -16,15 +22,17 @@ const DEFAULT_PREFS: NotificationPreferences = {
   comment: true,
 };
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+if (Notifications) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 interface NotificationContextType {
   notifications: AppNotification[];
@@ -56,7 +64,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const tokenRegistered = useRef(false);
 
   useEffect(() => {
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+    if (!Notifications) return;
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
       const data = response.notification.request.content.data;
       if (data?.objectId) {
         // Navigation will be handled by the app
@@ -110,6 +119,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [masterEnabled]);
 
   const sendLocalNotification = async (title: string, body: string) => {
+    if (!Notifications) return;
     try {
       await Notifications.scheduleNotificationAsync({
         content: { title, body, sound: 'default' },
