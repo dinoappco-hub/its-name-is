@@ -29,7 +29,7 @@ const FallbackImage = memo(({ uri, style, iconSize = 36, bgColor, iconColor, ico
   uri: string; style: any; iconSize?: number; bgColor: string; iconColor: string; iconName?: keyof typeof MaterialIcons.glyphMap;
 }) => {
   const [failed, setFailed] = useState(false);
-  const validUri = uri && typeof uri === 'string' && uri.startsWith('http');
+  const validUri = uri && typeof uri === 'string' && (uri.startsWith('http://') || uri.startsWith('https://'));
   if (failed || !validUri) {
     return (
       <View style={[style, { alignItems: 'center', justifyContent: 'center', backgroundColor: bgColor }]}> 
@@ -37,7 +37,16 @@ const FallbackImage = memo(({ uri, style, iconSize = 36, bgColor, iconColor, ico
       </View>
     );
   }
-  return <Image source={{ uri }} style={style} contentFit="cover" transition={200} cachePolicy="memory-disk" onError={() => setFailed(true)} />;
+  return (
+    <Image
+      source={{ uri }}
+      style={style}
+      contentFit="cover"
+      transition={200}
+      cachePolicy="memory-disk"
+      onError={() => { console.warn('[FallbackImage] Failed to load:', uri?.substring(0, 80)); setFailed(true); }}
+    />
+  );
 });
 
 export default function FeedScreen() {
@@ -433,9 +442,9 @@ const styles = StyleSheet.create({
   featuredSection: { marginBottom: 20 },
   sectionTitle: { fontSize: 15, fontWeight: '600', marginBottom: 12 },
   featuredRow: { flexDirection: 'row', gap: 10 },
-  featuredCard: { flex: 1, height: 240, borderRadius: 16, overflow: 'hidden' },
+  featuredCard: { flex: 1, height: 240, borderRadius: 16, overflow: 'hidden', backgroundColor: '#1a1a2e' },
   featuredCardFirst: { flex: 1.5 },
-  featuredImage: { width: '100%', height: '100%' },
+  featuredImage: { width: '100%', height: '100%', backgroundColor: '#1a1a2e' },
   featuredOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 10, paddingTop: 30 },
   featuredName: { fontSize: 13, fontWeight: '600', color: '#fff', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   featuredBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
@@ -448,8 +457,8 @@ const styles = StyleSheet.create({
   sortChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 9999 },
   sortChipText: { fontSize: 11, fontWeight: '500' },
   card: { marginBottom: CARD_GAP, borderRadius: 12, overflow: 'hidden' },
-  cardImageWrap: { width: '100%', aspectRatio: 0.65 },
-  cardImage: { width: '100%', height: '100%' },
+  cardImageWrap: { width: '100%', aspectRatio: 0.75, backgroundColor: '#1a1a2e' },
+  cardImage: { width: '100%', height: '100%', backgroundColor: '#1a1a2e' },
   featuredBadge: { position: 'absolute', top: 8, left: 8, flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 9999, paddingHorizontal: 6, paddingVertical: 3 },
   featuredBadgeText: { fontSize: 9, fontWeight: '700' },
   cardContent: { padding: 10 },
