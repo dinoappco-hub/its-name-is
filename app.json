@@ -35,7 +35,7 @@
     },
     "plugins": [
       "expo-router",
-[
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash.png",
@@ -46,12 +46,19 @@
       ],
       "expo-web-browser",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "its name is. needs camera access to photograph objects for the community to name."
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "its name is. needs photo library access to upload objects.",
           "cameraPermission": "its name is. needs camera access to photograph objects."
         }
-      ]
+      ],
+      "expo-haptics"
     ],
     "experiments": {
       "typedRoutes": true
