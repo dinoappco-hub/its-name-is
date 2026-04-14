@@ -1,20 +1,40 @@
 // Safe wrapper — pure JS fallbacks using React Native Animated for smoothness
 // No native reanimated dependencies
+// Custom wrapper components strip unsupported props (entering, exiting, layout)
 
 import {
-  View,
+  View as RNView,
   Text as RNText,
   ScrollView as RNScrollView,
   Animated as RNAnimated,
-  Easing as RNEasing,
+  ViewProps,
+  TextProps,
+  ScrollViewProps,
 } from 'react-native';
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, forwardRef } from 'react';
 
-// Use RN Animated components for smooth transitions
+// Wrapper components that strip reanimated-specific props (entering, exiting, layout)
+// and pass only valid RN Animated props through
+
+const AnimatedViewInner = forwardRef<RNView, any>(({ entering, exiting, layout, ...rest }, ref) => {
+  return <RNAnimated.View ref={ref} {...rest} />;
+});
+AnimatedViewInner.displayName = 'SafeAnimatedView';
+
+const AnimatedTextInner = forwardRef<RNText, any>(({ entering, exiting, layout, ...rest }, ref) => {
+  return <RNAnimated.Text ref={ref} {...rest} />;
+});
+AnimatedTextInner.displayName = 'SafeAnimatedText';
+
+const AnimatedScrollViewInner = forwardRef<RNScrollView, any>(({ entering, exiting, layout, ...rest }, ref) => {
+  return <RNAnimated.ScrollView ref={ref} {...rest} />;
+});
+AnimatedScrollViewInner.displayName = 'SafeAnimatedScrollView';
+
 const SafeAnimated = {
-  View: RNAnimated.View,
-  Text: RNAnimated.Text,
-  ScrollView: RNAnimated.ScrollView,
+  View: AnimatedViewInner,
+  Text: AnimatedTextInner,
+  ScrollView: AnimatedScrollViewInner,
 };
 
 export default SafeAnimated;
@@ -27,7 +47,6 @@ class SharedValueImpl {
   constructor(init: number) {
     this._rawValue = typeof init === 'number' ? init : 0;
     this._animValue = new RNAnimated.Value(this._rawValue);
-    // Keep rawValue in sync via listener
     this._animValue.addListener(({ value }) => {
       this._rawValue = value;
     });
@@ -38,14 +57,13 @@ class SharedValueImpl {
   }
 
   set value(newVal: any) {
-    // Handle animated marker objects from withTiming/withSpring
     if (newVal && typeof newVal === 'object' && newVal.__timing) {
       RNAnimated.timing(this._animValue, {
         toValue: newVal.toValue,
         duration: newVal.duration || 300,
         useNativeDriver: false,
       }).start((result) => {
-        if (newVal.callback) newVal.callback(result.finished);
+        if (typeof newVal.callback === 'function') newVal.callback(result.finished);
       });
       return;
     }
@@ -58,11 +76,10 @@ class SharedValueImpl {
         mass: cfg.mass || 0.8,
         useNativeDriver: false,
       }).start((result) => {
-        if (newVal.callback) newVal.callback(result.finished);
+        if (typeof newVal.callback === 'function') newVal.callback(result.finished);
       });
       return;
     }
-    // Plain number — set immediately
     if (typeof newVal === 'number') {
       this._rawValue = newVal;
       this._animValue.setValue(newVal);
@@ -79,25 +96,19 @@ export const useSharedValue = (init: any) => {
 };
 
 // useAnimatedStyle: polls the style factory and returns reactive style
-// Uses a slightly longer interval to reduce jank from excessive re-renders
 export const useAnimatedStyle = (fn: () => any) => {
   const [style, setStyle] = useState(() => {
     try { return fn(); } catch { return {}; }
   });
 
   useEffect(() => {
-    // Poll at 33ms (~30fps) — sufficient for UI transitions, avoids overloading JS thread
     const interval = setInterval(() => {
       try {
         const newStyle = fn();
         setStyle((prev: any) => {
-          // Quick shallow compare to avoid unnecessary re-renders
           const keys = Object.keys(newStyle);
           for (const k of keys) {
-            if (k === 'transform') {
-              // Always update transforms
-              return newStyle;
-            }
+            if (k === 'transform') return newStyle;
             if (prev[k] !== newStyle[k]) return newStyle;
           }
           return prev;
@@ -115,7 +126,7 @@ export const withTiming = (toValue: any, config?: any, callback?: any) => {
   if (typeof toValue === 'number') {
     return { __timing: true, toValue, duration: config?.duration || 300, callback };
   }
-  if (callback) {
+  if (typeof callback === 'function') {
     try { callback(true); } catch {}
   }
   return toValue;
