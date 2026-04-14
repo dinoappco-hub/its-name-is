@@ -37,13 +37,13 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
         Animated.timing(bounceAnim, {
           toValue: 1,
           duration: 600,
-          easing: Easing.inOut(Easing.sine),
+          easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(bounceAnim, {
           toValue: 0,
           duration: 600,
-          easing: Easing.inOut(Easing.sine),
+          easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
       ])
