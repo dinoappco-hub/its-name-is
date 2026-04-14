@@ -29,14 +29,15 @@ const FallbackImage = memo(({ uri, style, iconSize = 36, bgColor, iconColor, ico
   uri: string; style: any; iconSize?: number; bgColor: string; iconColor: string; iconName?: keyof typeof MaterialIcons.glyphMap;
 }) => {
   const [failed, setFailed] = useState(false);
-  if (failed || !uri) {
+  const validUri = uri && typeof uri === 'string' && uri.startsWith('http');
+  if (failed || !validUri) {
     return (
       <View style={[style, { alignItems: 'center', justifyContent: 'center', backgroundColor: bgColor }]}> 
         <MaterialIcons name={iconName} size={iconSize} color={iconColor} />
       </View>
     );
   }
-  return <Image source={{ uri }} style={style} contentFit="cover" transition={200} onError={() => setFailed(true)} />;
+  return <Image source={{ uri }} style={style} contentFit="cover" transition={200} cachePolicy="memory-disk" onError={() => setFailed(true)} />;
 });
 
 export default function FeedScreen() {
@@ -292,13 +293,22 @@ export default function FeedScreen() {
   const renderEmpty = () => {
     return (
       <View style={styles.emptyWrap}>
-        <MaterialIcons name="photo-camera" size={48} color={t.textMuted} />
+        <DinoLoader message="" size="medium" />
         <Text style={[styles.emptyTitle, { color: t.textPrimary }]}>No objects yet</Text>
-        <Text style={[styles.emptyText, { color: t.textSecondary }]}>Be the first to snap an object and let the community name it!</Text>
-        <Pressable style={[styles.emptyBtn, { backgroundColor: t.primary }]} onPress={() => router.navigate('/(tabs)/snap')}>
-          <MaterialIcons name="camera-alt" size={18} color={t.background} />
-          <Text style={[styles.emptyBtnText, { color: t.background }]}>Snap First Object</Text>
-        </Pressable>
+        <Text style={[styles.emptyText, { color: t.textSecondary }]}>
+          {search ? `No results for "${search}"` : selectedCategory !== 'all' ? 'Nothing in this category yet — be the first!' : 'Snap an object and let the community give it a name!'}
+        </Text>
+        {!search ? (
+          <Pressable style={[styles.emptyBtn, { backgroundColor: t.primary }]} onPress={() => { triggerHaptic('selection'); router.navigate('/(tabs)/snap'); }}>
+            <MaterialIcons name="camera-alt" size={18} color={t.background} />
+            <Text style={[styles.emptyBtnText, { color: t.background }]}>Snap First Object</Text>
+          </Pressable>
+        ) : (
+          <Pressable style={[styles.emptyBtn, { backgroundColor: t.surface, borderWidth: 1, borderColor: t.border }]} onPress={() => setSearch('')}>
+            <MaterialIcons name="close" size={16} color={t.textSecondary} />
+            <Text style={[styles.emptyBtnText, { color: t.textSecondary }]}>Clear Search</Text>
+          </Pressable>
+        )}
       </View>
     );
   };
@@ -459,10 +469,10 @@ const styles = StyleSheet.create({
   welcomeSubtitle: { fontSize: 13, fontWeight: '400', textAlign: 'center', lineHeight: 18, marginBottom: 4 },
   welcomeDinos: { marginTop: 4 },
   centeredLoader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 32, gap: 12 },
-  emptyTitle: { fontSize: 15, fontWeight: '600', marginTop: 4 },
-  emptyText: { fontSize: 13, fontWeight: '400', textAlign: 'center', lineHeight: 20 },
-  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12, marginTop: 8 },
-  emptyBtnText: { fontSize: 14, fontWeight: '700' },
+  emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 32, paddingHorizontal: 32, gap: 8 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', marginTop: 0 },
+  emptyText: { fontSize: 14, fontWeight: '400', textAlign: 'center', lineHeight: 22, marginBottom: 4 },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, paddingHorizontal: 24, paddingVertical: 14, marginTop: 8 },
+  emptyBtnText: { fontSize: 15, fontWeight: '700' },
   dinoRefreshWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 8, marginTop: -16 },
 });

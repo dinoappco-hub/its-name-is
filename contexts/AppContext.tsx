@@ -95,8 +95,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (objectsRes.error) {
-        console.error('Failed to fetch objects:', objectsRes.error);
+        console.error('[AppContext] Failed to fetch objects:', objectsRes.error);
       }
+      console.log('[AppContext] loadData: received', objectsRes.data?.length ?? 0, 'objects, imageUris:', objectsRes.data?.map(o => o.imageUri?.substring(0, 60)).join(', '));
       if (objectsRes.data && objectsRes.data.length >= 0) {
         setObjects(objectsRes.data);
       }

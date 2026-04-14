@@ -60,9 +60,10 @@ export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error:
       .order('created_at', { ascending: false });
 
     if (objErr) {
-      console.error('fetchObjects query error:', objErr.message, objErr);
+      console.error('[objectService] fetchObjects query error:', objErr.message, objErr.code, objErr.hint);
       return { data: [], error: objErr.message };
     }
+    console.log('[objectService] fetchObjects returned', objects?.length ?? 0, 'objects');
     if (!objects || objects.length === 0) return { data: [], error: null };
 
     const objectIds = objects.map((o: any) => o.id);
@@ -122,9 +123,12 @@ export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error:
 
       const totalVotes = suggestedNames.reduce((sum, n) => sum + Math.max(0, n.votes), 0);
 
+      const imageUri = obj.image_url || '';
+      if (!imageUri) console.warn('[objectService] Object', obj.id, 'has no image_url');
+
       return {
         id: obj.id,
-        imageUri: obj.image_url,
+        imageUri,
         description: obj.description,
         category: obj.category || 'random',
         suggestedNames,
