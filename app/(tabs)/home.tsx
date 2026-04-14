@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef, memo } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, ScrollView as HScrollView, FlatList, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,6 +23,21 @@ import { useMute } from '../../hooks/useMute';
 const CARD_GAP = 10;
 
 type SortMode = 'trending' | 'new' | 'top';
+
+// Reusable image with error fallback
+const FallbackImage = memo(({ uri, style, iconSize = 36, bgColor, iconColor, iconName = 'image' }: {
+  uri: string; style: any; iconSize?: number; bgColor: string; iconColor: string; iconName?: keyof typeof MaterialIcons.glyphMap;
+}) => {
+  const [failed, setFailed] = useState(false);
+  if (failed || !uri) {
+    return (
+      <View style={[style, { alignItems: 'center', justifyContent: 'center', backgroundColor: bgColor }]}> 
+        <MaterialIcons name={iconName} size={iconSize} color={iconColor} />
+      </View>
+    );
+  }
+  return <Image source={{ uri }} style={style} contentFit="cover" transition={200} onError={() => setFailed(true)} />;
+});
 
 export default function FeedScreen() {
   const insets = useSafeAreaInsets();
@@ -120,7 +135,7 @@ export default function FeedScreen() {
           onPress={() => { triggerHaptic('selection'); router.push(`/object/${item.id}`); }}
         >
           <View style={styles.cardImageWrap}>
-            <Image source={{ uri: item.imageUri }} style={styles.cardImage} contentFit="cover" transition={200} />
+            <FallbackImage uri={item.imageUri} style={styles.cardImage} iconSize={36} bgColor={t.surface} iconColor={t.textMuted} />
             {item.isFeatured ? (
               <View style={[styles.featuredBadge, { backgroundColor: t.primary }]}>
                 <MaterialIcons name="star" size={10} color={t.background} />
@@ -141,7 +156,7 @@ export default function FeedScreen() {
               </View>
             </View>
             <Pressable style={styles.cardUser} onPress={(e) => { e.stopPropagation?.(); navigateToUser(item.submittedBy.id); }} hitSlop={4}>
-              <Image source={{ uri: item.submittedBy.avatar }} style={styles.cardAvatar} contentFit="cover" />
+              <FallbackImage uri={item.submittedBy.avatar} style={styles.cardAvatar} iconSize={10} bgColor={t.surface} iconColor={t.textMuted} iconName="person" />
               <Text style={[styles.cardUsername, { color: t.textSecondary }]} numberOfLines={1}>@{item.submittedBy.username}</Text>
             </Pressable>
           </View>
@@ -207,7 +222,7 @@ export default function FeedScreen() {
             {activeUsers.map((u) => (
               <Pressable key={u.id} style={styles.activeUserItem} onPress={() => navigateToUser(u.id)}>
                 <View style={[styles.activeAvatarWrap, { borderColor: t.border }]}>
-                  <Image source={{ uri: u.avatar }} style={styles.activeAvatar} contentFit="cover" />
+                  <FallbackImage uri={u.avatar} style={styles.activeAvatar} iconSize={20} bgColor={t.surface} iconColor={t.textMuted} iconName="person" />
                 </View>
                 <Text style={[styles.activeUsername, { color: t.textMuted }]} numberOfLines={1}>{u.username}</Text>
               </Pressable>
@@ -244,13 +259,13 @@ export default function FeedScreen() {
               const topN = [...obj.suggestedNames].sort((a, b) => b.votes - a.votes)[0];
               return (
                 <Pressable key={obj.id} style={[styles.featuredCard, idx === 0 && styles.featuredCardFirst]} onPress={() => { Haptics?.selectionAsync(); router.push(`/object/${obj.id}`); }}>
-                  <Image source={{ uri: obj.imageUri }} style={styles.featuredImage} contentFit="cover" transition={200} />
+                  <FallbackImage uri={obj.imageUri} style={styles.featuredImage} iconSize={40} bgColor={t.surface} iconColor={t.textMuted} />
                   <View style={styles.featuredOverlay}>
                     <Text style={styles.featuredName} numberOfLines={1}>{topN?.name || 'Unnamed'}</Text>
                     <View style={styles.featuredBottom}>
                       <View style={styles.featuredVotes}><MaterialIcons name="arrow-upward" size={11} color="#fff" /><Text style={styles.featuredVoteText}>{obj.totalVotes}</Text></View>
                       <Pressable style={styles.featuredUser} onPress={(e) => { e.stopPropagation?.(); navigateToUser(obj.submittedBy.id); }} hitSlop={4}>
-                        <Image source={{ uri: obj.submittedBy.avatar }} style={styles.featuredUserAvatar} contentFit="cover" />
+                        <FallbackImage uri={obj.submittedBy.avatar} style={styles.featuredUserAvatar} iconSize={12} bgColor={t.surface} iconColor={t.textMuted} iconName="person" />
                       </Pressable>
                     </View>
                   </View>

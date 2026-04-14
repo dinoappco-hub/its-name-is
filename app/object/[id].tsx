@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Modal, Share } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -24,6 +24,21 @@ import { useAccessibility } from '../../hooks/useAccessibility';
 import { useMute } from '../../hooks/useMute';
 import { sendPushNotification } from '../../services/pushService';
 
+
+// Reusable image with error fallback
+const FallbackImage = memo(({ uri, style, iconSize = 36, bgColor = '#1a1a1f', iconColor = '#666', iconName = 'image' }: {
+  uri: string; style: any; iconSize?: number; bgColor?: string; iconColor?: string; iconName?: keyof typeof MaterialIcons.glyphMap;
+}) => {
+  const [failed, setFailed] = useState(false);
+  if (failed || !uri) {
+    return (
+      <View style={[style, { alignItems: 'center', justifyContent: 'center', backgroundColor: bgColor }]}> 
+        <MaterialIcons name={iconName} size={iconSize} color={iconColor} />
+      </View>
+    );
+  }
+  return <Image source={{ uri }} style={style} contentFit="cover" transition={200} onError={() => setFailed(true)} />;
+});
 
 export default function ObjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -409,7 +424,7 @@ export default function ObjectDetailScreen() {
       <View key={comment.id} style={{ marginLeft: indent }}>
         <View style={[styles.commentCard, { backgroundColor: t.surface, borderColor: t.border }, depth > 0 && { backgroundColor: t.surfaceElevated, borderColor: t.borderLight }]}>
           <Pressable onPress={() => navigateToUser(comment.user.id)} hitSlop={4}>
-            <Image source={{ uri: comment.user.avatar }} style={styles.commentAvatar} contentFit="cover" />
+            <FallbackImage uri={comment.user.avatar} style={styles.commentAvatar} iconSize={14} bgColor={t.surface} iconColor={t.textMuted} iconName="person" />
           </Pressable>
           <View style={styles.commentBody}>
             <View style={styles.commentHeader}>
@@ -490,7 +505,7 @@ export default function ObjectDetailScreen() {
               </Pressable>
             </View>
             <Pressable style={styles.nameSubmitter} onPress={() => navigateToUser(item.submittedBy.id)} hitSlop={4}>
-              <Image source={{ uri: item.submittedBy.avatar }} style={styles.nameAvatar} contentFit="cover" />
+              <FallbackImage uri={item.submittedBy.avatar} style={styles.nameAvatar} iconSize={10} bgColor={t.surface} iconColor={t.textMuted} iconName="person" />
               <Text style={[styles.nameUsername, { color: t.textSecondary }]}>@{item.submittedBy.username}</Text>
               <Text style={[styles.nameTime, { color: t.textMuted }]}>{timeAgo(item.submittedAt)}</Text>
             </Pressable>
@@ -539,7 +554,7 @@ export default function ObjectDetailScreen() {
         >
           <Animated.View entering={shouldAnimate ? FadeIn.duration(400) : undefined}>
             <View style={styles.heroWrap}>
-              <Image source={{ uri: object.imageUri }} style={styles.heroImage} contentFit="cover" transition={200} />
+              <FallbackImage uri={object.imageUri} style={styles.heroImage} iconSize={56} bgColor={t.surface} iconColor={t.textMuted} />
               <View style={styles.heroOverlay}>
                 <Pressable style={styles.heroBack} onPress={() => router.back()}>
                   <MaterialIcons name="arrow-back" size={22} color="#fff" />
@@ -633,7 +648,7 @@ export default function ObjectDetailScreen() {
           <View style={styles.contentPad}>
             <Pressable onPress={() => navigateToUser(object.submittedBy.id)}>
               <Animated.View entering={shouldAnimate ? FadeInUp.delay(200) : undefined} style={styles.submitterCard}>
-                <Image source={{ uri: object.submittedBy.avatar }} style={styles.submitterAvatar} contentFit="cover" />
+                <FallbackImage uri={object.submittedBy.avatar} style={styles.submitterAvatar} iconSize={18} bgColor={t.surface} iconColor={t.textMuted} iconName="person" />
                 <View style={styles.submitterInfo}>
                   <View style={styles.submitterNameRow}>
                     <Text style={[styles.submitterName, { color: t.textPrimary }]}>@{object.submittedBy.username}</Text>
@@ -791,11 +806,7 @@ export default function ObjectDetailScreen() {
 
               {/* Comment input */}
               <View style={styles.commentInputRow}>
-                <Image
-                  source={{ uri: currentUser.avatar }}
-                  style={styles.commentInputAvatar}
-                  contentFit="cover"
-                />
+                <FallbackImage uri={currentUser.avatar} style={styles.commentInputAvatar} iconSize={16} bgColor={t.surface} iconColor={t.textMuted} iconName="person" />
                 <TextInput
                   style={[styles.commentTextInput, { backgroundColor: t.surface, color: t.textPrimary, borderColor: t.border }]}
                   placeholder="Add a comment..."

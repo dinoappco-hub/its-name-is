@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, memo } from 'react';
 import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Dimensions, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -18,6 +18,21 @@ import { ObjectSubmission } from '../../services/types';
 const { width: SCREEN_W } = Dimensions.get('window');
 const GRID_GAP = 10;
 const CARD_W = (SCREEN_W - 32 - GRID_GAP) / 2;
+
+// Reusable image with error fallback
+const FallbackImage = memo(({ uri, style, iconSize = 36, bgColor = '#1a1a1f', iconColor = '#666', iconName = 'image' }: {
+  uri: string; style: any; iconSize?: number; bgColor?: string; iconColor?: string; iconName?: keyof typeof MaterialIcons.glyphMap;
+}) => {
+  const [failed, setFailed] = useState(false);
+  if (failed || !uri) {
+    return (
+      <View style={[style, { alignItems: 'center', justifyContent: 'center', backgroundColor: bgColor }]}> 
+        <MaterialIcons name={iconName} size={iconSize} color={iconColor} />
+      </View>
+    );
+  }
+  return <Image source={{ uri }} style={style} contentFit="cover" transition={200} onError={() => setFailed(true)} />;
+});
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -86,7 +101,7 @@ export default function ProfileScreen() {
         onPress={() => { triggerHaptic('selection'); router.push(`/object/${item.id}`); }}
         onLongPress={() => handleDeleteSubmission(item)}
       >
-        <Image source={{ uri: item.imageUri }} style={styles.submissionImage} contentFit="cover" transition={200} />
+        <FallbackImage uri={item.imageUri} style={styles.submissionImage} iconSize={32} bgColor={t.surface} iconColor={t.textMuted} />
         <View style={styles.submissionOverlay}>
           <Text style={styles.submissionName} numberOfLines={1}>{topName?.name || 'Unnamed'}</Text>
           <View style={styles.submissionMeta}>
@@ -136,7 +151,7 @@ export default function ProfileScreen() {
       </View>
 
       <Animated.View entering={shouldAnimate ? FadeInDown.duration(400) : undefined} style={[styles.profileCard, { backgroundColor: t.surface, borderColor: t.border }]}>
-        <Image source={{ uri: avatarUri }} style={styles.avatar} contentFit="cover" />
+        <FallbackImage uri={avatarUri || ''} style={styles.avatar} iconSize={28} bgColor={t.surface} iconColor={t.textMuted} iconName="person" />
         <View style={styles.profileInfo}>
           <View style={styles.nameRow}>
             <Text style={[styles.displayName, { color: t.textPrimary, fontSize: scaledSize(18), fontWeight: fw('700') }]}>{displayName}</Text>
