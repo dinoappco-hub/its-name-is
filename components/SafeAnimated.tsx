@@ -6,6 +6,7 @@ import {
   Text as RNText,
   ScrollView as RNScrollView,
   Animated as RNAnimated,
+  Easing as RNEasing,
 } from 'react-native';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 
@@ -22,12 +23,14 @@ export default SafeAnimated;
 class SharedValueImpl {
   _animValue: RNAnimated.Value;
   _rawValue: number;
-  _listeners: Set<() => void>;
 
   constructor(init: number) {
     this._rawValue = typeof init === 'number' ? init : 0;
     this._animValue = new RNAnimated.Value(this._rawValue);
-    this._listeners = new Set();
+    // Keep rawValue in sync via listener
+    this._animValue.addListener(({ value }) => {
+      this._rawValue = value;
+    });
   }
 
   get value() {
@@ -37,46 +40,33 @@ class SharedValueImpl {
   set value(newVal: any) {
     // Handle animated marker objects from withTiming/withSpring
     if (newVal && typeof newVal === 'object' && newVal.__timing) {
-      this._animateTo(newVal.toValue, newVal.duration || 300, newVal.callback);
+      RNAnimated.timing(this._animValue, {
+        toValue: newVal.toValue,
+        duration: newVal.duration || 300,
+        useNativeDriver: false,
+      }).start((result) => {
+        if (newVal.callback) newVal.callback(result.finished);
+      });
       return;
     }
     if (newVal && typeof newVal === 'object' && newVal.__spring) {
-      this._springTo(newVal.toValue, newVal.callback);
+      const cfg = newVal.config || {};
+      RNAnimated.spring(this._animValue, {
+        toValue: newVal.toValue,
+        damping: cfg.damping || 22,
+        stiffness: cfg.stiffness || 200,
+        mass: cfg.mass || 0.8,
+        useNativeDriver: false,
+      }).start((result) => {
+        if (newVal.callback) newVal.callback(result.finished);
+      });
       return;
     }
     // Plain number — set immediately
     if (typeof newVal === 'number') {
       this._rawValue = newVal;
       this._animValue.setValue(newVal);
-      this._listeners.forEach(fn => { try { fn(); } catch {} });
     }
-  }
-
-  // Internal: for withTiming to use
-  _animateTo(toValue: number, duration: number, callback?: (finished: boolean) => void) {
-    RNAnimated.timing(this._animValue, {
-      toValue,
-      duration,
-      useNativeDriver: false,
-    }).start((result) => {
-      this._rawValue = toValue;
-      this._listeners.forEach(fn => { try { fn(); } catch {} });
-      if (callback) callback(result.finished);
-    });
-  }
-
-  _springTo(toValue: number, callback?: (finished: boolean) => void) {
-    RNAnimated.spring(this._animValue, {
-      toValue,
-      damping: 22,
-      stiffness: 200,
-      mass: 0.8,
-      useNativeDriver: false,
-    }).start((result) => {
-      this._rawValue = toValue;
-      this._listeners.forEach(fn => { try { fn(); } catch {} });
-      if (callback) callback(result.finished);
-    });
   }
 }
 
@@ -88,31 +78,41 @@ export const useSharedValue = (init: any) => {
   return ref.current as any;
 };
 
+// useAnimatedStyle: polls the style factory and returns reactive style
+// Uses a slightly longer interval to reduce jank from excessive re-renders
 export const useAnimatedStyle = (fn: () => any) => {
-  // For RN Animated, we return plain styles calculated from shared values
-  // We use a re-render approach driven by value changes
   const [style, setStyle] = useState(() => {
     try { return fn(); } catch { return {}; }
   });
 
   useEffect(() => {
-    // Poll at 16ms (~60fps) for smooth updates
+    // Poll at 33ms (~30fps) — sufficient for UI transitions, avoids overloading JS thread
     const interval = setInterval(() => {
       try {
         const newStyle = fn();
-        setStyle(newStyle);
+        setStyle((prev: any) => {
+          // Quick shallow compare to avoid unnecessary re-renders
+          const keys = Object.keys(newStyle);
+          for (const k of keys) {
+            if (k === 'transform') {
+              // Always update transforms
+              return newStyle;
+            }
+            if (prev[k] !== newStyle[k]) return newStyle;
+          }
+          return prev;
+        });
       } catch {}
-    }, 16);
+    }, 33);
     return () => clearInterval(interval);
   }, []);
 
   return style;
 };
 
-// withTiming: animate a shared value smoothly
+// withTiming: return marker for SharedValue setter
 export const withTiming = (toValue: any, config?: any, callback?: any) => {
   if (typeof toValue === 'number') {
-    // Return a marker that useSharedValue.set can detect
     return { __timing: true, toValue, duration: config?.duration || 300, callback };
   }
   if (callback) {
@@ -121,7 +121,7 @@ export const withTiming = (toValue: any, config?: any, callback?: any) => {
   return toValue;
 };
 
-// withSpring: spring animation
+// withSpring: return marker for SharedValue setter
 export const withSpring = (toValue: any, config?: any) => {
   if (typeof toValue === 'number') {
     return { __spring: true, toValue, config };
@@ -129,7 +129,7 @@ export const withSpring = (toValue: any, config?: any) => {
   return toValue;
 };
 
-export const withRepeat = (targetValue: any, count?: number, reverse?: boolean) => targetValue;
+export const withRepeat = (targetValue: any, _count?: number, _reverse?: boolean) => targetValue;
 export const withDelay = (_d: any, anim: any) => anim;
 export const runOnJS = (fn: any) => fn;
 
@@ -137,14 +137,12 @@ export const interpolate = (val: number, input: number[], output: number[]) => {
   if (!input || !output || input.length < 2 || output.length < 2) return val;
   const minIn = input[0];
   const maxIn = input[input.length - 1];
-  // Multi-stop interpolation
   for (let i = 0; i < input.length - 1; i++) {
     if (val >= input[i] && val <= input[i + 1]) {
       const segT = (val - input[i]) / (input[i + 1] - input[i] || 1);
       return output[i] + segT * (output[i + 1] - output[i]);
     }
   }
-  // Clamp
   if (val <= minIn) return output[0];
   if (val >= maxIn) return output[output.length - 1];
   const t = Math.max(0, Math.min(1, (val - minIn) / (maxIn - minIn || 1)));
@@ -155,9 +153,9 @@ export const Easing = {
   linear: (t: number) => t,
   ease: (t: number) => t,
   bezier: () => (t: number) => t,
-  inOut: (fn: any) => fn || ((t: number) => t),
-  in: (fn: any) => fn || ((t: number) => t),
-  out: (fn: any) => fn || ((t: number) => t),
+  inOut: (_fn: any) => _fn || ((t: number) => t),
+  in: (_fn: any) => _fn || ((t: number) => t),
+  out: (_fn: any) => _fn || ((t: number) => t),
   cubic: (t: number) => t,
 };
 

@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { Image } from 'expo-image';
 import { useAppTheme } from '../hooks/useTheme';
 
@@ -17,82 +17,168 @@ const DINO_SIZES = {
 export default function DinoLoader({ message = 'Loading...', size = 'medium' }: DinoLoaderProps) {
   const { colors: t } = useAppTheme();
   const dims = DINO_SIZES[size];
-  const [rotation, setRotation] = useState(0);
-  const [bounce, setBounce] = useState(0);
-  const [dotPhase, setDotPhase] = useState(0);
-  const animRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Use RN Animated for smooth 60fps native-driven animations
+  const rotationAnim = useRef(new Animated.Value(0)).current;
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const dotAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    let startTime = Date.now();
-    animRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      // Rotation: full cycle every 2400ms
-      setRotation((elapsed / 2400) * 360);
-      // Bounce: ping-pong every 600ms
-      const bouncePhase = (elapsed % 1200) / 600;
-      setBounce(bouncePhase <= 1 ? bouncePhase : 2 - bouncePhase);
-      // Dots: cycle every 900ms
-      setDotPhase((elapsed % 900) / 900);
-    }, 32);
+    // Rotation loop - full circle every 2400ms
+    const rotLoop = Animated.loop(
+      Animated.timing(rotationAnim, {
+        toValue: 1,
+        duration: 2400,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+
+    // Bounce loop - up and down every 1200ms
+    const bounceLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.inOut(Easing.sine),
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 600,
+          easing: Easing.inOut(Easing.sine),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    // Dot animation loop
+    const dotLoop = Animated.loop(
+      Animated.timing(dotAnim, {
+        toValue: 1,
+        duration: 900,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      })
+    );
+
+    rotLoop.start();
+    bounceLoop.start();
+    dotLoop.start();
+
     return () => {
-      if (animRef.current) clearInterval(animRef.current);
+      rotLoop.stop();
+      bounceLoop.stop();
+      dotLoop.stop();
     };
   }, []);
 
-  const getTransform = (angleOffset: number) => {
-    const angle = ((rotation * Math.PI) / 180) + angleOffset;
-    const x = Math.cos(angle) * dims.orbit;
-    const y = Math.sin(angle) * dims.orbit * 0.4;
-    const sinVal = Math.sin(angle);
-    const scale = 0.75 + (sinVal + 1) * 0.175; // maps [-1,1] to [0.75,1.1]
-    const translateY = angleOffset === 0
-      ? bounce * -4
-      : (1 - bounce) * -4;
-    const rotDeg = sinVal * 12 * (angleOffset === 0 ? 1 : -1);
-    return {
-      transform: [
-        { translateX: x },
-        { translateY: y + translateY },
-        { scale },
-        { rotate: `${rotDeg}deg` },
-      ],
-      zIndex: sinVal > 0 ? 2 : 0,
-    };
-  };
+  // Stego: orbits at angle 0 offset
+  const stegoTranslateX = rotationAnim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [dims.orbit, 0, -dims.orbit, 0, dims.orbit],
+  });
+  const stegoTranslateY = rotationAnim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [0, -dims.orbit * 0.4, 0, dims.orbit * 0.4, 0],
+  });
+  const stegoScale = rotationAnim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [1, 0.85, 0.75, 0.85, 1],
+  });
+  const stegoBounce = bounceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -4],
+  });
+  const stegoRotate = rotationAnim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: ['0deg', '-12deg', '0deg', '12deg', '0deg'],
+  });
 
-  const stegoStyle = getTransform(0);
-  const brontoStyle = getTransform(Math.PI);
+  // Bronto: orbits at angle PI offset (opposite)
+  const brontoTranslateX = rotationAnim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [-dims.orbit, 0, dims.orbit, 0, -dims.orbit],
+  });
+  const brontoTranslateY = rotationAnim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [0, dims.orbit * 0.4, 0, -dims.orbit * 0.4, 0],
+  });
+  const brontoScale = rotationAnim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [0.75, 0.85, 1, 0.85, 0.75],
+  });
+  const brontoBounce = bounceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-4, 0],
+  });
+  const brontoRotate = rotationAnim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: ['0deg', '12deg', '0deg', '-12deg', '0deg'],
+  });
 
-  const dot1Opacity = dotPhase < 0.33 ? 1 : 0.3;
-  const dot2Opacity = dotPhase >= 0.33 && dotPhase < 0.66 ? 1 : 0.3;
-  const dot3Opacity = dotPhase >= 0.66 ? 1 : 0.3;
+  // Dot opacities
+  const dot1Opacity = dotAnim.interpolate({
+    inputRange: [0, 0.33, 0.34, 1],
+    outputRange: [1, 1, 0.3, 0.3],
+  });
+  const dot2Opacity = dotAnim.interpolate({
+    inputRange: [0, 0.32, 0.33, 0.66, 0.67, 1],
+    outputRange: [0.3, 0.3, 1, 1, 0.3, 0.3],
+  });
+  const dot3Opacity = dotAnim.interpolate({
+    inputRange: [0, 0.65, 0.66, 1],
+    outputRange: [0.3, 0.3, 1, 1],
+  });
 
   return (
     <View style={styles.container}>
       <View style={[styles.orbitContainer, { width: dims.container, height: dims.container }]}>
         <View style={[styles.orbitShadow, { width: dims.orbit * 2.2, height: dims.orbit * 0.9, backgroundColor: `${t.textMuted}10`, borderRadius: dims.orbit }]} />
-        <View style={[styles.dinoWrap, { width: dims.dino, height: dims.dino }, stegoStyle]}>
+        <Animated.View style={[
+          styles.dinoWrap,
+          { width: dims.dino, height: dims.dino },
+          {
+            transform: [
+              { translateX: stegoTranslateX },
+              { translateY: Animated.add(stegoTranslateY, stegoBounce) },
+              { scale: stegoScale },
+              { rotate: stegoRotate },
+            ],
+          },
+        ]}>
           <Image
             source={require('../assets/images/dino-stego.png')}
             style={{ width: dims.dino, height: dims.dino }}
             contentFit="contain"
           />
-        </View>
-        <View style={[styles.dinoWrap, { width: dims.dino, height: dims.dino }, brontoStyle]}>
+        </Animated.View>
+        <Animated.View style={[
+          styles.dinoWrap,
+          { width: dims.dino, height: dims.dino },
+          {
+            transform: [
+              { translateX: brontoTranslateX },
+              { translateY: Animated.add(brontoTranslateY, brontoBounce) },
+              { scale: brontoScale },
+              { rotate: brontoRotate },
+            ],
+          },
+        ]}>
           <Image
             source={require('../assets/images/dino-bronto.png')}
             style={{ width: dims.dino, height: dims.dino }}
             contentFit="contain"
           />
-        </View>
+        </Animated.View>
       </View>
       {message ? (
         <View style={styles.messageRow}>
           <Text style={[styles.message, { color: t.textSecondary }]}>{message}</Text>
           <View style={styles.dotsRow}>
-            <View style={[styles.dot, { backgroundColor: t.primary, opacity: dot1Opacity }]} />
-            <View style={[styles.dot, { backgroundColor: t.primary, opacity: dot2Opacity }]} />
-            <View style={[styles.dot, { backgroundColor: t.primary, opacity: dot3Opacity }]} />
+            <Animated.View style={[styles.dot, { backgroundColor: t.primary, opacity: dot1Opacity }]} />
+            <Animated.View style={[styles.dot, { backgroundColor: t.primary, opacity: dot2Opacity }]} />
+            <Animated.View style={[styles.dot, { backgroundColor: t.primary, opacity: dot3Opacity }]} />
           </View>
         </View>
       ) : null}
