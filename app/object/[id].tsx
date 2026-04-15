@@ -56,9 +56,7 @@ export default function ObjectDetailScreen() {
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor, a11yProps } = useAccessibility();
   const { isUserMuted, muteUser: muteUserAction, unmuteUser: unmuteUserAction } = useMute();
   const { sendRemotePush } = useNotifications();
-  const [newName, setNewName] = useState('');
-  const [showInput, setShowInput] = useState(false);
-  const [suggesting, setSuggesting] = useState(false);
+
   const { showAlert } = useAlert();
 
   // Report state
@@ -381,27 +379,7 @@ export default function ObjectDetailScreen() {
     vote(object.id, nameId, direction);
   };
 
-  const handleSuggestName = async () => {
-    if (!newName.trim()) return;
-    if (currentUser.isBanned) {
-      showAlert('Account Suspended', 'Your account has been suspended. You cannot suggest names.');
-      return;
-    }
-    if (newName.trim().length < 2) {
-      showAlert('Too short', 'Names must be at least 2 characters.');
-      return;
-    }
-    setSuggesting(true);
-    const { error } = await addNameSuggestion(object.id, newName.trim());
-    setSuggesting(false);
-    if (error) {
-      showAlert('Error', error);
-      return;
-    }
-    Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
-    setNewName('');
-    setShowInput(false);
-  };
+
 
   const timeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -727,46 +705,11 @@ export default function ObjectDetailScreen() {
             <View style={styles.namesSection}>
               <View style={styles.namesSectionHeader}>
                 <Text style={[styles.namesSectionTitle, { color: t.textPrimary }]}>Suggested Names</Text>
-                <Pressable
-                  style={[styles.suggestBtn, { borderColor: `${t.primary}40`, backgroundColor: `${t.primary}15` }]}
-                  onPress={() => {
-                    triggerHaptic('selection');
-                    setShowInput(!showInput);
-                  }}
-                >
-                  <MaterialIcons name="add" size={16} color={t.primary} />
-                  <Text style={[styles.suggestBtnText, { color: t.primary }]}>Suggest</Text>
-                </Pressable>
               </View>
-
-              {showInput ? (
-                <Animated.View entering={shouldAnimate ? FadeInDown.duration(300) : undefined} style={styles.suggestInput}>
-                  <TextInput
-                    style={[styles.suggestTextInput, { backgroundColor: t.surface, color: t.textPrimary, borderColor: t.border }]}
-                    placeholder="Your name idea..."
-                    placeholderTextColor={t.textMuted}
-                    value={newName}
-                    onChangeText={setNewName}
-                    maxLength={50}
-                    autoFocus
-                  />
-                  <Pressable
-                    style={[styles.suggestSubmit, { backgroundColor: t.primary }, (!newName.trim() || suggesting) && { opacity: 0.4 }]}
-                    onPress={handleSuggestName}
-                    disabled={suggesting}
-                  >
-                    {suggesting ? (
-                      <ActivityIndicator size="small" color={t.background} />
-                    ) : (
-                      <MaterialIcons name="send" size={18} color={t.background} />
-                    )}
-                  </Pressable>
-                </Animated.View>
-              ) : null}
 
               {sortedNames.length === 0 ? (
                 <View style={styles.noNames}>
-                  <Text style={[styles.noNamesText, { color: t.textMuted }]}>No names yet. Be the first to suggest one!</Text>
+                  <Text style={[styles.noNamesText, { color: t.textMuted }]}>No names suggested yet</Text>
                 </View>
               ) : null}
 
@@ -1025,11 +968,7 @@ const styles = StyleSheet.create({
   namesSection: { marginTop: 4 },
   namesSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   namesSectionTitle: { fontSize: 18, fontWeight: '700' },
-  suggestBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1 },
-  suggestBtnText: { fontSize: 12, fontWeight: '700' },
-  suggestInput: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  suggestTextInput: { flex: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, borderWidth: 1 },
-  suggestSubmit: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+
   noNames: { alignItems: 'center', paddingVertical: 24 },
   noNamesText: { fontSize: 13, textAlign: 'center' },
   nameRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1 },
