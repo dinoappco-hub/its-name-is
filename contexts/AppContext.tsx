@@ -68,10 +68,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [refreshing, setRefreshing] = useState(false);
   const viewedRef = useRef<Set<string>>(new Set());
 
-  // Load data when auth user changes
+  // Load data when auth user changes — with retry for session restoration
   useEffect(() => {
     if (authUser?.id) {
-      loadData(authUser.id);
+      let retryCount = 0;
+      const tryLoad = async () => {
+        const success = await loadData(authUser.id);
+        if (!success && retryCount < 3) {
+          retryCount++;
+          console.log(`[AppContext] Retry ${retryCount}/3 loading data for user ${authUser.id}`);
+          setTimeout(tryLoad, retryCount * 1000); // 1s, 2s, 3s
+        }
+      };
+      tryLoad();
     } else {
       setCurrentUser(defaultUser);
       setObjects([]);
@@ -80,12 +89,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [authUser?.id]);
 
-  const loadData = async (userId: string) => {
+  const loadData = async (userId: string): Promise<boolean> => {
     setLoading(true);
     try {
       const [profileRes, objectsRes, stats, todayCount] = await Promise.all([
         fetchUserProfile(userId),
-        fetchObjects(),
+        fetchObjects(userId),
         getUserStats(userId),
         getSubmissionsToday(userId),
       ]);
@@ -96,24 +105,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (objectsRes.error) {
         console.error('[AppContext] Failed to fetch objects:', objectsRes.error);
-      }
-      console.log('[AppContext] loadData: received', objectsRes.data?.length ?? 0, 'objects, imageUris:', objectsRes.data?.map(o => o.imageUri?.substring(0, 60)).join(', '));
-      if (objectsRes.data && objectsRes.data.length >= 0) {
-        setObjects(objectsRes.data);
+        setLoading(false);
+        return false; // Signal retry needed
       }
 
+      console.log('[AppContext] loadData: received', objectsRes.data?.length ?? 0, 'objects');
+      setObjects(objectsRes.data ?? []);
       setSubmissionsToday(todayCount);
+      setLoading(false);
+      return true;
     } catch (err: any) {
       console.error('Failed to load app data:', err?.message || err);
-    } finally {
       setLoading(false);
+      return false;
     }
   };
 
   const refreshObjects = useCallback(async () => {
     setRefreshing(true);
     try {
-      const { data, error } = await fetchObjects();
+      const { data, error } = await fetchObjects(authUser?.id || undefined);
       if (error) console.error('Refresh objects error:', error);
       if (data) setObjects(data);
 

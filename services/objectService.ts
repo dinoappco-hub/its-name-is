@@ -50,9 +50,21 @@ export async function uploadObjectImage(userId: string, uri: string): Promise<{ 
 
 // ──────────────────────────── Fetch Objects ────────────────────────────
 
-export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error: string | null }> {
+export async function fetchObjects(currentUserId?: string): Promise<{ data: ObjectSubmission[]; error: string | null }> {
   try {
     const supabase = getClient();
+
+    // Ensure we have a valid session before querying
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session) {
+      // Try refreshing the session
+      const { data: refreshData, error: refreshErr } = await supabase.auth.refreshSession();
+      if (refreshErr || !refreshData?.session) {
+        console.warn('[objectService] No valid session, cannot fetch objects');
+        return { data: [], error: 'Session not ready' };
+      }
+    }
+
     // Fetch all objects with their submitter profiles
     const { data: objects, error: objErr } = await supabase
       .from('object_submissions')
@@ -96,9 +108,12 @@ export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error:
       votes = voteData || [];
     }
 
-    // Get current user for vote state
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    const currentUserId = authUser?.id || '';
+    // Use the passed userId, or try to get from session as fallback
+    let resolvedUserId = currentUserId || '';
+    if (!resolvedUserId) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      resolvedUserId = authUser?.id || '';
+    }
 
     // Build UI objects
     const result: ObjectSubmission[] = objects.map((obj: any) => {
@@ -109,7 +124,7 @@ export async function fetchObjects(): Promise<{ data: ObjectSubmission[]; error:
         const nameVotes = votes.filter((v: any) => v.name_id === n.id);
         const upCount = nameVotes.filter((v: any) => v.direction === 'up').length;
         const downCount = nameVotes.filter((v: any) => v.direction === 'down').length;
-        const userVoteRecord = nameVotes.find((v: any) => v.user_id === currentUserId);
+        const userVoteRecord = nameVotes.find((v: any) => v.user_id === resolvedUserId);
 
         return {
           id: n.id,
