@@ -704,7 +704,7 @@ export default function ObjectDetailScreen() {
 
             <View style={styles.namesSection}>
               <View style={styles.namesSectionHeader}>
-                <Text style={[styles.namesSectionTitle, { color: t.textPrimary }]}>Name</Text>
+                <Text style={[styles.namesSectionTitle, { color: t.textPrimary }]}>its name is</Text>
               </View>
 
               {sortedNames.length === 0 ? (
