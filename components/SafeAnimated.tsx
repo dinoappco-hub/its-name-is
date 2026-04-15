@@ -70,6 +70,43 @@ const FallbackAnimated = {
 };
 
 // ──────────────────────────────────────────────
+// Android-safe wrappers: use Reanimated's Animated.View for
+// animated style support (useAnimatedStyle, SharedValues) but
+// strip entering/exiting/layout props that crash on Android.
+// ──────────────────────────────────────────────
+
+let AndroidSafeAnimated: any = null;
+if (hasReanimated && !safeLayoutAnimations) {
+  const ReanimatedView = Reanimated.default.View;
+  const ReanimatedText = Reanimated.default.Text;
+  const ReanimatedScrollView = Reanimated.default.ScrollView;
+
+  const SafeReanimatedView = forwardRef<RNView, any>((props, ref) => {
+    const { entering, exiting, layout, ...rest } = props;
+    return <ReanimatedView ref={ref} {...rest} />;
+  });
+  SafeReanimatedView.displayName = 'SafeReanimatedView';
+
+  const SafeReanimatedText = forwardRef<RNText, any>((props, ref) => {
+    const { entering, exiting, layout, ...rest } = props;
+    return <ReanimatedText ref={ref} {...rest} />;
+  });
+  SafeReanimatedText.displayName = 'SafeReanimatedText';
+
+  const SafeReanimatedScrollView = forwardRef<RNScrollView, any>((props, ref) => {
+    const { entering, exiting, layout, ...rest } = props;
+    return <ReanimatedScrollView ref={ref} {...rest} />;
+  });
+  SafeReanimatedScrollView.displayName = 'SafeReanimatedScrollView';
+
+  AndroidSafeAnimated = {
+    View: SafeReanimatedView,
+    Text: SafeReanimatedText,
+    ScrollView: SafeReanimatedScrollView,
+  };
+}
+
+// ──────────────────────────────────────────────
 // Fallback: chainable no-op stubs for layout animations
 // ──────────────────────────────────────────────
 
@@ -153,9 +190,14 @@ const fallbackUseAnimatedScrollHandler = () => undefined;
 // Export: real reanimated if available, stubs otherwise
 // ──────────────────────────────────────────────
 
-// Use reanimated Animated.View on all platforms (it works fine for style/transform),
-// but only use FallbackAnimated if reanimated is completely unavailable.
-const SafeAnimated = hasReanimated ? Reanimated.default : FallbackAnimated;
+// On iOS with reanimated: use real Reanimated (full entering/exiting support).
+// On Android with reanimated: use AndroidSafeAnimated wrappers that strip
+//   entering/exiting/layout props to prevent C++ "Object is not a function" crashes,
+//   while still supporting animated styles (useAnimatedStyle, SharedValues).
+// Without reanimated: use FallbackAnimated (RN Animated with prop stripping).
+const SafeAnimated = safeLayoutAnimations
+  ? Reanimated.default
+  : AndroidSafeAnimated || FallbackAnimated;
 export default SafeAnimated;
 
 // Layout entering/exiting animations — only enabled on iOS to prevent Android C++ crashes
