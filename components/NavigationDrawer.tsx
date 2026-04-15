@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions, Platform, BackHandler, Animated, Easing, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from './SafeIcons';
@@ -12,8 +12,8 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useAccessibility } from '../hooks/useAccessibility';
 import { useAppTheme } from '../hooks/useTheme';
 
-const SCREEN_W = Dimensions.get('window').width;
-const DRAWER_W = Math.min(SCREEN_W * 0.82, 340);
+const DEFAULT_SCREEN_W = Math.max(Dimensions.get('window').width, 375);
+const DEFAULT_DRAWER_W = Math.min(DEFAULT_SCREEN_W * 0.82, 340);
 
 interface NavigationDrawerProps {
   visible: boolean;
@@ -42,20 +42,32 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
   const { unreadCount } = useNotifications();
   const { activeCount: a11yActiveCount, triggerHaptic } = useAccessibility();
 
+  const [drawerW] = useState(() => DEFAULT_DRAWER_W);
+
   // Use RN Animated directly for smooth native-driven animations
-  const slideAnim = useRef(new Animated.Value(-DRAWER_W)).current;
+  const slideAnim = useRef(new Animated.Value(-drawerW)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
+      // Use timing on Android to avoid spring C++ issues; spring on iOS for feel
+      const openAnim = Platform.OS === 'android'
+        ? Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 280,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          })
+        : Animated.spring(slideAnim, {
+            toValue: 0,
+            damping: 22,
+            stiffness: 200,
+            mass: 0.8,
+            useNativeDriver: true,
+          });
+
       Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          damping: 22,
-          stiffness: 200,
-          mass: 0.8,
-          useNativeDriver: true,
-        }),
+        openAnim,
         Animated.timing(backdropAnim, {
           toValue: 1,
           duration: 250,
@@ -65,7 +77,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
     } else {
       Animated.parallel([
         Animated.timing(slideAnim, {
-          toValue: -DRAWER_W,
+          toValue: -drawerW,
           duration: 220,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
@@ -138,7 +150,7 @@ export default function NavigationDrawer({ visible, onClose }: NavigationDrawerP
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
 
-      <Animated.View style={[styles.drawer, { width: DRAWER_W, paddingTop: insets.top + 8, backgroundColor: t.background, borderRightColor: t.border, transform: [{ translateX: slideAnim }] }]}>
+      <Animated.View style={[styles.drawer, { width: drawerW, paddingTop: insets.top + 8, backgroundColor: t.background, borderRightColor: t.border, transform: [{ translateX: slideAnim }] }]}>
         <Pressable style={[styles.profileSection, { borderBottomColor: t.border }]} onPress={() => handleNavigate('/(tabs)/profile')}>
           <View style={[styles.avatarWrap, { borderColor: t.border }]}>
             <Image source={{ uri: currentUser.avatar }} style={styles.avatar} contentFit="cover" />

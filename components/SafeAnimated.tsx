@@ -7,6 +7,7 @@ import {
   Text as RNText,
   ScrollView as RNScrollView,
   Animated as RNAnimated,
+  Platform,
 } from 'react-native';
 
 // ──────────────────────────────────────────────
@@ -18,12 +19,19 @@ try {
   Reanimated = require('react-native-reanimated');
 } catch {}
 
+// On Android, entering/layout animations can trigger C++ bad_function_call crashes
+// in the native animation engine (Hermes + Reanimated JIT compilation issue).
+// Only enable reanimated for shared values / withTiming / withSpring (stable).
+// Disable entering/exiting layout animations on Android to prevent crashes.
 const hasReanimated = !!(
   Reanimated &&
   Reanimated.default &&
   Reanimated.default.View &&
   typeof Reanimated.useSharedValue === 'function'
 );
+
+// Layout entering/exiting animations are only safe on iOS
+const safeLayoutAnimations = hasReanimated && Platform.OS === 'ios';
 
 // ──────────────────────────────────────────────
 // If reanimated is available, re-export everything from it
@@ -145,14 +153,17 @@ const fallbackUseAnimatedScrollHandler = () => undefined;
 // Export: real reanimated if available, stubs otherwise
 // ──────────────────────────────────────────────
 
+// Use reanimated Animated.View on all platforms (it works fine for style/transform),
+// but only use FallbackAnimated if reanimated is completely unavailable.
 const SafeAnimated = hasReanimated ? Reanimated.default : FallbackAnimated;
 export default SafeAnimated;
 
-export const FadeIn = hasReanimated ? Reanimated.FadeIn : stubFadeIn;
-export const FadeInDown = hasReanimated ? Reanimated.FadeInDown : stubFadeInDown;
-export const FadeInUp = hasReanimated ? Reanimated.FadeInUp : stubFadeInUp;
-export const FadeOut = hasReanimated ? Reanimated.FadeOut : stubFadeOut;
-export const ZoomIn = hasReanimated ? Reanimated.ZoomIn : stubZoomIn;
+// Layout entering/exiting animations — only enabled on iOS to prevent Android C++ crashes
+export const FadeIn = safeLayoutAnimations ? Reanimated.FadeIn : stubFadeIn;
+export const FadeInDown = safeLayoutAnimations ? Reanimated.FadeInDown : stubFadeInDown;
+export const FadeInUp = safeLayoutAnimations ? Reanimated.FadeInUp : stubFadeInUp;
+export const FadeOut = safeLayoutAnimations ? Reanimated.FadeOut : stubFadeOut;
+export const ZoomIn = safeLayoutAnimations ? Reanimated.ZoomIn : stubZoomIn;
 
 export const useSharedValue = hasReanimated ? Reanimated.useSharedValue : fallbackUseSharedValue;
 export const useAnimatedStyle = hasReanimated ? Reanimated.useAnimatedStyle : fallbackUseAnimatedStyle;

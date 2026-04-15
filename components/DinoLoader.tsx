@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { useAppTheme } from '../hooks/useTheme';
 
@@ -23,6 +23,9 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
   const dotAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // On Android, use simpler easing to avoid native driver C++ bad_function_call
+    const safeEasing = Platform.OS === 'android' ? Easing.linear : Easing.inOut(Easing.sin);
+
     const rotLoop = Animated.loop(
       Animated.timing(rotationAnim, {
         toValue: 1,
@@ -37,13 +40,13 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
         Animated.timing(bounceAnim, {
           toValue: 1,
           duration: 600,
-          easing: Easing.inOut(Easing.sin),
+          easing: safeEasing,
           useNativeDriver: true,
         }),
         Animated.timing(bounceAnim, {
           toValue: 0,
           duration: 600,
-          easing: Easing.inOut(Easing.sin),
+          easing: safeEasing,
           useNativeDriver: true,
         }),
       ])
