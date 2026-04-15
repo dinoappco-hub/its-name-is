@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { useAppTheme } from '../hooks/useTheme';
 import { config } from '../constants/config';
 
-const EFFECTIVE_DATE = 'April 3, 2026';
+const EFFECTIVE_DATE = 'April 15, 2026';
 
 export default function PrivacyScreen() {
   const insets = useSafeAreaInsets();
@@ -116,26 +116,35 @@ export default function PrivacyScreen() {
           <P>To exercise any of these rights, contact us on our Discord server.</P>
         </Section>
 
-        <Section number="6" title="Camera and Photo Access">
+        <Section number="6" title="Photo and Video Permissions">
+          <P>{config.appName} handles photos and camera access in accordance with Google Play's User Data policy. All user photos are treated as personal and sensitive data.</P>
+
+          <SubHeading>Camera Permission</SubHeading>
           <P>{config.appName} uses the <Text style={[styles.highlight, { color: t.primary }]}>android.permission.CAMERA</Text> permission to allow you to photograph objects directly within the app for community sharing.</P>
-          <SubHeading>Why We Need Camera Access</SubHeading>
           <Bullet>To let you take photos of real-world objects using the in-app live viewfinder</Bullet>
           <Bullet>Camera is the core feature — snapping objects is how the community discovers and names things</Bullet>
-          <SubHeading>How the Camera Is Used</SubHeading>
           <Bullet>The camera activates only when you open the Snap tab or tap "Open Camera"</Bullet>
           <Bullet>Photos are captured only when you press the shutter button — never automatically</Bullet>
           <Bullet>We do not access your camera in the background or when the app is closed</Bullet>
           <Bullet>Flash, zoom, and front/back camera controls are provided for your convenience</Bullet>
-          <SubHeading>Photo Library Access</SubHeading>
-          <Bullet>You may also choose photos from your device gallery as an alternative to taking new photos</Bullet>
-          <Bullet>We only access photos you explicitly select — we never scan or read your photo library</Bullet>
+
+          <SubHeading>Photo Library Access — Android Photo Picker</SubHeading>
+          <P>On devices running Android 13 (API level 33) and later, {config.appName} uses the <Text style={[styles.highlight, { color: t.primary }]}>Android Photo Picker</Text> (system-provided media picker) to allow you to select photos from your gallery. This means:</P>
+          <Bullet>{config.appName} does <Text style={{ fontWeight: '700' }}>NOT</Text> request the READ_MEDIA_IMAGES or READ_MEDIA_VIDEO permissions</Bullet>
+          <Bullet>The system photo picker grants access only to the specific photo(s) you select — we never have broad access to your media library</Bullet>
+          <Bullet>We cannot browse, scan, index, or read any photos beyond what you explicitly choose to share</Bullet>
+          <Bullet>No background access to your photo library occurs at any time</Bullet>
+          <P>On older Android versions (below API 33), the system picker or READ_EXTERNAL_STORAGE permission may be used as needed, scoped only to the photos you select for upload.</P>
+
           <SubHeading>What Happens to Your Photos</SubHeading>
           <Bullet>Photos you submit are uploaded to our secure cloud storage</Bullet>
           <Bullet>Uploaded photos are publicly visible to other users within the app</Bullet>
           <Bullet>You can delete any photo you submitted at any time from your profile</Bullet>
           <Bullet>When you delete a submission, the photo is permanently removed from our servers</Bullet>
-          <SubHeading>Denying Camera Permission</SubHeading>
-          <P>Camera access is optional. If you deny the permission, you can still use the gallery upload feature to submit photos. You can change camera permissions at any time in your device settings.</P>
+          <Bullet>We do not use your photos for advertising, profiling, or any purpose other than displaying them within the {config.appName} community</Bullet>
+
+          <SubHeading>Denying Permissions</SubHeading>
+          <P>Camera access is optional. If you deny the camera permission, you can still use the gallery photo picker to submit photos. You can change camera permissions at any time in your device settings.</P>
         </Section>
 
         <Section number="7" title="Notifications">
