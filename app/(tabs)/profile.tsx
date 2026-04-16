@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, memo } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, memo } from 'react';
 import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Dimensions, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -15,9 +15,7 @@ import { useAccessibility } from '../../hooks/useAccessibility';
 import { useAppTheme } from '../../hooks/useTheme';
 import { ObjectSubmission } from '../../services/types';
 
-const { width: SCREEN_W } = Dimensions.get('window');
 const GRID_GAP = 10;
-const CARD_W = (SCREEN_W - 32 - GRID_GAP) / 2;
 
 // Reusable image with error fallback
 const FallbackImage = memo(({ uri, style, iconSize = 36, bgColor = '#1a1a1f', iconColor = '#666', iconName = 'image' }: {
@@ -43,6 +41,15 @@ export default function ProfileScreen() {
   const { currentUser, getUserObjects, objects, loading, refreshing, refreshObjects, deleteSubmission } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor } = useAccessibility();
   const [dinoRefreshing, setDinoRefreshing] = useState(false);
+
+  const [screenWidth, setScreenWidth] = useState(() => Math.max(Dimensions.get('window').width, 375));
+  useEffect(() => {
+    const update = () => setScreenWidth(Math.max(Dimensions.get('window').width, 375));
+    update();
+    const sub = Dimensions.addEventListener('change', update);
+    return () => sub?.remove();
+  }, []);
+  const CARD_W = Math.max(1, (screenWidth - 32 - GRID_GAP) / 2);
 
   const handleRefresh = useCallback(async () => {
     setDinoRefreshing(true);

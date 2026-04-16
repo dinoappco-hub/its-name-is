@@ -3,7 +3,8 @@ import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Key
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '../../components/SafeIcons';
-import * as ImagePicker from 'expo-image-picker';
+let ImagePicker: any = null;
+try { ImagePicker = require('expo-image-picker'); } catch {}
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
 import Animated, { FadeIn, FadeInUp, ZoomIn } from '../../components/SafeAnimated';
@@ -14,12 +15,23 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAppTheme } from '../../hooks/useTheme';
 import CropOverlay from '../../components/CropOverlay';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const getScreenDims = () => ({
+  width: Math.max(Dimensions.get('window').width, 375),
+  height: Math.max(Dimensions.get('window').height, 667),
+});
 
 export default function SnapScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors: t, typo } = useAppTheme();
+  const [screenDims, setScreenDims] = useState(getScreenDims);
+  useEffect(() => {
+    const update = () => setScreenDims(getScreenDims());
+    update();
+    const sub = Dimensions.addEventListener('change', update);
+    return () => sub?.remove();
+  }, []);
+  const SCREEN_W = screenDims.width;
   const { addSubmission, currentUser } = useApp();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -105,6 +117,10 @@ export default function SnapScreen() {
   }, [CameraModule]);
 
   const openCamera = async (silent = false) => {
+    if (!ImagePicker) {
+      if (!silent) showAlert('Camera Unavailable', 'Camera module is not available in this environment. Please use a real device.');
+      return;
+    }
     if (Platform.OS === 'web') {
       try {
         const camPerm = await ImagePicker.requestCameraPermissionsAsync();
@@ -201,6 +217,10 @@ export default function SnapScreen() {
   };
 
   const pickFromGallery = async () => {
+    if (!ImagePicker) {
+      showAlert('Unavailable', 'Image picker is not available in this environment.');
+      return;
+    }
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {

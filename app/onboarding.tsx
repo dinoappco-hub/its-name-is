@@ -10,7 +10,7 @@ let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
 import { useAppTheme } from '../hooks/useTheme';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const getScreenW = () => Math.max(Dimensions.get('window').width, 375);
 
 interface OnboardingSlide {
   id: string;
@@ -49,6 +49,13 @@ export default function OnboardingScreen() {
   const { colors: t } = useAppTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const [SCREEN_W, setScreenW] = useState(getScreenW);
+  React.useEffect(() => {
+    const update = () => setScreenW(getScreenW());
+    update();
+    const sub = Dimensions.addEventListener('change', update);
+    return () => sub?.remove();
+  }, []);
 
   const completeOnboarding = async () => {
     await AsyncStorage.setItem('snapname_onboarded', 'true');

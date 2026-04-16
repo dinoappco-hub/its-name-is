@@ -11,15 +11,22 @@ import { COLOR_PRESETS, FONT_PRESETS, buildThemeColors, isValidHex, hslToHex, he
 import { useAccessibility } from '../hooks/useAccessibility';
 import { Image } from 'expo-image';
 
-const { width: SCREEN_W } = Dimensions.get('window');
 const GRID_GAP = 10;
-const PRESET_CARD_W = (SCREEN_W - 32 - GRID_GAP) / 2;
 
 type TabMode = 'presets' | 'custom';
 
 export default function CustomizeThemeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [screenW, setScreenW] = useState(() => Math.max(Dimensions.get('window').width, 375));
+  useEffect(() => {
+    const update = () => setScreenW(Math.max(Dimensions.get('window').width, 375));
+    update();
+    const sub = Dimensions.addEventListener('change', update);
+    return () => sub?.remove();
+  }, []);
+  const SCREEN_W = screenW;
+  const PRESET_CARD_W = Math.max(1, (SCREEN_W - 32 - GRID_GAP) / 2);
   const { colors: t, isDark, mode, colorPreset, setColorPreset, customColors, setCustomColors, fontPreset, setFontPreset } = useAppTheme();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate } = useAccessibility();
 
@@ -275,7 +282,7 @@ export default function CustomizeThemeScreen() {
                   <Animated.View
                     key={preset.key}
                     entering={shouldAnimate ? FadeInDown.delay(idx * 50).duration(350) : undefined}
-                    style={{ width: PRESET_CARD_W }}
+                    style={{ width: PRESET_CARD_W as number }}
                   >
                     <Pressable
                       style={[
@@ -597,7 +604,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP, marginBottom: 16,
   },
   fontCard: {
-    width: PRESET_CARD_W, borderRadius: 14, borderWidth: 1, padding: 14,
+    borderRadius: 14, borderWidth: 1, padding: 14, flexGrow: 1, flexBasis: '45%',
     alignItems: 'center', gap: 4, position: 'relative',
   },
   fontCardTop: {

@@ -8,7 +8,7 @@ import Animated, { FadeInDown, FadeInUp } from '../components/SafeAnimated';
 import { useAppTheme } from '../hooks/useTheme';
 import { config } from '../constants/config';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+// SCREEN_W is not used at module scope to prevent SSR issues
 
 const KIDS = [
   { name: 'Steggy', description: 'Brown Stegosaurus', color: '#8B6914', emoji: '🦖', bgColor: '#8B691415' },
@@ -210,7 +210,8 @@ const styles = StyleSheet.create({
   kidsIntro: { fontSize: 13, marginBottom: 16, lineHeight: 18 },
   kidsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   kidCard: {
-    width: (SCREEN_W - 40 - 40 - 24) / 4,
+    width: '22%',
+    flexGrow: 1,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 4,

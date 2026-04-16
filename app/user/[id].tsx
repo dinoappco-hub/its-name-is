@@ -15,13 +15,19 @@ import { fetchPublicUserProfile } from '../../services/communityService';
 import { useMute } from '../../hooks/useMute';
 import { useAlert } from '@/template';
 
-const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 10;
-const CARD_W = (SCREEN_W - 20 * 2 - CARD_GAP) / 2;
 
 export default function PublicUserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const [screenW, setScreenW] = useState(() => Math.max(Dimensions.get('window').width, 375));
+  React.useEffect(() => {
+    const update = () => setScreenW(Math.max(Dimensions.get('window').width, 375));
+    update();
+    const sub = Dimensions.addEventListener('change', update);
+    return () => sub?.remove();
+  }, []);
+  const CARD_W = Math.max(1, (screenW - 20 * 2 - CARD_GAP) / 2);
   const router = useRouter();
   const { user: authUser } = useAuth();
   const { colors: t } = useAppTheme();
@@ -95,7 +101,7 @@ export default function PublicUserProfileScreen() {
     return (
       <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(400)}>
         <Pressable
-          style={[styles.card, { backgroundColor: t.surface }]}
+          style={[styles.card, { backgroundColor: t.surface, width: CARD_W }]}
           onPress={() => {
             Haptics?.selectionAsync();
             router.push(`/object/${item.id}`);
@@ -126,7 +132,7 @@ export default function PublicUserProfileScreen() {
         </Pressable>
       </Animated.View>
     );
-  }, [router, t]);
+  }, [router, t, CARD_W]);
 
   if (loadingProfile) {
     return (
@@ -291,7 +297,7 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   sectionTitle: { fontSize: 16, fontWeight: '600' },
   sectionCount: { fontSize: 13, fontWeight: '700', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 9999 },
-  card: { width: CARD_W, marginBottom: CARD_GAP, borderRadius: 12, overflow: 'hidden' },
+  card: { marginBottom: CARD_GAP, borderRadius: 12, overflow: 'hidden' },
   cardImageWrap: { width: '100%', aspectRatio: 1 },
   cardImage: { width: '100%', height: '100%' },
   featuredBadge: { position: 'absolute', top: 8, left: 8, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },

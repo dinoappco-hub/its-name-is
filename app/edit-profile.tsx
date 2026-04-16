@@ -6,7 +6,8 @@ import { MaterialIcons } from '../components/SafeIcons';
 import { useRouter } from 'expo-router';
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
-import * as ImagePicker from 'expo-image-picker';
+let ImagePicker: any = null;
+try { ImagePicker = require('expo-image-picker'); } catch {}
 import Animated, { FadeInDown } from '../components/SafeAnimated';
 import { useAuth, useAlert } from '@/template';
 import { useApp } from '../contexts/AppContext';
@@ -33,6 +34,7 @@ export default function EditProfileScreen() {
   const displayAvatar = newAvatarLocal || avatarUri;
 
   const handlePickAvatar = async () => {
+    if (!ImagePicker) { showAlert('Unavailable', 'Image picker is not available in this environment.'); return; }
     Haptics?.selectionAsync();
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') { showAlert('Permission Required', 'Please allow access to your photo library to change your avatar.'); return; }
