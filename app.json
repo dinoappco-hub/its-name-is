@@ -27,7 +27,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.itsnameis.app",
       "versionCode": 1,
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"],
+      "permissions": ["CAMERA"],
       "blockedPermissions": ["android.permission.ACTIVITY_RECOGNITION"]
     },
     "web": {

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — its name is.</title>
+  <style>
+    :root {
+      --bg: #0A0A0F;
+      --surface: #16161F;
+      --border: #2A2A3A;
+      --text: #E8E8F0;
+      --text-sec: #A0A0B8;
+      --text-muted: #6B6B80;
+      --primary: #7C5CFC;
+      --accent: #F59E0B;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 0;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .hero-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 32px;
+      background: rgba(124, 92, 252, 0.12);
+      border: 1px solid rgba(124, 92, 252, 0.25);
+      margin-bottom: 16px;
+      font-size: 28px;
+    }
+    .hero h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .hero .date {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .intro-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 32px;
+      font-size: 15px;
+      color: var(--text-sec);
+    }
+    .intro-card .highlight {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .section {
+      margin-bottom: 28px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .section-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 14px;
+      background: rgba(245, 158, 11, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .section-body {
+      padding-left: 40px;
+    }
+    .sub-heading {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 10px;
+      margin-bottom: 8px;
+    }
+    p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text-sec);
+      margin-bottom: 12px;
+    }
+    .bullet {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 8px;
+      padding-right: 8px;
+    }
+    .bullet-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 3px;
+      background: var(--accent);
+      margin-top: 10px;
+      flex-shrink: 0;
+    }
+    .bullet-text {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text-sec);
+      flex: 1;
+    }
+    .permission-tag {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    strong {
+      font-weight: 700;
+      color: var(--text);
+    }
+    .contact-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 15px;
+      transition: opacity 0.2s;
+    }
+    .contact-card:hover {
+      opacity: 0.8;
+    }
+    .footer {
+      text-align: center;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+      margin-top: 16px;
+    }
+    .footer p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 24px 16px 60px; }
+      .hero h1 { font-size: 24px; }
+      .section-body { padding-left: 32px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <div class="hero-icon">🔒</div>
+      <h1>Privacy Policy</h1>
+      <p class="date">Effective: April 15, 2026</p>
+    </div>
+
+    <div class="intro-card">
+      Your privacy matters to us. This Privacy Policy explains how <span class="highlight">its name is.</span> collects, uses, and protects your personal information when you use our application.
+    </div>
+
+    <!-- Section 1 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <div class="section-title">Information We Collect</div>
+      </div>
+      <div class="section-body">
+        <p>We collect the following types of information:</p>
+
+        <div class="sub-heading">Account Information</div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Email address (used for authentication and account recovery)</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Username and display name (chosen by you)</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Profile avatar (optional)</div></div>
+
+        <div class="sub-heading">Content You Submit</div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Photos of objects you upload</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Object names and descriptions you create</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Name suggestions and votes you provide</div></div>
+
+        <div class="sub-heading">Automatically Collected Data</div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Device type and operating system</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">App usage patterns and feature interactions</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Crash reports and performance data</div></div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <div class="section-title">How We Use Your Information</div>
+      </div>
+      <div class="section-body">
+        <p>We use the information we collect to:</p>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Provide and operate the its name is. application</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Authenticate your identity and manage your account</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Display your submissions and activity to the community</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Send notifications about votes, name suggestions, and app updates</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Improve app performance and fix bugs</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Enforce our Terms of Service and Community Guidelines</div></div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <div class="section-title">Information Sharing</div>
+      </div>
+      <div class="section-body">
+        <p>We do not sell your personal information. We may share information in the following circumstances:</p>
+
+        <div class="sub-heading">Community Visibility</div>
+        <p>Your username, avatar, submissions, name suggestions, and votes are visible to other its name is. users as part of the community experience.</p>
+
+        <div class="sub-heading">Service Providers</div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Cloud hosting providers — for storing your data securely</div></div>
+
+        <div class="sub-heading">Legal Requirements</div>
+        <p>We may disclose information if required by law, legal process, or to protect the rights and safety of our users.</p>
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <div class="section-title">Data Storage and Security</div>
+      </div>
+      <div class="section-body">
+        <p>Your data is stored securely using industry-standard encryption and hosted on secure cloud infrastructure. We implement appropriate technical and organizational measures to protect your information against unauthorized access, alteration, or destruction.</p>
+        <p>While we strive to protect your data, no method of transmission over the internet is 100% secure. We cannot guarantee absolute security.</p>
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <div class="section-title">Your Rights</div>
+      </div>
+      <div class="section-body">
+        <p>You have the right to:</p>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Access your personal data stored in the app</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Update or correct your account information</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Delete your account and associated data</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Opt out of non-essential notifications</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Request a copy of your data</div></div>
+        <p>To exercise any of these rights, contact us on our Discord server.</p>
+      </div>
+    </div>
+
+    <!-- Section 6 — Photo and Video Permissions -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <div class="section-title">Photo and Video Permissions</div>
+      </div>
+      <div class="section-body">
+        <p>its name is. handles photos and camera access in accordance with Google Play's User Data policy. All user photos are treated as personal and sensitive data.</p>
+
+        <div class="sub-heading">Camera Permission</div>
+        <p>its name is. uses the <span class="permission-tag">android.permission.CAMERA</span> permission to allow you to photograph objects directly within the app for community sharing.</p>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">To let you take photos of real-world objects using the in-app live viewfinder</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Camera is the core feature — snapping objects is how the community discovers and names things</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">The camera activates only when you open the Snap tab or tap "Open Camera"</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Photos are captured only when you press the shutter button — never automatically</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">We do not access your camera in the background or when the app is closed</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Flash, zoom, and front/back camera controls are provided for your convenience</div></div>
+
+        <div class="sub-heading">Photo Library Access — Android Photo Picker</div>
+        <p>On devices running Android 13 (API level 33) and later, its name is. uses the <span class="permission-tag">Android Photo Picker</span> (system-provided media picker) to allow you to select photos from your gallery. This means:</p>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">its name is. does <strong>NOT</strong> request the READ_MEDIA_IMAGES or READ_MEDIA_VIDEO permissions</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">The system photo picker grants access only to the specific photo(s) you select — we never have broad access to your media library</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">We cannot browse, scan, index, or read any photos beyond what you explicitly choose to share</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">No background access to your photo library occurs at any time</div></div>
+        <p>On older Android versions (below API 33), the system picker or READ_EXTERNAL_STORAGE permission may be used as needed, scoped only to the photos you select for upload.</p>
+
+        <div class="sub-heading">What Happens to Your Photos</div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Photos you submit are uploaded to our secure cloud storage</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Uploaded photos are publicly visible to other users within the app</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">You can delete any photo you submitted at any time from your profile</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">When you delete a submission, the photo is permanently removed from our servers</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">We do not use your photos for advertising, profiling, or any purpose other than displaying them within the its name is. community</div></div>
+
+        <div class="sub-heading">Denying Permissions</div>
+        <p>Camera access is optional. If you deny the camera permission, you can still use the gallery photo picker to submit photos. You can change camera permissions at any time in your device settings.</p>
+      </div>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">7</div>
+        <div class="section-title">Notifications</div>
+      </div>
+      <div class="section-body">
+        <p>With your permission, we send push notifications about:</p>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Votes on your submitted objects</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">New name suggestions for your objects</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Objects being featured by the community</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Achievement milestones</div></div>
+        <p>You can manage notification preferences in the app settings at any time, including disabling all notifications.</p>
+      </div>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">8</div>
+        <div class="section-title">Children's Privacy</div>
+      </div>
+      <div class="section-body">
+        <p>its name is. is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us with personal information, please contact us immediately so we can delete it.</p>
+      </div>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">9</div>
+        <div class="section-title">Data Retention</div>
+      </div>
+      <div class="section-body">
+        <p>We retain your data for as long as your account is active. When you delete your account:</p>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Your profile information is permanently removed</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Your submitted content may be anonymized or removed</div></div>
+        <div class="bullet"><div class="bullet-dot"></div><div class="bullet-text">Aggregated, non-identifiable data may be retained for analytics</div></div>
+        <p>Backup copies may persist for up to 30 days after deletion.</p>
+      </div>
+    </div>
+
+    <!-- Section 10 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">10</div>
+        <div class="section-title">Changes to This Policy</div>
+      </div>
+      <div class="section-body">
+        <p>We may update this Privacy Policy from time to time. We will notify you of significant changes through the app or via email. Your continued use of the app after changes constitutes acceptance of the updated policy.</p>
+      </div>
+    </div>
+
+    <!-- Section 11 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">11</div>
+        <div class="section-title">Contact Us</div>
+      </div>
+      <div class="section-body">
+        <p>If you have questions or concerns about this Privacy Policy, please contact us:</p>
+        <a class="contact-card" href="https://discord.gg/2cda4rje" target="_blank" rel="noopener">💬 discord.gg/2cda4rje</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Last updated: April 15, 2026</p>
+      <p>its name is. · All rights reserved</p>
+    </div>
+  </div>
+</body>
+</html>
