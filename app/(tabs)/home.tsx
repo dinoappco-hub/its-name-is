@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef, memo } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, ScrollView as HScrollView, FlatList, Platform, Animated as RNAnimated, Easing as RNEasing } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, ScrollView as HScrollView, FlatList, Platform, Animated as RNAnimated, Easing as RNEasing, LayoutAnimation, UIManager } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Image } from 'expo-image';
@@ -126,13 +126,30 @@ export default function FeedScreen() {
   const featuredObjects = useMemo(() => objects.filter(o => o.isFeatured).slice(0, 3), [objects]);
 
   const [dinoRefreshing, setDinoRefreshing] = useState(false);
+  const dinoFadeAnim = useRef(new RNAnimated.Value(0)).current;
 
   const handleRefresh = useCallback(async () => {
+    // Fade in the dino loader
     setDinoRefreshing(true);
+    RNAnimated.timing(dinoFadeAnim, {
+      toValue: 1,
+      duration: 250,
+      easing: RNEasing.out(RNEasing.cubic),
+      useNativeDriver: true,
+    }).start();
     await Promise.all([refreshObjects(), loadCommunityData()]);
-    // Keep dino visible for a satisfying animation duration
-    setTimeout(() => setDinoRefreshing(false), 1200);
-  }, [refreshObjects]);
+    // Keep dino visible briefly, then fade out smoothly
+    setTimeout(() => {
+      RNAnimated.timing(dinoFadeAnim, {
+        toValue: 0,
+        duration: 400,
+        easing: RNEasing.inOut(RNEasing.cubic),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) setDinoRefreshing(false);
+      });
+    }, 800);
+  }, [refreshObjects, dinoFadeAnim]);
 
   const navigateToUser = useCallback((userId: string) => { Haptics?.selectionAsync(); router.push(`/user/${userId}`); }, [router]);
 
@@ -380,9 +397,22 @@ export default function FeedScreen() {
         ListHeaderComponent={() => (
           <>
             {dinoRefreshing ? (
-              <View style={styles.dinoRefreshWrap}>
-                <DinoLoader message="Refreshing" size="small" />
-              </View>
+              <RNAnimated.View style={[styles.dinoRefreshWrap, {
+                opacity: dinoFadeAnim,
+                transform: [{
+                  translateY: dinoFadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-20, 0],
+                  }),
+                }, {
+                  scale: dinoFadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.8, 1],
+                  }),
+                }],
+              }]}>
+                <DinoLoader message="Refreshing" size="small" fadeIn />
+              </RNAnimated.View>
             ) : null}
             {renderHeader()}
           </>

@@ -1,5 +1,5 @@
-import React, { useMemo, useCallback, useState, useEffect, memo } from 'react';
-import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Dimensions, Platform } from 'react-native';
+import React, { useMemo, useCallback, useState, useEffect, useRef, memo } from 'react';
+import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Dimensions, Platform, Animated as RNAnimated, Easing as RNEasing } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '../../components/SafeIcons';
@@ -41,6 +41,7 @@ export default function ProfileScreen() {
   const { currentUser, getUserObjects, objects, loading, refreshing, refreshObjects, deleteSubmission } = useApp();
   const { scaledSize, fontWeight: fw, triggerHaptic, shouldAnimate, subtleTextColor } = useAccessibility();
   const [dinoRefreshing, setDinoRefreshing] = useState(false);
+  const dinoFadeAnim = useRef(new RNAnimated.Value(0)).current;
 
   const [screenWidth, setScreenWidth] = useState(() => Math.max(Dimensions.get('window').width, 375));
   useEffect(() => {
@@ -53,9 +54,24 @@ export default function ProfileScreen() {
 
   const handleRefresh = useCallback(async () => {
     setDinoRefreshing(true);
+    RNAnimated.timing(dinoFadeAnim, {
+      toValue: 1,
+      duration: 250,
+      easing: RNEasing.out(RNEasing.cubic),
+      useNativeDriver: true,
+    }).start();
     await refreshObjects();
-    setTimeout(() => setDinoRefreshing(false), 1200);
-  }, [refreshObjects]);
+    setTimeout(() => {
+      RNAnimated.timing(dinoFadeAnim, {
+        toValue: 0,
+        duration: 400,
+        easing: RNEasing.inOut(RNEasing.cubic),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) setDinoRefreshing(false);
+      });
+    }, 800);
+  }, [refreshObjects, dinoFadeAnim]);
   const userObjects = useMemo(() => {
     if (!currentUser.id) return [];
     return getUserObjects(currentUser.id);
@@ -138,9 +154,22 @@ export default function ProfileScreen() {
   const renderHeader = () => (
     <>
       {dinoRefreshing ? (
-        <View style={styles.dinoRefreshWrap}>
-          <DinoLoader message="Refreshing" size="small" />
-        </View>
+        <RNAnimated.View style={[styles.dinoRefreshWrap, {
+          opacity: dinoFadeAnim,
+          transform: [{
+            translateY: dinoFadeAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-20, 0],
+            }),
+          }, {
+            scale: dinoFadeAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.8, 1],
+            }),
+          }],
+        }]}>
+          <DinoLoader message="Refreshing" size="small" fadeIn />
+        </RNAnimated.View>
       ) : null}
       <View style={styles.headerRow}>
         <Text style={[styles.pageTitle, { color: t.textPrimary }]}>Profile</Text>

@@ -6,6 +6,7 @@ import { useAppTheme } from '../hooks/useTheme';
 interface DinoLoaderProps {
   message?: string;
   size?: 'small' | 'medium' | 'large';
+  fadeIn?: boolean;
 }
 
 const DINO_SIZES = {
@@ -14,15 +15,24 @@ const DINO_SIZES = {
   large: { orbit: 52, dino: 60, container: 150 },
 };
 
-export default function DinoLoader({ message = 'Loading...', size = 'medium' }: DinoLoaderProps) {
+export default function DinoLoader({ message = 'Loading...', size = 'medium', fadeIn = false }: DinoLoaderProps) {
   const { colors: t } = useAppTheme();
   const dims = DINO_SIZES[size];
 
   const rotationAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const dotAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(fadeIn ? 0 : 1)).current;
 
   useEffect(() => {
+    if (fadeIn) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+    }
     // On Android, use simpler easing to avoid native driver C++ bad_function_call
     const safeEasing = Platform.OS === 'android' ? Easing.linear : Easing.inOut(Easing.sin);
 
@@ -131,7 +141,7 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
   });
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, fadeIn ? { opacity: fadeAnim, transform: [{ scale: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }] } : undefined]}>
       <View style={[styles.orbitContainer, { width: dims.container, height: dims.container }]}>
         <View style={[styles.orbitShadow, { width: dims.orbit * 2.2, height: dims.orbit * 0.9, backgroundColor: `${t.textMuted}10`, borderRadius: dims.orbit }]} />
 
@@ -189,7 +199,7 @@ export default function DinoLoader({ message = 'Loading...', size = 'medium' }: 
           </View>
         </View>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 
