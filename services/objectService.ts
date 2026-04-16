@@ -54,18 +54,10 @@ export async function fetchObjects(currentUserId?: string): Promise<{ data: Obje
   try {
     const supabase = getClient();
 
-    // Ensure we have a valid session before querying
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData?.session) {
-      // Try refreshing the session
-      const { data: refreshData, error: refreshErr } = await supabase.auth.refreshSession();
-      if (refreshErr || !refreshData?.session) {
-        console.warn('[objectService] No valid session, cannot fetch objects');
-        return { data: [], error: 'Session not ready' };
-      }
-    }
-
     // Fetch all objects with their submitter profiles
+    // RLS allows authenticated users to select all objects, and the Supabase
+    // client handles session restoration automatically — no manual session
+    // check needed here (it caused race conditions on app reopen).
     const { data: objects, error: objErr } = await supabase
       .from('object_submissions')
       .select('*, user_profiles!user_id(*)')

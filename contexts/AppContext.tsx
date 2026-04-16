@@ -70,14 +70,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Load data when auth user changes — with retry for session restoration
   useEffect(() => {
+    let cancelled = false;
     if (authUser?.id) {
       let retryCount = 0;
       const tryLoad = async () => {
+        if (cancelled) return;
         const success = await loadData(authUser.id);
-        if (!success && retryCount < 3) {
+        if (!success && !cancelled && retryCount < 4) {
           retryCount++;
-          console.log(`[AppContext] Retry ${retryCount}/3 loading data for user ${authUser.id}`);
-          setTimeout(tryLoad, retryCount * 1000); // 1s, 2s, 3s
+          console.log(`[AppContext] Retry ${retryCount}/4 loading data for user ${authUser.id}`);
+          setTimeout(tryLoad, Math.min(retryCount * 800, 2400)); // 800ms, 1.6s, 2.4s, 2.4s
         }
       };
       tryLoad();
@@ -87,6 +89,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSubmissionsToday(0);
       setLoading(false);
     }
+    return () => { cancelled = true; };
   }, [authUser?.id]);
 
   const loadData = async (userId: string): Promise<boolean> => {
