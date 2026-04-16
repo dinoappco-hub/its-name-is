@@ -10,6 +10,15 @@ import { config } from '../constants/config';
 
 // SCREEN_W is not used at module scope to prevent SSR issues
 
+const FAQ = [
+  { q: 'Why is the app dinosaur themed?', a: 'Because my dinosaurs inspired this app\'s creation! They are my kids and the reason this whole thing exists.', icon: '🦖' },
+  { q: 'Why did you create this app?', a: 'I was bored one day and wanted to do something cool. I have no tech skills — this app was built entirely by AI! I know people have named their objects before, especially stuffed animals, and I wanted to make it community-based where people can see and vote on named objects.', icon: '💡' },
+  { q: 'What AI platform did you use to build this app?', a: 'OnSpace AI.', icon: '🤖' },
+  { q: 'How long did it take you to build this app?', a: '2 months.', icon: '⏱️' },
+  { q: 'What is your favorite dinosaur?', a: 'I like the stegosaurus the most!', icon: '🦕' },
+  { q: 'What is your favourite animal?', a: 'I like the capybara.', icon: '🐾' },
+];
+
 const KIDS = [
   { name: 'Steggy', description: 'Brown Stegosaurus', color: '#8B6914', emoji: '🦖', bgColor: '#8B691415' },
   { name: 'Dino', description: 'Pink Stegosaurus', color: '#E91E8C', emoji: '🦖', bgColor: '#E91E8C15' },
@@ -147,7 +156,29 @@ export default function OurStoryScreen() {
             </View>
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(1000).duration(400)}>
+          {/* FAQ Section */}
+          <Animated.View entering={FadeInUp.delay(1000).duration(400)} style={[styles.faqSection, { backgroundColor: t.surface, borderColor: t.border }]}>
+            <View style={styles.faqHeader}>
+              <MaterialIcons name="help-outline" size={22} color={t.primary} />
+              <Text style={[styles.faqTitle, { color: t.textPrimary }]}>FAQ from the Founder</Text>
+            </View>
+            <Text style={[styles.faqIntro, { color: t.textSecondary }]}>Questions people ask me all the time</Text>
+            {FAQ.map((item, index) => (
+              <Animated.View
+                key={index}
+                entering={FadeInUp.delay(1050 + index * 60).duration(350)}
+                style={[styles.faqItem, { borderColor: t.border }, index === FAQ.length - 1 && { borderBottomWidth: 0, marginBottom: 0, paddingBottom: 0 }]}
+              >
+                <View style={styles.faqQuestionRow}>
+                  <Text style={styles.faqEmoji}>{item.icon}</Text>
+                  <Text style={[styles.faqQuestion, { color: t.textPrimary }]}>{item.q}</Text>
+                </View>
+                <Text style={[styles.faqAnswer, { color: t.textSecondary }]}>{item.a}</Text>
+              </Animated.View>
+            ))}
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(1400).duration(400)}>
             <Pressable style={[styles.ctaBtn, { backgroundColor: t.primary }]} onPress={() => router.navigate('/(tabs)/snap')}>
               <MaterialIcons name="camera-alt" size={20} color={t.background} />
               <Text style={[styles.ctaBtnText, { color: t.background }]}>Start Naming Things</Text>
@@ -250,4 +281,15 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, height: 36 },
   ctaBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, height: 54, marginBottom: 20 },
   ctaBtnText: { fontSize: 16, fontWeight: '700' },
+
+  // FAQ Section
+  faqSection: { borderRadius: 16, padding: 20, marginBottom: 24, borderWidth: 1 },
+  faqHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  faqTitle: { fontSize: 18, fontWeight: '700' },
+  faqIntro: { fontSize: 13, marginBottom: 16, lineHeight: 18 },
+  faqItem: { borderBottomWidth: 1, paddingBottom: 16, marginBottom: 16 },
+  faqQuestionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  faqEmoji: { fontSize: 18 },
+  faqQuestion: { fontSize: 15, fontWeight: '600', flex: 1, lineHeight: 21 },
+  faqAnswer: { fontSize: 14, fontWeight: '400', lineHeight: 22, marginLeft: 26 },
 });
